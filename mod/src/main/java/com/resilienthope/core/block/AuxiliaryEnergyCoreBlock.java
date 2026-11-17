@@ -29,7 +29,7 @@ public class AuxiliaryEnergyCoreBlock extends Block {
     public AuxiliaryEnergyCoreBlock() {
         super(BlockBehaviour.Properties.of(Material.METAL)
                 .strength(5.0f, 15.0f)
-                .sound(SoundType.BEACON)
+                .sound(SoundType.AMETHYST)
                 .lightLevel(state -> 15)
                 .noOcclusion());
     }
