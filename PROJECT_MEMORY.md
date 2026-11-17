@@ -36,8 +36,11 @@
    - [x] **实现原神式 4 人小队右侧 HUD、战技冷却框与底部无锁通讯字幕**；
    - [x] **实现无限大分类背包 (Infinite Inventory)**，拦截原版 27 格背包，按 `B` 呼出四大仓储分类；
    - [x] **实现 1-4 号位小队轮切状态机与星舰传送锚点方块 (`teleport_waypoint`)**；
-   - [ ] 引入 Better Combat 与动作模组生态（翻滚、平滑运镜、第三人称越肩）；
-   - [ ] 搭建第 1 章节星舰工业下层灰盒白模地图与测试传送点。
+   - [x] **引入 Better Combat 动作模组与 Shoulder Surfing Reloaded 越肩自由视角生态**；
+   - [x] **内置等离子重切剑 (`plasma_cutter`) 的 Better Combat 重型双手大剑动作与挥砍音画**；
+   - [x] **利用 opencode (hy4-flash-free) 产出星舰序章灰盒 NBT (`starship_prologue.nbt`) 并植入登入自动生成与剧情播报**；
+   - [ ] 进阶：配置 Curios 5 槽位科技芯片（圣遗物）属性与套装计算；
+   - [ ] 进阶：接入三方势力（指挥层/工会/科学派）首段分支交互与任务追踪条。
 4. **Phase 4: 资产精细优化与内容铺设 (Asset Polish & Production)**
    - 体素（Voxel）科幻专武模型、机械敌人与机械外骨骼；
    - 完整主线三方博弈剧本与对白触发；
