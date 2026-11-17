@@ -33,6 +33,7 @@ public class CharacterData {
 
     public float getCurrentEnergy() { return currentEnergy; }
     public void setCurrentEnergy(float currentEnergy) { this.currentEnergy = Math.max(0, Math.min(currentEnergy, maxEnergy)); }
+    public void addEnergy(float delta) { this.currentEnergy = Math.max(0, Math.min(this.currentEnergy + delta, this.maxEnergy)); }
 
     public int getECooldownTicks() { return eCooldownTicks; }
     public void setECooldownTicks(int ticks) { this.eCooldownTicks = Math.max(0, ticks); }
