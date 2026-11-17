@@ -1,0 +1,24 @@
+# OS & Editors
+.DS_Store
+Thumbs.db
+*.bak
+*.tmp
+.idea/
+.vscode/
+*.iml
+
+# Local Minecraft Client (Used for local testing, not committed to git)
+Minecraft/
+
+# Java & Gradle Build Artifacts (CI compiles remotely)
+.gradle/
+build/
+bin/
+out/
+*.class
+*.jar
+!src/main/resources/**/*.jar
+
+# Secrets
+*.log
+.env
