@@ -48,7 +48,6 @@ public class StarshipSpawnHandler {
                 new PacketSyncQuest(QuestManager.getQuestTitle(), QuestManager.getObjectiveText(), QuestManager.getTargetPos(), QuestManager.getQuestStage()));
 
         if (!player.getTags().contains(SPAWN_TAG)) {
-            ServerLevel level = player.getLevel();
             StructureManager templateManager = level.getStructureManager();
             ResourceLocation structureId = new ResourceLocation(PickingHopeCore.MOD_ID, "starship_prologue");
             Optional<StructureTemplate> template = templateManager.get(structureId);
