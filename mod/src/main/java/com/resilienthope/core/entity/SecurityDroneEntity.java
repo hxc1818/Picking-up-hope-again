@@ -1,10 +1,7 @@
 package com.resilienthope.core.entity;
 
-import com.resilienthope.core.network.PacketHandler;
-import com.resilienthope.core.network.PacketRadioDialogue;
-import com.resilienthope.core.network.PacketSyncQuest;
-import com.resilienthope.core.quest.QuestManager;
-import net.minecraft.core.BlockPos;
+import com.resilienthope.core.init.ModItems;
+import com.resilienthope.core.quest.StoryDirector;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,7 +22,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 
 public class SecurityDroneEntity extends Monster {
 
@@ -33,12 +29,12 @@ public class SecurityDroneEntity extends Monster {
         super(type, level);
         this.moveControl = new FlyingMoveControl(this, 15, true);
         this.setNoGravity(true);
-        this.xpReward = 8;
+        this.xpReward = 12;
     }
 
     public static AttributeSupplier.Builder createAttributes() {
         return Monster.createMonsterAttributes()
-                .add(Attributes.MAX_HEALTH, 20.0D)
+                .add(Attributes.MAX_HEALTH, 28.0D)
                 .add(Attributes.ATTACK_DAMAGE, 3.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.35D)
                 .add(Attributes.FLYING_SPEED, 0.6D)
@@ -61,33 +57,14 @@ public class SecurityDroneEntity extends Monster {
         if (!this.level.isClientSide()) {
             ServerLevel serverLevel = (ServerLevel) this.level;
             serverLevel.sendParticles(ParticleTypes.EXPLOSION, getX(), getY() + 0.5, getZ(), 3, 0.2, 0.2, 0.2, 0.05);
-            serverLevel.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.0f, 1.5f);
+            serverLevel.playSound(null, getX(), getY(), getZ(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 0.9f, 1.4f);
 
-            // Quest Hook: Stage 1 Drone Elimination
-            if (QuestManager.getQuestStage() == 1) {
-                QuestManager.incrementDroneKill();
-                int killed = QuestManager.getDronesKilled();
-                int required = QuestManager.getRequiredDrones();
+            ServerPlayer player = (cause.getEntity() instanceof ServerPlayer sp) ? sp :
+                    (this.getKillCredit() instanceof ServerPlayer kp ? kp :
+                    (serverLevel.getNearestPlayer(this, 36.0D) instanceof ServerPlayer np ? np : null));
 
-                ServerPlayer player = (cause.getEntity() instanceof ServerPlayer sp) ? sp :
-                        (this.getKillCredit() instanceof ServerPlayer kp ? kp :
-                        (serverLevel.getNearestPlayer(this, 30.0D) instanceof ServerPlayer np ? np : null));
-
-                if (player != null) {
-                    if (killed < required) {
-                        String progressMsg = "【序章·熄灭的炉火】失控无人机核心已摧毁 (" + killed + "/" + required + ")";
-                        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                                new PacketSyncQuest(QuestManager.getQuestTitle(), progressMsg, QuestManager.getTargetPos(), 1));
-                    } else {
-                        // All drones defeated! Advance to Stage 2: Rendezvous with Engineer Rhode
-                        QuestManager.advanceQuest(2, "【序章·熄灭的炉火】", "前往重工业控制台与工程师罗德会面", new BlockPos(36, 61, 14));
-                        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                                new PacketSyncQuest(QuestManager.getQuestTitle(), QuestManager.getObjectiveText(), QuestManager.getTargetPos(), 2));
-
-                        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                                new PacketRadioDialogue("机械公会 罗德", "呼……警报解除！通道重新稳定了，快到工程主控台这边来，我们必须立刻手动重启副反应堆！", 160));
-                    }
-                }
+            if (player != null) {
+                StoryDirector.onDroneKilled(player);
             }
         }
     }
@@ -95,7 +72,8 @@ public class SecurityDroneEntity extends Monster {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
-        this.spawnAtLocation(new ItemStack(Items.IRON_INGOT, 1));
+        this.spawnAtLocation(new ItemStack(ModItems.ALLOY_PLATE.get(), 2));
+        this.spawnAtLocation(new ItemStack(ModItems.QUANTUM_CORE.get(), 4));
         this.spawnAtLocation(new ItemStack(Items.REDSTONE, 2));
     }
 }

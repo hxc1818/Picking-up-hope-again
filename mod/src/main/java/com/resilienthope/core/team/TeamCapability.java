@@ -25,6 +25,8 @@ public class TeamCapability {
         int getActiveSlotIndex();
         void setActiveSlotIndex(int index);
         void switchSlot(Player player, int newIndex);
+        void syncHealthFromPlayer(Player player);
+        void syncHealthToPlayer(Player player);
         CompoundTag serializeNBT();
         void deserializeNBT(CompoundTag tag);
     }
@@ -34,10 +36,10 @@ public class TeamCapability {
         private int activeSlot = 0;
 
         public TeamData() {
-            slots[0] = new CharacterData("外勤特工", 1000.0f, 60.0f);
-            slots[1] = new CharacterData("工会重装兵", 1600.0f, 80.0f);
-            slots[2] = new CharacterData("深空科研员", 850.0f, 40.0f);
-            slots[3] = new CharacterData("先驱仿生体", 1100.0f, 70.0f);
+            slots[0] = new CharacterData("零号特工·破晓", 1000.0f, 100.0f, true);
+            slots[1] = new CharacterData("铁卫·待解锁", 1500.0f, 80.0f, false);
+            slots[2] = new CharacterData("矩阵·待解锁", 900.0f, 60.0f, false);
+            slots[3] = new CharacterData("星枢·待解锁", 1100.0f, 80.0f, false);
         }
 
         @Override
@@ -53,7 +55,7 @@ public class TeamCapability {
 
         @Override
         public void setActiveSlotIndex(int index) {
-            if (index >= 0 && index < 4) {
+            if (index >= 0 && index < 4 && slots[index].isUnlocked()) {
                 this.activeSlot = index;
             }
         }
@@ -61,16 +63,27 @@ public class TeamCapability {
         @Override
         public void switchSlot(Player player, int newIndex) {
             if (newIndex < 0 || newIndex >= 4 || newIndex == activeSlot) return;
+            if (!slots[newIndex].isUnlocked()) return;
 
-            // Sync current player health to current active character
-            CharacterData current = slots[activeSlot];
-            current.setCurrentHp(player.getHealth() * 50.0f); // 20 hearts -> 1000 hp scale
-
-            // Switch to new character
+            syncHealthFromPlayer(player);
             this.activeSlot = newIndex;
-            CharacterData target = slots[newIndex];
-            float mappedPlayerHp = Math.max(1.0f, target.getCurrentHp() / 50.0f);
-            player.setHealth(mappedPlayerHp);
+            syncHealthToPlayer(player);
+        }
+
+        @Override
+        public void syncHealthFromPlayer(Player player) {
+            if (player == null) return;
+            CharacterData current = slots[activeSlot];
+            float ratio = Math.max(0.0f, Math.min(1.0f, player.getHealth() / Math.max(1.0f, player.getMaxHealth())));
+            current.setCurrentHp(ratio * current.getTotalMaxHp());
+        }
+
+        @Override
+        public void syncHealthToPlayer(Player player) {
+            if (player == null) return;
+            CharacterData target = slots[activeSlot];
+            float ratio = Math.max(0.05f, Math.min(1.0f, target.getCurrentHp() / Math.max(1.0f, target.getTotalMaxHp())));
+            player.setHealth(ratio * player.getMaxHealth());
         }
 
         @Override
@@ -91,6 +104,13 @@ public class TeamCapability {
             ListTag list = tag.getList("Slots", Tag.TAG_COMPOUND);
             for (int i = 0; i < Math.min(4, list.size()); i++) {
                 slots[i].deserializeNBT(list.getCompound(i));
+            }
+            // Guarantee slot 0 identity and unlocked status even on migrated saves
+            slots[0].setName("零号特工·破晓");
+            slots[0].setUnlocked(true);
+            slots[0].setMaxEnergy(100.0f);
+            if (!slots[activeSlot].isUnlocked()) {
+                this.activeSlot = 0;
             }
         }
     }

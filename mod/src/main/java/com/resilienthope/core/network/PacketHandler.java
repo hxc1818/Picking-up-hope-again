@@ -2,11 +2,13 @@ package com.resilienthope.core.network;
 
 import com.resilienthope.core.PickingHopeCore;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
+    private static final String PROTOCOL_VERSION = "2";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(PickingHopeCore.MOD_ID, "main"),
             () -> PROTOCOL_VERSION,
@@ -15,6 +17,12 @@ public class PacketHandler {
     );
 
     private static int packetId = 0;
+
+    public static void sendToPlayer(ServerPlayer player, Object packet) {
+        if (player != null) {
+            INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        }
+    }
 
     public static void register() {
         INSTANCE.messageBuilder(PacketSwitchCharacter.class, packetId++)
@@ -51,6 +59,42 @@ public class PacketHandler {
                 .encoder(PacketLootChest::encode)
                 .decoder(PacketLootChest::decode)
                 .consumer(PacketLootChest::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketSyncTeamData.class, packetId++)
+                .encoder(PacketSyncTeamData::encode)
+                .decoder(PacketSyncTeamData::decode)
+                .consumer(PacketSyncTeamData::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketDamagePopup.class, packetId++)
+                .encoder(PacketDamagePopup::encode)
+                .decoder(PacketDamagePopup::decode)
+                .consumer(PacketDamagePopup::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketOpenNpcDialogue.class, packetId++)
+                .encoder(PacketOpenNpcDialogue::encode)
+                .decoder(PacketOpenNpcDialogue::decode)
+                .consumer(PacketOpenNpcDialogue::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketNpcAction.class, packetId++)
+                .encoder(PacketNpcAction::encode)
+                .decoder(PacketNpcAction::decode)
+                .consumer(PacketNpcAction::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketWishPull.class, packetId++)
+                .encoder(PacketWishPull::encode)
+                .decoder(PacketWishPull::decode)
+                .consumer(PacketWishPull::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketWishResult.class, packetId++)
+                .encoder(PacketWishResult::encode)
+                .decoder(PacketWishResult::decode)
+                .consumer(PacketWishResult::handle)
                 .add();
     }
 }

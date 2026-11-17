@@ -1,9 +1,7 @@
 package com.resilienthope.core.init;
 
 import com.resilienthope.core.PickingHopeCore;
-import com.resilienthope.core.block.AuxiliaryEnergyCoreBlock;
-import com.resilienthope.core.block.EngineeringTerminalBlock;
-import com.resilienthope.core.block.WaypointBlock;
+import com.resilienthope.core.block.*;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -15,4 +13,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> TELEPORT_WAYPOINT = BLOCKS.register("teleport_waypoint", WaypointBlock::new);
     public static final RegistryObject<Block> ENGINEERING_TERMINAL = BLOCKS.register("engineering_terminal", EngineeringTerminalBlock::new);
     public static final RegistryObject<Block> AUXILIARY_ENERGY_CORE = BLOCKS.register("auxiliary_energy_core", AuxiliaryEnergyCoreBlock::new);
+    public static final RegistryObject<Block> ORBITAL_DROP_POD = BLOCKS.register("orbital_drop_pod", OrbitalDropPodBlock::new);
+    public static final RegistryObject<Block> PRECURSOR_ALTAR = BLOCKS.register("precursor_altar", PrecursorAltarBlock::new);
 }

@@ -3,6 +3,8 @@ package com.resilienthope.core;
 import com.resilienthope.core.client.KeyInit;
 import com.resilienthope.core.client.gui.GenshinHudOverlay;
 import com.resilienthope.core.client.gui.InventoryOverrideHandler;
+import com.resilienthope.core.entity.FactionNpcEntity;
+import com.resilienthope.core.entity.PrecursorMechBossEntity;
 import com.resilienthope.core.entity.SecurityDroneEntity;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.init.ModEntities;
@@ -57,7 +59,8 @@ public class PickingHopeCore {
 
     private void registerEntityAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.SECURITY_DRONE.get(), SecurityDroneEntity.createAttributes().build());
-        LOGGER.info("Picking Hope Core: SecurityDrone attributes registered.");
+        event.put(ModEntities.PRECURSOR_MECH_BOSS.get(), PrecursorMechBossEntity.createAttributes().build());
+        event.put(ModEntities.FACTION_NPC.get(), FactionNpcEntity.createAttributes().build());
     }
 
     private void setupClient(final FMLClientSetupEvent event) {

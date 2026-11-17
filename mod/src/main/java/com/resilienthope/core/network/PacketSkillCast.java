@@ -9,18 +9,26 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.EntityDamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.List;
 import java.util.function.Supplier;
 
 public class PacketSkillCast {
+    private static class SkillDamageSource extends EntityDamageSource {
+        public SkillDamageSource(Entity attacker) {
+            super("player", attacker);
+            this.bypassArmor();
+        }
+    }
+
     private final int skillType; // 0 = E (Tactical), 1 = Q (Burst)
 
     public PacketSkillCast(int skillType) {
@@ -47,96 +55,85 @@ public class PacketSkillCast {
                 CharacterData character = team.getCharacter(activeSlot);
 
                 if (msg.skillType == 0) {
-                    // Tactical Skill (E)
-                    executeTacticalSkill(player, level, activeSlot, character);
+                    executeTacticalSkill(player, level, character);
                 } else if (msg.skillType == 1) {
-                    // Ultimate Burst (Q)
-                    executeUltimateBurst(player, level, activeSlot, character);
+                    executeUltimateBurst(player, level, character);
                 }
+                team.syncHealthFromPlayer(player);
+                PacketSyncTeamData.syncToPlayer(player);
             });
         });
         ctx.get().setPacketHandled(true);
     }
 
-    private static void executeTacticalSkill(ServerPlayer player, ServerLevel level, int slot, CharacterData character) {
+    private static void executeTacticalSkill(ServerPlayer player, ServerLevel level, CharacterData character) {
         Vec3 look = player.getLookAngle();
         Vec3 pos = player.position();
 
-        switch (slot) {
-            case 0 -> {
-                // Vanguard: Plasma Blade Dash (5m forward, 15 AoE damage)
-                Vec3 dashTarget = pos.add(look.x * 5.0, 0, look.z * 5.0);
-                player.teleportTo(dashTarget.x, dashTarget.y, dashTarget.z);
-                level.sendParticles(ParticleTypes.ELECTRIC_SPARK, dashTarget.x, dashTarget.y + 1, dashTarget.z, 30, 0.5, 0.5, 0.5, 0.1);
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.2f, 1.4f);
-
-                AABB hitBox = new AABB(dashTarget.x - 4, dashTarget.y - 2, dashTarget.z - 4, dashTarget.x + 4, dashTarget.y + 2, dashTarget.z + 4);
-                List<Monster> targets = level.getEntitiesOfClass(Monster.class, hitBox);
-                for (Monster m : targets) {
-                    m.hurt(DamageSource.playerAttack(player), 15.0f);
-                }
-                character.addEnergy(35.0f);
-            }
-            case 1 -> {
-                // Shadow: EMP Shockwave (Knockback + Stun + 12 AoE damage)
-                level.sendParticles(ParticleTypes.EXPLOSION, pos.x, pos.y + 1, pos.z, 15, 0.8, 0.8, 0.8, 0.05);
-                level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.PLAYERS, 0.8f, 1.8f);
-
-                AABB hitBox = player.getBoundingBox().inflate(6.0);
-                List<Monster> targets = level.getEntitiesOfClass(Monster.class, hitBox);
-                for (Monster m : targets) {
-                    m.hurt(DamageSource.playerAttack(player), 12.0f);
-                    m.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 2));
-                    Vec3 push = m.position().subtract(pos).normalize().scale(1.2);
-                    m.setDeltaMovement(push.x, 0.4, push.z);
-                }
-                character.addEnergy(35.0f);
-            }
-            case 2 -> {
-                // Titan: Kinetic Absorption Barrier (Shield 8 HP + Resistance)
-                player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 200, 1));
-                player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1));
-                level.sendParticles(ParticleTypes.ENCHANTED_HIT, pos.x, pos.y + 1, pos.z, 25, 0.6, 0.6, 0.6, 0.1);
-                level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.BEACON_ACTIVATE, SoundSource.PLAYERS, 1.0f, 1.6f);
-                character.addEnergy(30.0f);
-            }
-            case 3 -> {
-                // Medic: Nano Restoration Burst (Heal 8 HP + Regeneration)
-                player.heal(8.0f);
-                player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 1));
-                level.sendParticles(ParticleTypes.HAPPY_VILLAGER, pos.x, pos.y + 1, pos.z, 20, 0.5, 0.5, 0.5, 0.05);
-                level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.9f, 1.5f);
-                character.addEnergy(30.0f);
+        // Safe horizontal dash (~3.8 blocks forward without clipping into walls)
+        Vec3 horizontalLook = new Vec3(look.x, 0, look.z);
+        if (horizontalLook.lengthSqr() > 0.001) {
+            horizontalLook = horizontalLook.normalize();
+        } else {
+            horizontalLook = new Vec3(1, 0, 0);
+        }
+        Vec3 dashPos = pos;
+        for (double step = 0.8; step <= 3.6; step += 0.7) {
+            Vec3 candidate = pos.add(horizontalLook.scale(step));
+            if (level.noCollision(player, player.getBoundingBox().move(candidate.subtract(pos)))) {
+                dashPos = candidate;
+            } else {
+                break;
             }
         }
+        player.teleportTo(dashPos.x, dashPos.y, dashPos.z);
+
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, dashPos.x, dashPos.y + 1.0, dashPos.z, 35, 0.7, 0.6, 0.7, 0.15);
+        level.sendParticles(ParticleTypes.SWEEP_ATTACK, dashPos.x + horizontalLook.x, dashPos.y + 1.1, dashPos.z + horizontalLook.z, 3, 0.4, 0.2, 0.4, 0.0);
+        level.playSound(null, dashPos.x, dashPos.y, dashPos.z, SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.2f, 1.35f);
+
+        AABB hitBox = new AABB(dashPos.x - 4.2, dashPos.y - 2.0, dashPos.z - 4.2, dashPos.x + 4.2, dashPos.y + 2.5, dashPos.z + 4.2);
+        List<Monster> targets = level.getEntitiesOfClass(Monster.class, hitBox);
+        for (Monster m : targets) {
+            CharacterData.DamageResult res = character.computeDamage(2.4f, player.getRandom());
+            m.hurt(new SkillDamageSource(player), res.mcDamage());
+            PacketHandler.sendToPlayer(player, new PacketDamagePopup(m.getX(), m.getY() + m.getBbHeight() + 0.3, m.getZ(), res.displayDamage(), res.isCrit(), true));
+        }
+
+        // Gain energy & minor kinetic shield
+        player.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0, false, false));
+        float energyGain = targets.isEmpty() ? 22.0f : 35.0f;
+        character.addEnergy(energyGain);
     }
 
-    private static void executeUltimateBurst(ServerPlayer player, ServerLevel level, int slot, CharacterData character) {
+    private static void executeUltimateBurst(ServerPlayer player, ServerLevel level, CharacterData character) {
         if (character.getCurrentEnergy() < character.getMaxEnergy()) {
-            PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                    new PacketRadioDialogue("战术核心", "能量不足！终极爆发尚未充能完毕 (" + (int)character.getCurrentEnergy() + "/100)。", 60));
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("战术核心",
+                    "爆发能量未满！(" + (int) character.getCurrentEnergy() + "/" + (int) character.getMaxEnergy() + ")，攻击与战技 [E] 可快速充能。", 70));
             return;
         }
 
-        // Consume Burst Energy
         character.addEnergy(-character.getMaxEnergy());
 
         Vec3 pos = player.position();
-        level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y + 1.5, pos.z, 1, 0, 0, 0, 0);
+        level.sendParticles(ParticleTypes.FLASH, pos.x, pos.y + 1.5, pos.z, 2, 0, 0, 0, 0);
         level.sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.x, pos.y + 1.5, pos.z, 1, 0, 0, 0, 0);
-        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.x, pos.y + 1.5, pos.z, 80, 2.0, 1.0, 2.0, 0.2);
-        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 1.5f, 1.2f);
-        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 1.0f, 1.4f);
+        level.sendParticles(ParticleTypes.ELECTRIC_SPARK, pos.x, pos.y + 1.4, pos.z, 90, 2.5, 1.2, 2.5, 0.25);
+        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS, 1.4f, 1.15f);
+        level.playSound(null, pos.x, pos.y, pos.z, SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.9f, 1.4f);
 
-        AABB hitBox = player.getBoundingBox().inflate(10.0);
+        AABB hitBox = player.getBoundingBox().inflate(9.0);
         List<Monster> targets = level.getEntitiesOfClass(Monster.class, hitBox);
         for (Monster m : targets) {
-            m.hurt(DamageSource.playerAttack(player), 35.0f);
+            CharacterData.DamageResult res = character.computeDamage(5.8f, player.getRandom());
+            m.hurt(new SkillDamageSource(player), res.mcDamage());
+            PacketHandler.sendToPlayer(player, new PacketDamagePopup(m.getX(), m.getY() + m.getBbHeight() + 0.4, m.getZ(), res.displayDamage(), res.isCrit(), true));
         }
 
-        player.heal(12.0f);
+        player.heal(10.0f);
+        player.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 180, 1, false, false));
 
-        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                new PacketRadioDialogue("星舰战术中枢", "【终极爆发·星火裁决】全功率释放！辐射冲击波已清空范围威胁！", 140));
+        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("零号特工·破晓",
+                "【终极爆发·星火裁决】聚变超载释放！全范围电浆脉冲贯穿目标！", 110));
     }
 }

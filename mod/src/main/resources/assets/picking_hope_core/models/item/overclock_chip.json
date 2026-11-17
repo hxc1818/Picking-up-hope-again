@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "picking_hope_core:item/overclock_chip"
+  }
+}

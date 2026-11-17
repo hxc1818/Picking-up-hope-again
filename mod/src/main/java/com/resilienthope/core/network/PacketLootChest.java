@@ -1,5 +1,8 @@
 package com.resilienthope.core.network;
 
+import com.resilienthope.core.item.EquipmentStatsHelper;
+import com.resilienthope.core.quest.QuestManager;
+import com.resilienthope.core.quest.StoryDirector;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -9,7 +12,6 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.network.NetworkEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.function.Supplier;
 
@@ -39,15 +41,22 @@ public class PacketLootChest {
                 for (int i = 0; i < container.getContainerSize(); i++) {
                     ItemStack stack = container.getItem(i);
                     if (!stack.isEmpty()) {
-                        player.getInventory().add(stack.copy());
+                        ItemStack copy = stack.copy();
+                        EquipmentStatsHelper.ensureStats(copy, player.getRandom());
+                        if (!player.getInventory().add(copy)) {
+                            player.drop(copy, false);
+                        }
                         container.setItem(i, ItemStack.EMPTY);
                         count++;
                     }
                 }
                 if (count > 0) {
                     player.getLevel().playSound(null, msg.chestPos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1.0f, 1.2f);
-                    PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                            new PacketRadioDialogue("物资管理系统", "已将仓储箱战利品全部收入星舰战备背包！", 100));
+                    PacketHandler.sendToPlayer(player, new PacketRadioDialogue("物资管理系统",
+                            "战利品已收入体素背包！可按 [B] 打开背包装配芯片，或前往防爆连廊！", 120));
+                    if (QuestManager.getQuestStage() == 0) {
+                        StoryDirector.triggerStage0To1(player, true);
+                    }
                 }
             }
         });

@@ -28,6 +28,7 @@ public class PacketSwitchCharacter {
             if (player != null) {
                 player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
                     team.switchSlot(player, msg.targetSlot);
+                    PacketSyncTeamData.syncToPlayer(player);
                 });
             }
         });

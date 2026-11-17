@@ -1,22 +1,33 @@
 package com.resilienthope.core.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.resilienthope.core.PickingHopeCore;
+import com.resilienthope.core.item.EquipmentStatsHelper;
+import com.resilienthope.core.network.PacketEquipItem;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketSwitchCharacter;
+import com.resilienthope.core.subtitle.RadioSubtitleManager;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public class CharacterProfileScreen extends Screen {
+    private static final ResourceLocation TEX_PORTRAIT_DAWN = new ResourceLocation(PickingHopeCore.MOD_ID, "textures/gui/portrait_dawn.png");
 
-    private int selectedSlot = 0;
+    // -1 = Weapon slot, 0..4 = Tech Chip slots 1..5
+    private int selectedEquipSlot = -1;
+    private Button enhanceSlotBtn;
+    private Button unequipSlotBtn;
 
     public CharacterProfileScreen() {
-        super(new TextComponent("星舰战术终端 · 角色配队面板"));
+        super(new TextComponent("星舰战术终端 · 主角养成面板 (C)"));
     }
 
     @Override
@@ -24,95 +35,170 @@ public class CharacterProfileScreen extends Screen {
         super.init();
 
         Player player = Minecraft.getInstance().player;
-        if (player != null) {
-            player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
-                this.selectedSlot = team.getActiveSlotIndex();
-            });
-        }
 
-        // 4 Character selection buttons
-        int btnW = 95;
-        int btnH = 22;
-        int btnStartX = 30;
-        int btnY = 32;
-
-        String[] charNames = {"1. 特工·曙光", "2. 幽影·刺客", "3. 泰坦·重装", "4. 圣泉·医护"};
+        // 4 Party Slot tabs (Protagonist + 3 vertical expansion slots)
+        String[] charNames = {"1. 破晓", "2. 铁卫[锁]", "3. 矩阵[锁]", "4. 星枢[锁]"};
+        int btnW = 72;
         for (int i = 0; i < 4; i++) {
             int slot = i;
-            addRenderableWidget(new Button(btnStartX + i * (btnW + 8), btnY, btnW, btnH,
-                    new TextComponent(charNames[i]),
-                    btn -> this.selectedSlot = slot));
+            addRenderableWidget(new Button(28 + i * (btnW + 4), 30, btnW, 18, new TextComponent(charNames[i]), btn -> {
+                if (player != null) {
+                    player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
+                        if (!team.getCharacter(slot).isUnlocked()) {
+                            RadioSubtitleManager.postRadioMessage("战术终端", "该协同席位尚未开放，当前专注养成【零号特工·破晓】。", 60);
+                        } else {
+                            team.switchSlot(player, slot);
+                            PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(slot));
+                        }
+                    });
+                }
+            }));
         }
 
-        // Switch to this character button
-        int panelX = this.width / 2;
-        addRenderableWidget(new Button(panelX + 40, this.height - 45, 120, 20, new TextComponent("切换出战此角色"), btn -> {
-            if (player != null) {
-                player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
-                    team.switchSlot(player, selectedSlot);
-                    PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(selectedSlot));
-                });
+        int rightX = this.width / 2 + 45;
+        int bottomY = this.height - 40;
+
+        this.enhanceSlotBtn = addRenderableWidget(new Button(rightX, bottomY, 82, 20, new TextComponent("强化 (+1)"), btn -> {
+            PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_EQUIPPED, selectedEquipSlot, ItemStack.EMPTY));
+        }));
+
+        this.unequipSlotBtn = addRenderableWidget(new Button(rightX + 86, bottomY, 64, 20, new TextComponent("卸下"), btn -> {
+            if (selectedEquipSlot >= 0) {
+                PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_UNEQUIP_CHIP, selectedEquipSlot, ItemStack.EMPTY));
             }
         }));
 
-        // Close button
-        addRenderableWidget(new Button(this.width - 65, 12, 45, 20, new TextComponent("关闭"), btn -> onClose()));
+        addRenderableWidget(new Button(rightX + 154, bottomY, 72, 20, new TextComponent("背包替换"), btn -> {
+            InfiniteInventoryScreen.Category cat = (selectedEquipSlot == -1)
+                    ? InfiniteInventoryScreen.Category.WEAPONS
+                    : InfiniteInventoryScreen.Category.CHIPS;
+            Minecraft.getInstance().setScreen(new InfiniteInventoryScreen(cat));
+        }));
+
+        addRenderableWidget(new Button(this.width - 68, 12, 46, 18, new TextComponent("关闭"), btn -> onClose()));
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        int rightX = this.width / 2 + 45;
+        int listTop = 62;
+        int rightEnd = this.width - 26;
+        if (mouseX >= rightX && mouseX <= rightEnd) {
+            for (int row = 0; row < 6; row++) {
+                int slotY = listTop + row * 24;
+                if (mouseY >= slotY && mouseY <= slotY + 22) {
+                    this.selectedEquipSlot = row - 1; // -1 for weapon, 0..4 for chips
+                    return true;
+                }
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
         renderBackground(poseStack);
 
-        // Frame
-        fill(poseStack, 20, 18, this.width - 20, this.height - 18, 0xEE0B121A);
-        fill(poseStack, 20, 18, this.width - 20, 20, 0xFF4A90E2);
-
-        font.draw(poseStack, getTitle(), 30, 8, 0xFFFFFFFF);
+        GenshinHudOverlay.drawVoxelPanel(poseStack, 16, 10, this.width - 32, this.height - 20,
+                0xEE0B131E, 0xFF284868, 0xFF4FC3F7);
+        font.drawShadow(poseStack, getTitle(), 28, 15, 0xFF66FFFF);
 
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
 
         player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
-            CharacterData charData = team.getCharacter(selectedSlot);
-            boolean isCurrent = (selectedSlot == team.getActiveSlotIndex());
+            CharacterData active = team.getCharacter(team.getActiveSlotIndex());
 
-            // Left: Detailed Numerical Attributes
-            int leftX = 35;
-            int topY = 70;
-            fill(poseStack, leftX - 5, topY - 5, leftX + 220, this.height - 35, 0x60142232);
+            // 1. Left Column: Live 3D Protagonist Model
+            int modelBoxX = 28;
+            int modelBoxY = 54;
+            int modelBoxW = 108;
+            int modelBoxH = this.height - 74;
+            GenshinHudOverlay.drawVoxelPanel(poseStack, modelBoxX, modelBoxY, modelBoxW, modelBoxH,
+                    0xA00D1724, 0xFF284664, 0xFFFFCC00);
 
-            font.draw(poseStack, new TextComponent("【角色属性详情】" + (isCurrent ? " (当前出战中)" : "")), leftX, topY, 0xFF55FFFF);
+            GenshinHudOverlay.drawTexture(poseStack, TEX_PORTRAIT_DAWN, modelBoxX + 6, modelBoxY + 6, 22, 22, 32, 32);
+            font.draw(poseStack, new TextComponent("Lv." + active.getLevel() + " 破晓"), modelBoxX + 32, modelBoxY + 12, 0xFFFFE082);
 
-            int statY = topY + 20;
-            font.draw(poseStack, new TextComponent("• 角色名称: " + charData.getName()), leftX, statY, 0xFFEEEEEE);
-            font.draw(poseStack, new TextComponent("• 生命上限 (Max HP): " + (int)charData.getMaxHp()), leftX, statY + 16, 0xFF4CAF50);
-            font.draw(poseStack, new TextComponent("• 当前生命 (HP): " + (int)charData.getCurrentHp()), leftX, statY + 32, 0xFF81C784);
-            font.draw(poseStack, new TextComponent("• 基础攻击力 (ATK): 1,840"), leftX, statY + 48, 0xFFFF7043);
-            font.draw(poseStack, new TextComponent("• 基础防御力 (DEF): 820"), leftX, statY + 64, 0xFF90CAF9);
-            font.draw(poseStack, new TextComponent("• 暴击率 (Crit Rate): 45.2%"), leftX, statY + 80, 0xFFFFD54F);
-            font.draw(poseStack, new TextComponent("• 暴击伤害 (Crit DMG): 142.8%"), leftX, statY + 96, 0xFFFFB74D);
-            font.draw(poseStack, new TextComponent("• 聚变充能效率 (ER): 135.0%"), leftX, statY + 112, 0xFF4FC3F7);
-            font.draw(poseStack, new TextComponent("• 爆发能量: " + (int)charData.getCurrentEnergy() + "/100"), leftX, statY + 128, 0xFFCE93D8);
+            int entityCenterX = modelBoxX + modelBoxW / 2;
+            int entityBaseY = modelBoxY + modelBoxH - 22;
+            int scale = Math.max(30, Math.min(48, modelBoxH / 4));
+            InventoryScreen.renderEntityInInventory(entityCenterX, entityBaseY, scale,
+                    (float) (entityCenterX - mouseX), (float) (entityBaseY - 60 - mouseY), player);
 
-            // Right: 5 Chip Relic Slots
-            int rightX = this.width / 2 + 10;
-            fill(poseStack, rightX - 5, topY - 5, this.width - 30, this.height - 55, 0x60142232);
+            // 2. Middle Column: Live Computed Combat Stats
+            int statX = modelBoxX + modelBoxW + 8;
+            int statW = (this.width / 2 + 38) - statX;
+            GenshinHudOverlay.drawVoxelPanel(poseStack, statX, modelBoxY, statW, modelBoxH,
+                    0xA00E1826, 0xFF26425C, 0xFF4FC3F7);
 
-            font.draw(poseStack, new TextComponent("【科技战术芯片 (圣遗物 5 槽位)】"), rightX, topY, 0xFFFFCC00);
+            font.drawShadow(poseStack, new TextComponent("【实时战斗属性】"), statX + 8, modelBoxY + 8, 0xFF55FFFF);
+            int sy = modelBoxY + 26;
+            int step = 16;
 
-            String[] slotNames = {
-                    "槽位 1【核心】: 聚变脉冲核心芯片 ★★★★ (+16)",
-                    "槽位 2【动力】: 虚空驱动脉冲器 ★★★★★ (+20)",
-                    "槽位 3【传动】: 高精伺服齿轮组 ★★★★ (+12)",
-                    "槽位 4【偏转】: 偏振电磁力场护盾 ★★★★★ (+20)",
-                    "槽位 5【运算】: 量子神谕逻辑微芯片 ★★★★★ (+20)"
-            };
+            font.draw(poseStack, new TextComponent("生命上限: " + Math.round(active.getTotalMaxHp())), statX + 10, sy, 0xFF4ADE80);
+            font.draw(poseStack, new TextComponent(String.format("攻击力: %d", Math.round(active.getTotalAtk()))), statX + 10, sy + step, 0xFFFF8A65);
+            font.draw(poseStack, new TextComponent(String.format("  (白字 %d + 绿字 %d)", Math.round(active.getBaseAtk()), Math.round(active.getExtraAtk()))),
+                    statX + 10, sy + step * 2 - 3, 0xFF99AABB);
+            font.draw(poseStack, new TextComponent("防御力: " + Math.round(active.getTotalDef())), statX + 10, sy + step * 3, 0xFF90CAF9);
+            font.draw(poseStack, new TextComponent(String.format("暴击率: %.1f%%", active.getCritRate())), statX + 10, sy + step * 4, 0xFFFFD54F);
+            font.draw(poseStack, new TextComponent(String.format("暴击伤害: %.1f%%", active.getCritDmg())), statX + 10, sy + step * 5, 0xFFFFB74D);
+            font.draw(poseStack, new TextComponent(String.format("充能效率: %.1f%%", active.getEnergyRecharge())), statX + 10, sy + step * 6, 0xFF4FC3F7);
+            font.draw(poseStack, new TextComponent(String.format("电浆增伤: +%.1f%%", active.getPlasmaDmgBonus())), statX + 10, sy + step * 7, 0xFFCE93D8);
+            font.draw(poseStack, new TextComponent("爆发能量: " + (int) active.getCurrentEnergy() + " / " + (int) active.getMaxEnergy()),
+                    statX + 10, sy + step * 8, 0xFF80DEEA);
 
-            for (int s = 0; s < 5; s++) {
-                int slotY = topY + 22 + s * 24;
-                fill(poseStack, rightX, slotY, this.width - 35, slotY + 20, 0x50182E44);
-                font.draw(poseStack, new TextComponent(slotNames[s]), rightX + 8, slotY + 6, 0xFFE0E0E0);
+            int chipCount = active.countEquippedChips();
+            String resonance = chipCount >= 4 ? "【4芯片共鸣】战技爆伤 +20%" : (chipCount >= 2 ? "【2芯片共鸣】全攻 +12%" : "芯片共鸣：" + chipCount + "/2");
+            font.draw(poseStack, new TextComponent(resonance), statX + 10, modelBoxY + modelBoxH - 18, chipCount >= 2 ? 0xFFFFD54F : 0xFF778899);
+
+            // 3. Right Column: Weapon + 5 Interactive Tech Chip Slots
+            int rightX = this.width / 2 + 45;
+            int rightW = this.width - rightX - 24;
+            GenshinHudOverlay.drawVoxelPanel(poseStack, rightX - 4, modelBoxY, rightW + 8, modelBoxH,
+                    0xA00E1826, 0xFF26425C, 0xFFFFCC00);
+            font.drawShadow(poseStack, new TextComponent("【专武与 5 部位科技芯片 (点击选中)】"), rightX + 2, modelBoxY + 6, 0xFFFFD54F);
+
+            String[] slotNames = {"主武", "核心", "动力", "电池", "超频", "感知"};
+            for (int row = 0; row < 6; row++) {
+                int slotIdx = row - 1;
+                ItemStack stack = (slotIdx == -1) ? active.getEquippedWeapon() : active.getEquippedChip(slotIdx);
+                boolean isSel = (slotIdx == selectedEquipSlot);
+                int slotY = 62 + row * 24;
+
+                int borderCol = isSel ? 0xFFFFFFFF : (stack.isEmpty() ? 0xFF283A4E : EquipmentStatsHelper.getRarityColor(EquipmentStatsHelper.getRarity(stack)));
+                GenshinHudOverlay.drawVoxelPanel(poseStack, rightX, slotY, rightW, 21,
+                        isSel ? 0xC8203B56 : 0x90121E2C, borderCol, borderCol);
+
+                font.draw(poseStack, new TextComponent("[" + slotNames[row] + "]"), rightX + 4, slotY + 7, 0xFF88AABB);
+
+                if (stack.isEmpty()) {
+                    font.draw(poseStack, new TextComponent("未装配 (点击下方替换)"), rightX + 44, slotY + 7, 0xFF556677);
+                } else {
+                    this.itemRenderer.renderGuiItem(stack, rightX + 38, slotY + 2);
+                    int lv = EquipmentStatsHelper.getEnhanceLevel(stack);
+                    String label = stack.getHoverName().getString();
+                    if (label.length() > 14) label = label.substring(0, 14) + "..";
+                    font.draw(poseStack, new TextComponent(label + " +" + lv), rightX + 58, slotY + 7, 0xFFEEEEEE);
+                }
             }
+
+            // Selected Slot Detail Box
+            ItemStack selStack = (selectedEquipSlot == -1) ? active.getEquippedWeapon() : active.getEquippedChip(selectedEquipSlot);
+            int detY = 62 + 6 * 24 + 4;
+            if (!selStack.isEmpty()) {
+                font.draw(poseStack, new TextComponent(EquipmentStatsHelper.formatMainStatLabel(selStack)), rightX + 4, detY, 0xFF4ADE80);
+                var subs = EquipmentStatsHelper.getSubStatLines(selStack);
+                if (!subs.isEmpty()) {
+                    font.draw(poseStack, new TextComponent(String.join("  |  ", subs.subList(0, Math.min(2, subs.size())))),
+                            rightX + 4, detY + 12, 0xFFFFE082);
+                }
+            } else {
+                font.draw(poseStack, new TextComponent("当前槽位为空，请点击【背包替换】装配对应芯片。"), rightX + 4, detY + 4, 0xFF99AABB);
+            }
+
+            if (enhanceSlotBtn != null) enhanceSlotBtn.active = !selStack.isEmpty();
+            if (unequipSlotBtn != null) unequipSlotBtn.active = (selectedEquipSlot >= 0 && !selStack.isEmpty());
         });
 
         super.render(poseStack, mouseX, mouseY, partialTicks);

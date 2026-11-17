@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/handheld",
   "textures": {
-    "layer0": "minecraft:item/netherite_sword"
+    "layer0": "picking_hope_core:item/plasma_cutter"
   }
 }
