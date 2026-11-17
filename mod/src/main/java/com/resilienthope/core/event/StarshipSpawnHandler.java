@@ -9,9 +9,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
@@ -27,7 +27,7 @@ public class StarshipSpawnHandler {
 
         if (!player.getTags().contains(SPAWN_TAG)) {
             ServerLevel level = player.getLevel();
-            StructureTemplateManager templateManager = level.getStructureManager();
+            StructureManager templateManager = level.getStructureManager();
             ResourceLocation structureId = new ResourceLocation(PickingHopeCore.MOD_ID, "starship_prologue");
             Optional<StructureTemplate> template = templateManager.get(structureId);
 
