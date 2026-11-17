@@ -38,7 +38,7 @@
    - [x] **实现 1-4 号位小队轮切状态机与星舰传送锚点方块 (`teleport_waypoint`)**；
    - [x] **引入 Better Combat 动作模组与 Shoulder Surfing Reloaded 越肩自由视角生态**；
    - [x] **内置等离子重切剑 (`plasma_cutter`) 的 Better Combat 重型双手大剑动作与挥砍音画**；
-   - [x] **利用 opencode (hy4-flash-free) 产出星舰序章灰盒 NBT (`starship_prologue.nbt`) 并植入登入自动生成与剧情播报**；
+   - [x] **定制专属太空虚空预置存档《重拾希望》星舰灰盒先行版**（彻底剔除原版海洋与地貌，锁定午夜星空背景，内置模板与代码双重星舰生成保障）；
    - [ ] 进阶：配置 Curios 5 槽位科技芯片（圣遗物）属性与套装计算；
    - [ ] 进阶：接入三方势力（指挥层/工会/科学派）首段分支交互与任务追踪条。
 4. **Phase 4: 资产精细优化与内容铺设 (Asset Polish & Production)**
