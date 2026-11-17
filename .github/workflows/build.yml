@@ -7,6 +7,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Forge Mod (1.18.2)
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -30,20 +35,17 @@ jobs:
         run: |
           cd mod
           gradle build jar --no-daemon --stacktrace 2>&1 | tee build.log
-          echo "=== Content of mod/build ==="
-          ls -la build || true
-          ls -la build/libs || true
+          echo "=== Gradle build finished with exit code $? ==="
 
-      - name: Locate Built Jars
+      - name: Publish Built Files to Dist Branch
+        if: always()
         run: |
-          echo "=== Finding all generated JAR files in workspace ==="
-          find . -name "*.jar" -type f
-
-      - name: Upload Build Artifacts
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: picking-hope-core-mod-jar
-          path: |
-            **/build/libs/*.jar
-          if-no-files-found: warn
+          echo "Listing all files in mod/build:"
+          find mod -type f | head -n 100
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -B dist
+          git add -f mod/build/ || true
+          git add -f mod/build.log || true
+          git commit -m "build: publish compiled artifacts and log [skip ci]" || echo "No changes to commit"
+          git push -f origin dist || echo "Push to dist failed"
