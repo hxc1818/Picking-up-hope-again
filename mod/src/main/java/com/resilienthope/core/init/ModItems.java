@@ -17,6 +17,9 @@ public class ModItems {
     public static final RegistryObject<Item> ENGINEERING_TERMINAL = ITEMS.register("engineering_terminal",
             () -> new BlockItem(ModBlocks.ENGINEERING_TERMINAL.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
 
+    public static final RegistryObject<Item> AUXILIARY_ENERGY_CORE = ITEMS.register("auxiliary_energy_core",
+            () -> new BlockItem(ModBlocks.AUXILIARY_ENERGY_CORE.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
     public static final RegistryObject<Item> QUANTUM_CORE = ITEMS.register("quantum_core",
             () -> new Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC).stacksTo(64)));
 

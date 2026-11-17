@@ -11,9 +11,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -36,11 +39,26 @@ public class StarshipSpawnHandler {
             player.setGameMode(GameType.ADVENTURE);
         }
 
-        // Ensure Engineering Terminal exists at (36, 61, 14)
         ServerLevel level = player.getLevel();
+
+        // Always ensure main weapon is equipped in hand
+        if (!player.getMainHandItem().is(ModItems.PLASMA_CUTTER.get())) {
+            player.getInventory().clearContent();
+            ItemStack sword = new ItemStack(ModItems.PLASMA_CUTTER.get());
+            player.getInventory().setItem(0, sword);
+            player.setItemInHand(InteractionHand.MAIN_HAND, sword);
+        }
+
+        // Ensure Engineering Terminal exists at (36, 61, 14)
         BlockPos termPos = new BlockPos(36, 61, 14);
         if (level.getBlockState(termPos).isAir()) {
             level.setBlock(termPos, ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
+        }
+
+        // Ensure Auxiliary Energy Core exists at (34, 36, 14)
+        BlockPos corePos = new BlockPos(34, 36, 14);
+        if (level.getBlockState(corePos).isAir()) {
+            level.setBlock(corePos, ModBlocks.AUXILIARY_ENERGY_CORE.get().defaultBlockState(), 2);
         }
 
         // Synchronize active quest on login
@@ -61,19 +79,16 @@ public class StarshipSpawnHandler {
                 buildStarshipDirectly(level, origin);
             }
 
-            // Ensure Engineering Terminal is placed
-            level.setBlock(origin.offset(36, 1, 14), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
+            // Ensure Lower Deck and all props are built
+            buildLowerDeck(level, origin);
 
             // Teleport player into Awakening Bay (x: 6.5, y: 62.0, z: 10.5)
             player.teleportTo(level, 6.5, 62.0, 10.5, 90.0f, 0.0f);
             player.setRespawnPosition(level.dimension(), new BlockPos(6, 62, 10), 90.0f, true, false);
 
-            // Give starter plasma cutter weapon
-            player.getInventory().add(new ItemStack(ModItems.PLASMA_CUTTER.get()));
-
             // Broadcast initial transmission
             PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                    new PacketRadioDialogue("重拾希望号导航系统", "检测到冷冻休眠特工生命体征复苏。当前位于工业第7舱区，请前往聚变大厅连接传送中继。", 200));
+                    new PacketRadioDialogue("重拾希望号导航系统", "检测到冷冻休眠特工生命体征复苏。已配发主武器【等离子重切剑】，请前往聚变大厅连接传送中继。", 220));
 
             player.addTag(SPAWN_TAG);
         }
@@ -124,12 +139,54 @@ public class StarshipSpawnHandler {
 
         // Awakening Bay pedestal & chest
         level.setBlock(origin.offset(6, 1, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-        level.setBlock(origin.offset(6, 2, 10), Blocks.CHEST.defaultBlockState(), 2);
+        BlockPos chestPos = origin.offset(6, 2, 10);
+        level.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 2);
+
+        // Seed chest with starter supplies
+        BlockEntity be = level.getBlockEntity(chestPos);
+        if (be instanceof Container container) {
+            container.setItem(0, new ItemStack(ModItems.QUANTUM_CORE.get(), 16));
+            container.setItem(1, new ItemStack(ModItems.FUSION_CORE_CHIP.get(), 1));
+        }
 
         // Fusion Hall: Central Teleport Waypoint
         level.setBlock(origin.offset(32, 1, 10), ModBlocks.TELEPORT_WAYPOINT.get().defaultBlockState(), 2);
 
         // Engineering Terminal
         level.setBlock(origin.offset(36, 1, 14), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
+    }
+
+    private static void buildLowerDeck(ServerLevel level, BlockPos origin) {
+        // Lower Industrial Deck: Y=35 to Y=41, x: 20 to 39, z: 5 to 15
+        for (int x = 20; x <= 39; x++) {
+            for (int z = 5; z <= 15; z++) {
+                // Lower Floor (Y=35)
+                level.setBlock(new BlockPos(x, 35, z), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 2);
+                // Lower Ceiling (Y=41)
+                boolean isLight = (x % 4 == 0) && (z % 4 == 0);
+                level.setBlock(new BlockPos(x, 41, z), isLight ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
+
+                // Lower Walls
+                for (int y = 36; y <= 40; y++) {
+                    if (x == 20 || x == 39 || z == 5 || z == 15) {
+                        level.setBlock(new BlockPos(x, y, z), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), 2);
+                    } else {
+                        level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
+                    }
+                }
+            }
+        }
+
+        // Center: Auxiliary Energy Core at (34, 36, 14)
+        level.setBlock(new BlockPos(34, 36, 14), ModBlocks.AUXILIARY_ENERGY_CORE.get().defaultBlockState(), 2);
+        level.setBlock(new BlockPos(34, 35, 14), Blocks.NETHERITE_BLOCK.defaultBlockState(), 2);
+
+        // Elevator Shaft enclosure from Y=35 to Y=60 at (34, y, 14)
+        for (int y = 35; y <= 60; y++) {
+            level.setBlock(new BlockPos(33, y, 14), Blocks.LADDER.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(36, y, 14), Blocks.IRON_BARS.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(34, y, 13), Blocks.IRON_BARS.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(34, y, 15), Blocks.IRON_BARS.defaultBlockState(), 2);
+        }
     }
 }

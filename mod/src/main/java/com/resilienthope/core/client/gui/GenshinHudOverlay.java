@@ -1,11 +1,13 @@
 package com.resilienthope.core.client.gui;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.resilienthope.core.client.KeyInit;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.quest.QuestManager;
 import com.resilienthope.core.subtitle.RadioSubtitleManager;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
+import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
@@ -16,6 +18,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.client.gui.IIngameOverlay;
@@ -63,7 +66,92 @@ public class GenshinHudOverlay {
         renderRightBottomSkillRing(poseStack, mc, screenWidth, screenHeight, font);
         renderQuestTracker(poseStack, mc, player, screenWidth, screenHeight, font);
         renderInteractionPrompt(poseStack, mc, player, screenWidth, screenHeight, font);
+        renderInWorldQuestMarker(poseStack, mc, player, screenWidth, screenHeight, font);
+        renderMiniRadar(poseStack, mc, player, screenWidth, screenHeight, font);
         renderRadioDialogue(poseStack, mc, screenWidth, screenHeight, font);
+    }
+
+    private static void renderInWorldQuestMarker(PoseStack poseStack, Minecraft mc, Player player, int width, int height, Font font) {
+        BlockPos target = QuestManager.getTargetPos();
+        Camera camera = mc.gameRenderer.getMainCamera();
+        Vec3 camPos = camera.getPosition();
+
+        double dx = (target.getX() + 0.5) - camPos.x;
+        double dy = (target.getY() + 1.2) - camPos.y;
+        double dz = (target.getZ() + 0.5) - camPos.z;
+        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        float yaw = camera.getYRot();
+        float pitch = camera.getXRot();
+        double yawRad = Math.toRadians(-yaw);
+        double pitchRad = Math.toRadians(-pitch);
+
+        // Rotate Y
+        double x1 = dx * Math.cos(yawRad) - dz * Math.sin(yawRad);
+        double z1 = dx * Math.sin(yawRad) + dz * Math.cos(yawRad);
+
+        // Rotate X
+        double y2 = dy * Math.cos(pitchRad) - z1 * Math.sin(pitchRad);
+        double z2 = dy * Math.sin(pitchRad) + z1 * Math.cos(pitchRad);
+
+        double fovRad = Math.toRadians(mc.options.fov);
+        double halfH = Math.tan(fovRad / 2.0);
+        double halfW = halfH * ((double) width / height);
+
+        int screenX;
+        int screenY;
+        boolean inFront = z2 > 0.1;
+
+        if (inFront) {
+            screenX = (int) ((width / 2.0) + (x1 / z2) * (width / (2.0 * halfW)));
+            screenY = (int) ((height / 2.0) - (y2 / z2) * (height / (2.0 * halfH)));
+        } else {
+            // Target is behind camera: project to screen bottom
+            screenX = x1 > 0 ? width - 40 : 40;
+            screenY = height - 40;
+        }
+
+        // Clamp to screen edges
+        int clampedX = Math.max(30, Math.min(width - 30, screenX));
+        int clampedY = Math.max(30, Math.min(height - 40, screenY));
+
+        // Render In-World 3D Marker (Glowing diamond and distance)
+        GuiComponent.fill(poseStack, clampedX - 16, clampedY - 8, clampedX + 16, clampedY + 12, 0xA00B121A);
+        GuiComponent.fill(poseStack, clampedX - 16, clampedY - 8, clampedX + 16, clampedY - 6, 0xFFFFCC00);
+
+        font.draw(poseStack, new TextComponent("◈"), clampedX - 4, clampedY - 6, 0xFFFFD700);
+        String distStr = String.format("%.0fm", dist);
+        int distW = font.width(distStr);
+        font.draw(poseStack, new TextComponent(distStr), clampedX - distW / 2, clampedY + 3, 0xFF55FFFF);
+    }
+
+    private static void renderMiniRadar(PoseStack poseStack, Minecraft mc, Player player, int width, int height, Font font) {
+        int radarX = width - 45;
+        int radarY = 32;
+        int radius = 22;
+
+        // Dark circular backdrop
+        GuiComponent.fill(poseStack, radarX - radius, radarY - radius, radarX + radius, radarY + radius, 0x900A1018);
+        GuiComponent.fill(poseStack, radarX - radius, radarY - radius, radarX + radius, radarY - radius + 2, 0xFF4A90E2);
+
+        // Center player dot
+        GuiComponent.fill(poseStack, radarX - 2, radarY - 2, radarX + 2, radarY + 2, 0xFFFFFFFF);
+
+        // North indicator based on player yaw
+        float yaw = player.getYRot();
+        double northAngle = Math.toRadians(-yaw - 180);
+        int nX = (int) (radarX + Math.sin(northAngle) * (radius - 5));
+        int nY = (int) (radarY + Math.cos(northAngle) * (radius - 5));
+        font.draw(poseStack, new TextComponent("N"), nX - 3, nY - 4, 0xFF55FFFF);
+
+        // Target angle indicator
+        BlockPos target = QuestManager.getTargetPos();
+        double dTargetX = target.getX() + 0.5 - player.getX();
+        double dTargetZ = target.getZ() + 0.5 - player.getZ();
+        double targetAngle = Math.atan2(dTargetX, dTargetZ) - Math.toRadians(yaw);
+        int tX = (int) (radarX + Math.sin(targetAngle) * (radius - 7));
+        int tY = (int) (radarY - Math.cos(targetAngle) * (radius - 7));
+        font.draw(poseStack, new TextComponent("◆"), tX - 3, tY - 4, 0xFFFFD700);
     }
 
     private static void renderQuestTracker(PoseStack poseStack, Minecraft mc, Player player, int width, int height, Font font) {
@@ -192,10 +280,21 @@ public class GenshinHudOverlay {
         int qX = width - 42;
         int qY = height - 45;
 
+        float cd = KeyInit.getSkillCooldownSeconds();
+
         // E Skill Box
         GuiComponent.fill(poseStack, eX, eY, eX + 32, eY + 32, 0x901B2A38);
         GuiComponent.fill(poseStack, eX + 2, eY + 2, eX + 30, eY + 30, 0x60000000);
-        font.draw(poseStack, new TextComponent("E"), eX + 12, eY + 11, 0x55FFFF);
+
+        if (cd > 0) {
+            // Cooldown overlay & countdown text
+            GuiComponent.fill(poseStack, eX + 2, eY + 2, eX + 30, eY + 30, 0x90000000);
+            String cdStr = String.format("%.1f", cd);
+            int cdW = font.width(cdStr);
+            font.draw(poseStack, new TextComponent(cdStr), eX + (32 - cdW) / 2, eY + 11, 0xFFFFAA00);
+        } else {
+            font.draw(poseStack, new TextComponent("E"), eX + 12, eY + 11, 0x55FFFF);
+        }
 
         // Q Burst Box
         GuiComponent.fill(poseStack, qX, qY, qX + 32, qY + 32, 0x90382A1B);

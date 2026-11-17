@@ -61,10 +61,16 @@ for target in targets:
         p['Fire'] = nbtlib.Short(-20)
         p['FallDistance'] = nbtlib.Float(0.0)
         p['HurtTime'] = nbtlib.Short(0)
+        # Clear inventory completely so no dirt exists
+        p['Inventory'] = nbtlib.List[nbtlib.Compound]([])
         # Clear spawn tag so prologue sequence triggers freshly
         if 'Tags' in p:
             tags = [t for t in p['Tags'] if str(t) != 'picking_hope_spawned']
             p['Tags'] = nbtlib.List[nbtlib.String](tags)
+
+    playerdata_dir = os.path.join(target, 'playerdata')
+    if os.path.exists(playerdata_dir):
+        shutil.rmtree(playerdata_dir)
 
     # 4. Pure Space Void World Generator
     wgs = data.get('WorldGenSettings', nbtlib.Compound({}))

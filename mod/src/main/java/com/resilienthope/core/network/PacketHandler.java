@@ -34,5 +34,23 @@ public class PacketHandler {
                 .decoder(PacketSyncQuest::decode)
                 .consumer(PacketSyncQuest::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PacketSkillCast.class, packetId++)
+                .encoder(PacketSkillCast::encode)
+                .decoder(PacketSkillCast::decode)
+                .consumer(PacketSkillCast::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketEquipItem.class, packetId++)
+                .encoder(PacketEquipItem::encode)
+                .decoder(PacketEquipItem::decode)
+                .consumer(PacketEquipItem::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketLootChest.class, packetId++)
+                .encoder(PacketLootChest::encode)
+                .decoder(PacketLootChest::decode)
+                .consumer(PacketLootChest::handle)
+                .add();
     }
 }

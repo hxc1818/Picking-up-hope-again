@@ -1,11 +1,15 @@
 package com.resilienthope.core.client;
 
+import com.resilienthope.core.client.gui.CharacterProfileScreen;
 import com.resilienthope.core.client.gui.InfiniteInventoryScreen;
 import com.resilienthope.core.network.PacketHandler;
+import com.resilienthope.core.network.PacketSkillCast;
 import com.resilienthope.core.network.PacketSwitchCharacter;
+import com.resilienthope.core.subtitle.RadioSubtitleManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -25,6 +29,9 @@ public class KeyInit {
     public static KeyMapping KEY_BURST_Q;
     public static KeyMapping KEY_BAG_B;
     public static KeyMapping KEY_INTERACT_F;
+    public static KeyMapping KEY_PROFILE_C;
+
+    private static long skillCooldownUntil = 0;
 
     public static void registerKeybinds() {
         KEY_CHAR_1 = new KeyMapping("key.picking_hope.char_1", GLFW.GLFW_KEY_1, CATEGORY);
@@ -35,6 +42,7 @@ public class KeyInit {
         KEY_BURST_Q = new KeyMapping("key.picking_hope.burst_q", GLFW.GLFW_KEY_Q, CATEGORY);
         KEY_BAG_B = new KeyMapping("key.picking_hope.bag_b", GLFW.GLFW_KEY_B, CATEGORY);
         KEY_INTERACT_F = new KeyMapping("key.picking_hope.interact_f", GLFW.GLFW_KEY_F, CATEGORY);
+        KEY_PROFILE_C = new KeyMapping("key.picking_hope.profile_c", GLFW.GLFW_KEY_C, CATEGORY);
 
         ClientRegistry.registerKeyBinding(KEY_CHAR_1);
         ClientRegistry.registerKeyBinding(KEY_CHAR_2);
@@ -44,6 +52,12 @@ public class KeyInit {
         ClientRegistry.registerKeyBinding(KEY_BURST_Q);
         ClientRegistry.registerKeyBinding(KEY_BAG_B);
         ClientRegistry.registerKeyBinding(KEY_INTERACT_F);
+        ClientRegistry.registerKeyBinding(KEY_PROFILE_C);
+    }
+
+    public static float getSkillCooldownSeconds() {
+        long remaining = skillCooldownUntil - System.currentTimeMillis();
+        return remaining > 0 ? remaining / 1000.0f : 0.0f;
     }
 
     @SubscribeEvent
@@ -60,8 +74,20 @@ public class KeyInit {
             mc.setScreen(new InfiniteInventoryScreen());
         }
 
+        if (KEY_PROFILE_C.consumeClick()) {
+            mc.setScreen(new CharacterProfileScreen());
+        }
+
         if (KEY_INTERACT_F.consumeClick()) {
             triggerInteraction(mc);
+        }
+
+        if (KEY_SKILL_E.consumeClick()) {
+            triggerTacticalSkill(mc);
+        }
+
+        if (KEY_BURST_Q.consumeClick()) {
+            triggerUltimateBurst(mc);
         }
     }
 
@@ -72,7 +98,33 @@ public class KeyInit {
         mc.player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             team.switchSlot(mc.player, slot);
             PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(slot));
+
+            // Sound & voice feedback
+            mc.player.playSound(SoundEvents.BEACON_POWER_SELECT, 1.0f, 1.4f);
+            String[] voiceLines = {
+                    "【特工·曙光】等离子核心过载，战意已就绪！",
+                    "【幽影·刺客】虚空潜行阵列接入战局。",
+                    "【泰坦·重装】动能重装护盾矩阵已展开！",
+                    "【圣泉·医护】纳米生命支持系统持续在线。"
+            };
+            if (slot >= 0 && slot < voiceLines.length) {
+                RadioSubtitleManager.postRadioMessage("小队通信", voiceLines[slot], 60);
+            }
         });
+    }
+
+    private static void triggerTacticalSkill(Minecraft mc) {
+        if (System.currentTimeMillis() < skillCooldownUntil) {
+            mc.player.playSound(SoundEvents.DISPENSER_FAIL, 0.8f, 1.5f);
+            return;
+        }
+
+        skillCooldownUntil = System.currentTimeMillis() + 6000;
+        PacketHandler.INSTANCE.sendToServer(new PacketSkillCast(0));
+    }
+
+    private static void triggerUltimateBurst(Minecraft mc) {
+        PacketHandler.INSTANCE.sendToServer(new PacketSkillCast(1));
     }
 
     private static void triggerInteraction(Minecraft mc) {

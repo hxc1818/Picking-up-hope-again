@@ -1,6 +1,7 @@
 package com.resilienthope.core.init;
 
 import com.resilienthope.core.PickingHopeCore;
+import com.resilienthope.core.block.AuxiliaryEnergyCoreBlock;
 import com.resilienthope.core.block.EngineeringTerminalBlock;
 import com.resilienthope.core.block.WaypointBlock;
 import net.minecraft.world.level.block.Block;
@@ -13,4 +14,5 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> TELEPORT_WAYPOINT = BLOCKS.register("teleport_waypoint", WaypointBlock::new);
     public static final RegistryObject<Block> ENGINEERING_TERMINAL = BLOCKS.register("engineering_terminal", EngineeringTerminalBlock::new);
+    public static final RegistryObject<Block> AUXILIARY_ENERGY_CORE = BLOCKS.register("auxiliary_energy_core", AuxiliaryEnergyCoreBlock::new);
 }

@@ -15,6 +15,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
@@ -38,20 +39,29 @@ public class EngineeringTerminalBlock extends Block {
             int stage = QuestManager.getQuestStage();
             if (stage == 2) {
                 // Successfully complete prologue!
-                QuestManager.advanceQuest(3, "【第一章·深空回响】", "前往下层工业甲板寻找星核能源", new BlockPos(32, 50, 10));
+                BlockPos corePos = new BlockPos(34, 36, 14);
+                QuestManager.advanceQuest(3, "【第一章·深空回响】", "搭乘升降梯进入下层甲板，修复辅助能源核心", corePos);
+
+                // Open elevator hatch and shaft down to Lower Deck
+                for (int y = 35; y <= 60; y++) {
+                    level.setBlock(new BlockPos(34, y, 14), Blocks.AIR.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(35, y, 14), Blocks.AIR.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(33, y, 14), Blocks.LADDER.defaultBlockState(), 2);
+                }
 
                 // Reward: Fusion Core Chip
                 serverPlayer.getInventory().add(new ItemStack(ModItems.FUSION_CORE_CHIP.get()));
 
                 // Sound effect
                 level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.0f, 1.2f);
+                level.playSound(null, new BlockPos(34, 60, 14), SoundEvents.IRON_DOOR_OPEN, SoundSource.BLOCKS, 1.2f, 0.8f);
 
                 // Dialogues
                 PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
-                        new PacketRadioDialogue("机械公会 罗德", "干得漂亮！副反应堆成功重燃，全舰应急电力恢复了30%。", 160));
+                        new PacketRadioDialogue("机械公会 罗德", "干得漂亮！副反应堆成功重燃，通往下层的防爆升降梯已解锁！", 160));
 
                 PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
-                        new PacketRadioDialogue("机械公会 罗德", "这是工会研发的「聚变脉冲核心芯片」，拿着！它能强化你的动力装甲。下层甲板已解锁，快去调查！", 220));
+                        new PacketRadioDialogue("机械公会 罗德", "这是工会研发的「聚变脉冲核心芯片」，拿着！快搭乘升降梯进入下层工业甲板！", 220));
 
                 // Sync Quest
                 PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
