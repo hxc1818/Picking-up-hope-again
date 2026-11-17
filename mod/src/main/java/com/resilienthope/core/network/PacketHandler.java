@@ -28,5 +28,11 @@ public class PacketHandler {
                 .decoder(PacketRadioDialogue::decode)
                 .consumer(PacketRadioDialogue::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PacketSyncQuest.class, packetId++)
+                .encoder(PacketSyncQuest::encode)
+                .decoder(PacketSyncQuest::decode)
+                .consumer(PacketSyncQuest::handle)
+                .add();
     }
 }

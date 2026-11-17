@@ -26,7 +26,7 @@ for target in targets:
 
     # 1. Custom Display Name and Game Rules
     data['LevelName'] = nbtlib.String('《重拾希望》星舰灰盒先行版 (Picking Up Hope)')
-    data['GameType'] = nbtlib.Int(0)  # Survival mode
+    data['GameType'] = nbtlib.Int(2)  # Strict Adventure mode (Prevents breaking blocks)
     data['allowCommands'] = nbtlib.Byte(1)  # Cheats allowed
     data['Difficulty'] = nbtlib.Byte(1)
 

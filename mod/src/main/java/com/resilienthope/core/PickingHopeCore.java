@@ -3,12 +3,15 @@ package com.resilienthope.core;
 import com.resilienthope.core.client.KeyInit;
 import com.resilienthope.core.client.gui.GenshinHudOverlay;
 import com.resilienthope.core.client.gui.InventoryOverrideHandler;
+import com.resilienthope.core.entity.SecurityDroneEntity;
 import com.resilienthope.core.init.ModBlocks;
+import com.resilienthope.core.init.ModEntities;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
@@ -28,8 +31,10 @@ public class PickingHopeCore {
 
         ModBlocks.BLOCKS.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
+        ModEntities.ENTITY_TYPES.register(modEventBus);
 
         modEventBus.addListener(this::setupCommon);
+        modEventBus.addListener(this::registerEntityAttributes);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
             modEventBus.addListener(this::setupClient);
@@ -48,6 +53,11 @@ public class PickingHopeCore {
             TeamCapability.register();
         });
         LOGGER.info("Picking Hope Core: Common setup initialized.");
+    }
+
+    private void registerEntityAttributes(EntityAttributeCreationEvent event) {
+        event.put(ModEntities.SECURITY_DRONE.get(), SecurityDroneEntity.createAttributes().build());
+        LOGGER.info("Picking Hope Core: SecurityDrone attributes registered.");
     }
 
     private void setupClient(final FMLClientSetupEvent event) {

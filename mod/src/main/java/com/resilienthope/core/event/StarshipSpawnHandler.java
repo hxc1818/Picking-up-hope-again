@@ -5,15 +5,19 @@ import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketRadioDialogue;
+import com.resilienthope.core.network.PacketSyncQuest;
+import com.resilienthope.core.quest.QuestManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.network.PacketDistributor;
@@ -26,6 +30,22 @@ public class StarshipSpawnHandler {
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player)) return;
+
+        // Strictly enforce Adventure Mode
+        if (!player.isCreative() && !player.isSpectator()) {
+            player.setGameMode(GameType.ADVENTURE);
+        }
+
+        // Ensure Engineering Terminal exists at (36, 61, 14)
+        ServerLevel level = player.getLevel();
+        BlockPos termPos = new BlockPos(36, 61, 14);
+        if (level.getBlockState(termPos).isAir()) {
+            level.setBlock(termPos, ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
+        }
+
+        // Synchronize active quest on login
+        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
+                new PacketSyncQuest(QuestManager.getQuestTitle(), QuestManager.getObjectiveText(), QuestManager.getTargetPos(), QuestManager.getQuestStage()));
 
         if (!player.getTags().contains(SPAWN_TAG)) {
             ServerLevel level = player.getLevel();
@@ -42,6 +62,9 @@ public class StarshipSpawnHandler {
                 buildStarshipDirectly(level, origin);
             }
 
+            // Ensure Engineering Terminal is placed
+            level.setBlock(origin.offset(36, 1, 14), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
+
             // Teleport player into Awakening Bay (x: 6.5, y: 62.0, z: 10.5)
             player.teleportTo(level, 6.5, 62.0, 10.5, 90.0f, 0.0f);
             player.setRespawnPosition(level.dimension(), new BlockPos(6, 62, 10), 90.0f, true, false);
@@ -54,6 +77,16 @@ public class StarshipSpawnHandler {
                     new PacketRadioDialogue("重拾希望号导航系统", "检测到冷冻休眠特工生命体征复苏。当前位于工业第7舱区，请前往聚变大厅连接传送中继。", 200));
 
             player.addTag(SPAWN_TAG);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END && !event.player.level.isClientSide() && event.player instanceof ServerPlayer player) {
+            // Guarantee player cannot dismantle the world
+            if (!player.isCreative() && !player.isSpectator() && player.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
+                player.setGameMode(GameType.ADVENTURE);
+            }
         }
     }
 
@@ -90,7 +123,6 @@ public class StarshipSpawnHandler {
             }
         }
 
-        // Interior Props:
         // Awakening Bay pedestal & chest
         level.setBlock(origin.offset(6, 1, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
         level.setBlock(origin.offset(6, 2, 10), Blocks.CHEST.defaultBlockState(), 2);
@@ -98,12 +130,7 @@ public class StarshipSpawnHandler {
         // Fusion Hall: Central Teleport Waypoint
         level.setBlock(origin.offset(32, 1, 10), ModBlocks.TELEPORT_WAYPOINT.get().defaultBlockState(), 2);
 
-        // Fusion Core Columns
-        for (int y = 1; y < 6; y++) {
-            level.setBlock(origin.offset(32, y, 5), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(origin.offset(32, y, 15), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(origin.offset(30, y, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(origin.offset(34, y, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-        }
+        // Engineering Terminal
+        level.setBlock(origin.offset(36, 1, 14), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
     }
 }
