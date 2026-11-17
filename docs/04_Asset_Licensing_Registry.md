@@ -26,6 +26,7 @@ flowchart TD
 | **Curios API (Forge)** | 5格科技芯片（圣遗物）基础插槽框架 | **LGPL-3.0 / MIT** | [GitHub: TheIllusiveC4/Curios](https://github.com/TheIllusiveC4/Curios) | ✅ 已批准 |
 | **Architectury API** | 多平台兼容与底层工具集 | **Architectury Open (MIT-like)** | [GitHub: architectury/architectury-api](https://github.com/architectury/architectury-api) | ✅ 已批准 |
 | **Cloth Config** | 客户端/核心配置界面库 | **LGPL-3.0** | [GitHub: shedaniel/cloth-config](https://github.com/shedaniel/cloth-config) | ✅ 已批准 |
+| **Shoulder Surfing Reloaded** | 锁定第三人称越肩视角与准星交互 | **MIT License** | [GitHub: Exopandora/ShoulderSurfing](https://github.com/Exopandora/ShoulderSurfing) | ✅ 已批准 |
 
 ---
 
