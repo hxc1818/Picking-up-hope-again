@@ -1,0 +1,15 @@
+{
+  "itemGroup.picking_hope_core": "重拾希望 (Picking Up Hope)",
+  "block.picking_hope_core.teleport_waypoint": "星舰传送锚点",
+  "item.picking_hope_core.teleport_waypoint": "星舰传送锚点",
+  "item.picking_hope_core.quantum_core": "星辉算力芯片 (抽卡代币)",
+  "item.picking_hope_core.plasma_cutter": "【专武】等离子重切剑",
+  "key.categories.picking_hope": "《重拾希望》按键绑定",
+  "key.picking_hope.char_1": "小队成员 1",
+  "key.picking_hope.char_2": "小队成员 2",
+  "key.picking_hope.char_3": "小队成员 3",
+  "key.picking_hope.char_4": "小队成员 4",
+  "key.picking_hope.skill_e": "科技战技 (E)",
+  "key.picking_hope.burst_q": "终极爆发 (Q)",
+  "key.picking_hope.bag_b": "星舰无限背包 (B)"
+}

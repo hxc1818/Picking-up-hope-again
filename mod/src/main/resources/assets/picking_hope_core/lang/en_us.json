@@ -1,0 +1,15 @@
+{
+  "itemGroup.picking_hope_core": "Picking Up Hope Again",
+  "block.picking_hope_core.teleport_waypoint": "Starship Teleport Waypoint",
+  "item.picking_hope_core.teleport_waypoint": "Starship Teleport Waypoint",
+  "item.picking_hope_core.quantum_core": "Star-Core Token (Gacha)",
+  "item.picking_hope_core.plasma_cutter": "Plasma Heavy Cutter",
+  "key.categories.picking_hope": "Picking Up Hope Keybinds",
+  "key.picking_hope.char_1": "Party Member 1",
+  "key.picking_hope.char_2": "Party Member 2",
+  "key.picking_hope.char_3": "Party Member 3",
+  "key.picking_hope.char_4": "Party Member 4",
+  "key.picking_hope.skill_e": "Tech Skill (E)",
+  "key.picking_hope.burst_q": "Burst Skill (Q)",
+  "key.picking_hope.bag_b": "Infinite Starship Bag (B)"
+}

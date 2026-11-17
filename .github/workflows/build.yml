@@ -22,23 +22,27 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Grant Execute Permission for Gradlew
+      - name: Ensure Gradle Wrapper
         run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-          elif [ -f "./mod/gradlew" ]; then
-            chmod +x ./mod/gradlew
+          TARGET_DIR="."
+          if [ -d "mod" ] && [ -f "mod/build.gradle" ]; then
+            TARGET_DIR="mod"
           fi
+          cd "$TARGET_DIR"
+          if [ ! -f "gradlew" ]; then
+            echo "Generating Gradle wrapper (7.4.2) for Forge 1.18.2..."
+            gradle wrapper --gradle-version 7.4.2 --distribution-type bin
+          fi
+          chmod +x ./gradlew
 
       - name: Build with Gradle
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew build --no-daemon
-          elif [ -f "./mod/gradlew" ]; then
-            cd mod && ./gradlew build --no-daemon
-          else
-            echo "No gradlew found yet. Skeleton initialized successfully."
+          TARGET_DIR="."
+          if [ -d "mod" ] && [ -f "mod/build.gradle" ]; then
+            TARGET_DIR="mod"
           fi
+          cd "$TARGET_DIR"
+          ./gradlew build --no-daemon --stacktrace
 
       - name: Upload Build Artifacts
         if: success()
@@ -48,4 +52,4 @@ jobs:
           path: |
             build/libs/*.jar
             mod/build/libs/*.jar
-          if-no-files-found: ignore
+          if-no-files-found: warn
