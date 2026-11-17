@@ -29,7 +29,17 @@ jobs:
       - name: Build with Gradle
         run: |
           cd mod
-          gradle build --no-daemon --stacktrace
+          gradle build --no-daemon --stacktrace 2>&1 | tee build.log
+
+      - name: Report Build Log to Summary
+        if: always()
+        run: |
+          if [ -f "mod/build.log" ]; then
+            echo "### Gradle Build Log Output" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            tail -n 80 mod/build.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload Build Artifacts
         if: success()

@@ -46,6 +46,10 @@ minecraft {
 }
 
 repositories {
+    maven {
+        name = 'forge'
+        url = 'https://maven.minecraftforge.net'
+    }
     mavenCentral()
 }
 
