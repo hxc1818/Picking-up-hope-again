@@ -10,6 +10,8 @@ import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraftforge.client.gui.IIngameOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -23,15 +25,16 @@ public class GenshinHudOverlay {
     }
 
     @SubscribeEvent
-    public static void onRenderOverlayPre(RenderGameOverlayEvent.Pre event) {
-        RenderGameOverlayEvent.ElementType type = event.getType();
-        // Fully hide vanilla survival hotbar and survival stats
-        if (type == RenderGameOverlayEvent.ElementType.HOTBAR ||
-            type == RenderGameOverlayEvent.ElementType.HEALTH ||
-            type == RenderGameOverlayEvent.ElementType.FOOD ||
-            type == RenderGameOverlayEvent.ElementType.EXPERIENCE ||
-            type == RenderGameOverlayEvent.ElementType.ARMOR ||
-            type == RenderGameOverlayEvent.ElementType.HEALTHMOUNT) {
+    public static void onRenderOverlayPre(RenderGameOverlayEvent.PreLayer event) {
+        IIngameOverlay overlay = event.getOverlay();
+        // Fully cancel vanilla survival hotbar and vanilla status elements
+        if (overlay == ForgeIngameGui.HOTBAR_ELEMENT ||
+            overlay == ForgeIngameGui.PLAYER_HEALTH_ELEMENT ||
+            overlay == ForgeIngameGui.FOOD_LEVEL_ELEMENT ||
+            overlay == ForgeIngameGui.EXPERIENCE_BAR_ELEMENT ||
+            overlay == ForgeIngameGui.ARMOR_LEVEL_ELEMENT ||
+            overlay == ForgeIngameGui.MOUNT_HEALTH_ELEMENT ||
+            overlay == ForgeIngameGui.ITEM_NAME_ELEMENT) {
             event.setCanceled(true);
         }
     }
