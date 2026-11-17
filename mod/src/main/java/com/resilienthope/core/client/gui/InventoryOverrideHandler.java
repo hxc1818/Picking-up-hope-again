@@ -22,7 +22,7 @@ public class InventoryOverrideHandler {
             // Cancel vanilla survival inventory
             event.setCanceled(true);
             mc.setScreen(new InfiniteInventoryScreen());
-        } else if (event.getScreen() instanceof ContainerScreen<?>) {
+        } else if (event.getScreen() instanceof ContainerScreen) {
             // Cancel vanilla chest container screen with 36 inventory slots
             event.setCanceled(true);
             if (mc.hitResult instanceof BlockHitResult bHit) {
