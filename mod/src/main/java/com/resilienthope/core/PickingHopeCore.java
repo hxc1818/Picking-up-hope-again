@@ -39,6 +39,7 @@ public class PickingHopeCore {
         });
 
         MinecraftForge.EVENT_BUS.register(TeamCapability.class);
+        MinecraftForge.EVENT_BUS.register(com.resilienthope.core.event.StarshipSpawnHandler.class);
     }
 
     private void setupCommon(final FMLCommonSetupEvent event) {

@@ -22,5 +22,11 @@ public class PacketHandler {
                 .decoder(PacketSwitchCharacter::decode)
                 .consumer(PacketSwitchCharacter::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PacketRadioDialogue.class, packetId++)
+                .encoder(PacketRadioDialogue::encode)
+                .decoder(PacketRadioDialogue::decode)
+                .consumer(PacketRadioDialogue::handle)
+                .add();
     }
 }
