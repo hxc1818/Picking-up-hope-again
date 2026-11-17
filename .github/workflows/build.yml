@@ -29,23 +29,21 @@ jobs:
       - name: Build with Gradle
         run: |
           cd mod
-          gradle build --no-daemon --stacktrace 2>&1 | tee build.log
+          gradle build jar --no-daemon --stacktrace 2>&1 | tee build.log
+          echo "=== Content of mod/build ==="
+          ls -la build || true
+          ls -la build/libs || true
 
-      - name: Report Build Log to Summary
-        if: always()
+      - name: Locate Built Jars
         run: |
-          if [ -f "mod/build.log" ]; then
-            echo "### Gradle Build Log Output" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            tail -n 80 mod/build.log >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "=== Finding all generated JAR files in workspace ==="
+          find . -name "*.jar" -type f
 
       - name: Upload Build Artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-mod-jars
+          name: picking-hope-core-mod-jar
           path: |
-            mod/build/libs/*.jar
+            **/build/libs/*.jar
           if-no-files-found: warn
