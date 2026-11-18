@@ -256,7 +256,7 @@ public class StoryDirector {
             spawnOverworldDrone(level, 17.5, 61.0, 10.0, "故障清扫机");
             QuestManager.advanceQuest(2, "【走廊初战】", "左键攻击走廊里的【故障清扫机】，先手切入回合制战斗", new BlockPos(17, 61, 10));
             PacketHandler.sendToPlayer(player, new PacketRadioDialogue("船舱警报",
-                    "走廊闸门已强制开启！前方维修走廊有清扫机器人短路拦路，靠近左键挥刀先手进战！", 170));
+                    "走廊闸门已强制开启！前方有故障清扫机挡路，靠近左键挥刀先手进战，实战体验林野的技能连招！", 170));
             saveAndSyncQuest(player);
         } else {
             PacketHandler.sendToPlayer(player, new PacketRadioDialogue("闸门控制端", "休眠区走廊闸门维持开启状态。", 80));
@@ -427,7 +427,7 @@ public class StoryDirector {
                     spawnOverworldDrone(level, 37.0, 61.0, 11.0, "安保巡逻机·乙");
                     QuestManager.advanceQuest(5, "【双人清障】", "配合陈风清理大厅里的安保巡逻机 (0/2)", new BlockPos(32, 61, 6));
                     PacketHandler.sendToPlayer(player, new PacketRadioDialogue("巡检员·陈风",
-                            "我入队了！我是【气属性·对群】职业，战斗中多用林野 [Q] 普攻攒点，再让我用 [E] 战技横扫！", 180));
+                            "我入队了！我是【气属性·对群】输出，待会打巡逻机我给你演示【旋风横扫】与破盾自动【乘风追击】！", 180));
                     saveAndSyncQuest(player);
                 }
             }
@@ -441,7 +441,7 @@ public class StoryDirector {
                     QuestManager.advanceQuest(11, "【医疗补给与整备】", "打开医务室物资箱并用经验瓶将任意角色升至 Lv.2", new BlockPos(32, 36, 5));
                     checkStage11Progress(player);
                     PacketHandler.sendToPlayer(player, new PacketRadioDialogue("医疗员·苏晴",
-                            "我入队啦！我是【水属性·治疗】，危急时用我的战技急救或按 [1~4] 随时插队终结技！先开旁边的医疗箱补给并升级角色吧！", 190));
+                            "我入队啦！我是【水属性·治疗】，待会清重装守卫时正好给你演示全队【纳米水雾急救】与大招回点！先开医疗箱并升到 Lv.2 吧！", 190));
                     saveAndSyncQuest(player);
                 }
             }

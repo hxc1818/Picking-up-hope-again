@@ -13,11 +13,13 @@ public class FactionNpcRenderer extends MobRenderer<FactionNpcEntity, HumanoidMo
             new ModelLayerLocation(new ResourceLocation(PickingHopeCore.MOD_ID, "faction_npc"), "main");
 
     private static final ResourceLocation TEX_ZHENG =
-            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_zheng.png");
+            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/char_laozheng.png");
     private static final ResourceLocation TEX_CHEN =
-            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_han.png");
+            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/char_chenfeng.png");
     private static final ResourceLocation TEX_SU =
-            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_su.png");
+            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/char_suqing.png");
+    private static final ResourceLocation TEX_HAN =
+            new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/char_hanbing.png");
 
     public FactionNpcRenderer(EntityRendererProvider.Context context) {
         super(context, new HumanoidModel<>(context.bakeLayer(LAYER_LOCATION)), 0.5F);
@@ -26,7 +28,8 @@ public class FactionNpcRenderer extends MobRenderer<FactionNpcEntity, HumanoidMo
     @Override
     public ResourceLocation getTextureLocation(FactionNpcEntity entity) {
         return switch (entity.getNpcId()) {
-            case "chen", "han" -> TEX_CHEN;
+            case "chen" -> TEX_CHEN;
+            case "han" -> TEX_HAN;
             case "su" -> TEX_SU;
             default -> TEX_ZHENG;
         };

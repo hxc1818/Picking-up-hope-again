@@ -1,7 +1,5 @@
 package com.resilienthope.core.combat;
 
-import com.resilienthope.core.combat.BattleState;
-import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketBattleSync;
@@ -50,12 +48,18 @@ public class TurnBasedCombatManager {
 
     public static void ensureBattleArena(ServerLevel level, boolean iceTheme) {
         int minX = 0, maxX = 28, minZ = 0, maxZ = 24, floorY = 150;
-        var floorBase = iceTheme ? ModBlocks.PERMAFROST_ROCK.get().defaultBlockState() : ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
-        var laneBlock = ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
-        var wallBlock = iceTheme ? ModBlocks.PERMAFROST_ROCK.get().defaultBlockState() : ModBlocks.STARSHIP_WALL.get().defaultBlockState();
-        var ceilingBlock = ModBlocks.STARSHIP_HULL.get().defaultBlockState();
-        var lightBlock = ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
-        var oreOrAlarm = iceTheme ? ModBlocks.FROZEN_ORE_VEIN.get().defaultBlockState() : ModBlocks.ALARM_BEACON.get().defaultBlockState();
+        var floorBase = iceTheme
+                ? com.resilienthope.core.init.ModBlocks.PERMAFROST_ROCK.get().defaultBlockState()
+                : com.resilienthope.core.init.ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
+        var laneBlock = com.resilienthope.core.init.ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
+        var wallBlock = iceTheme
+                ? com.resilienthope.core.init.ModBlocks.PERMAFROST_ROCK.get().defaultBlockState()
+                : com.resilienthope.core.init.ModBlocks.STARSHIP_WALL.get().defaultBlockState();
+        var ceilingBlock = com.resilienthope.core.init.ModBlocks.STARSHIP_HULL.get().defaultBlockState();
+        var lightBlock = com.resilienthope.core.init.ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
+        var oreOrAlarm = iceTheme
+                ? com.resilienthope.core.init.ModBlocks.FROZEN_ORE_VEIN.get().defaultBlockState()
+                : com.resilienthope.core.init.ModBlocks.ALARM_BEACON.get().defaultBlockState();
 
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
@@ -78,12 +82,11 @@ public class TurnBasedCombatManager {
                 }
             }
         }
-        // Corner Conduit Pillars inside tactical stage
         for (int y = floorY + 1; y < floorY + 12; y++) {
-            level.setBlock(new BlockPos(2, y, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
-            level.setBlock(new BlockPos(26, y, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
-            level.setBlock(new BlockPos(2, y, 22), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
-            level.setBlock(new BlockPos(26, y, 22), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(2, y, 2), com.resilienthope.core.init.ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(26, y, 2), com.resilienthope.core.init.ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(2, y, 22), com.resilienthope.core.init.ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(26, y, 22), com.resilienthope.core.init.ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
         }
     }
 
@@ -137,7 +140,7 @@ public class TurnBasedCombatManager {
             if (n.contains("轨道巡逻")) return "mine_patrol";
             if (n.contains("配电室")) return "substation_guard";
             if (n.contains("统御")) return "bridge_commander";
-            if (n.contains("重装守卫")) return "lower_guard";
+            if (n.contains("重装守卫") || n.contains("重装机房")) return "lower_guard";
             if (n.contains("机房巡逻")) return "lower_patrol";
             if (n.contains("猎犬") || n.contains("外围防卫")) return "ice_hound";
             if (n.contains("安保巡逻")) return "corridor_patrol";
@@ -171,6 +174,7 @@ public class TurnBasedCombatManager {
         state.active = true;
         state.encounterType = encounterType;
         state.canFlee = canFlee;
+        state.iceTheme = iceTheme;
         state.skillPoints = 3;
 
         final int[] worldLv = {0};
@@ -183,10 +187,10 @@ public class TurnBasedCombatManager {
                 u.element = c.getElement();
                 u.role = c.getRole();
                 u.maxHp = c.getTotalMaxHp();
-                u.hp = Math.max(u.maxHp * 0.5f, c.getCurrentHp());
+                u.hp = Math.max(u.maxHp * 0.55f, c.getCurrentHp());
                 u.shield = 0f;
                 u.maxEnergy = c.getMaxEnergy();
-                u.energy = Math.min(u.maxEnergy, Math.max(30f, c.getCurrentEnergy()));
+                u.energy = Math.min(u.maxEnergy, Math.max(35f, c.getCurrentEnergy()));
                 u.atk = c.getTotalAtk();
                 u.def = c.getTotalDef();
                 u.speed = c.getTotalSpeed();
@@ -200,39 +204,221 @@ public class TurnBasedCombatManager {
         });
 
         populateEnemies(state, encounterType, worldLv[0], ambush);
-        state.addLog(ambush ? "先手突袭成功！敌方全体韧性受损，我方抢占先机！" : "遭遇敌人拦截！准备迎战！");
+        setupTutorialIfApplicable(state, encounterType);
 
+        if (state.tutorialId == 0) {
+            state.addLog(ambush ? "先手突袭成功！敌方全体韧性受损，我方抢占先机！" : "遭遇敌人拦截！准备迎战！");
+        }
+
+        refreshAllEnemyIntents(state);
         session.state = state;
         ACTIVE_SESSIONS.put(player.getUUID(), session);
 
         advanceTimelineUntilPlayerTurn(player, session);
+        refreshTutorialPrompt(state);
         PacketHandler.sendToPlayer(player, new PacketBattleSync(state.toNbt()));
+    }
+
+    private static void setupTutorialIfApplicable(BattleState st, String encounterType) {
+        int stage = QuestManager.getQuestStage();
+
+        // Tutorial 1: Lin Ye's Skill, Basic & Ult in Stage 2 (corridor_cleaner)
+        if ("corridor_cleaner".equals(encounterType) && stage <= 2) {
+            st.tutorialId = 1;
+            st.tutorialStep = 1;
+            st.skillPoints = 3;
+            st.canFlee = false;
+            if (!st.allies.isEmpty()) {
+                st.allies.get(0).actionValue = 0f;
+                st.allies.get(0).energy = 45f;
+            }
+            for (BattleState.EnemyUnit e : st.enemies) {
+                e.maxHp = 280f;
+                e.hp = 280f;
+                e.maxToughness = 90f;
+                e.toughness = 60f;
+            }
+            st.addLog("【林野教学】请先体验战技与普攻搭配！");
+            return;
+        }
+
+        // Tutorial 2: Chen Feng's AOE Skill, Follow-Up Passive & Ult on first fight in Stage 5
+        if ("corridor_patrol".equals(encounterType) && stage == 5 && QuestManager.getDronesKilled() == 0) {
+            int chenIdx = findAllyIndex(st, "chenfeng");
+            if (chenIdx >= 0) {
+                st.tutorialId = 2;
+                st.tutorialStep = 1;
+                st.skillPoints = 3;
+                st.canFlee = false;
+                st.allies.get(chenIdx).actionValue = 0f;
+                st.allies.get(chenIdx).energy = 40f;
+                if (!st.allies.isEmpty()) {
+                    st.allies.get(0).actionValue = 25f;
+                }
+                if (st.enemies.size() >= 2) {
+                    st.enemies.get(0).maxHp = 330f;
+                    st.enemies.get(0).hp = 330f;
+                    st.enemies.get(0).weaknesses.clear();
+                    st.enemies.get(0).weaknesses.addAll(List.of("AIR", "EARTH"));
+                    st.enemies.get(0).toughness = 65f;
+
+                    st.enemies.get(1).maxHp = 330f;
+                    st.enemies.get(1).hp = 330f;
+                    st.enemies.get(1).weaknesses.clear();
+                    st.enemies.get(1).weaknesses.addAll(List.of("AIR", "WATER"));
+                    st.enemies.get(1).toughness = 65f;
+                }
+                st.addLog("【陈风教学】陈风抢占先手，准备横扫敌阵！");
+                return;
+            }
+        }
+
+        // Tutorial 3: Su Qing's Team Heal/Cleanse/Buff, Basic Heal & Ult SP Recovery in Stage 12
+        if ("lower_guard".equals(encounterType) && stage == 12) {
+            int suIdx = findAllyIndex(st, "suqing");
+            if (suIdx >= 0) {
+                st.tutorialId = 3;
+                st.tutorialStep = 1;
+                st.skillPoints = 3;
+                st.canFlee = false;
+                // Opening suppressive volley from the Heavy Guard so healing is meaningful!
+                int totalOpeningHit = 0;
+                for (BattleState.AllyUnit a : st.allies) {
+                    float drop = Math.max(85f, a.maxHp * 0.28f);
+                    a.hp = Math.max(a.maxHp * 0.35f, a.hp - drop);
+                    totalOpeningHit = Math.round(drop);
+                }
+                if (!st.allies.isEmpty()) {
+                    st.allies.get(0).debuffBurnTurns = 2;
+                }
+                st.allies.get(suIdx).actionValue = 0f;
+                st.allies.get(suIdx).energy = 45f;
+                for (int i = 0; i < st.allies.size(); i++) {
+                    if (i != suIdx) st.allies.get(i).actionValue = 20f + i * 8f;
+                }
+                for (BattleState.EnemyUnit e : st.enemies) {
+                    e.actionValue = Math.max(e.actionValue, 65f);
+                }
+                if (st.enemies.size() >= 2) {
+                    st.enemies.get(1).maxHp = 680f;
+                    st.enemies.get(1).hp = 680f;
+                }
+                st.addEvent(1, Math.min(1, st.enemies.size() - 1), -1, "BOSS_AOE",
+                        "heavy_guard_mech", "重装机房守卫机", "压制震荡炮", "FIRE", totalOpeningHit, false,
+                        "敌方开局压制扫射！全队受伤且林野陷入灼烧！");
+                st.addLog("【苏晴教学】守卫开场火力压制！轮到苏晴进行紧急救场！");
+            }
+        }
+    }
+
+    private static void refreshTutorialPrompt(BattleState st) {
+        if (st.tutorialId == 0 || st.tutorialStep == 0 || st.finished) {
+            st.tutorialTitle = "";
+            st.tutorialPrompt = "";
+            st.tutorialHighlightBtn = -1;
+            return;
+        }
+        BattleState.AllyUnit actor = (st.activeAllyIndex >= 0 && st.activeAllyIndex < st.allies.size())
+                ? st.allies.get(st.activeAllyIndex) : null;
+
+        if (st.tutorialId == 1) {
+            switch (st.tutorialStep) {
+                case 1 -> {
+                    st.tutorialTitle = "【第1课 · 林野战技】";
+                    st.tutorialPrompt = "林野擅长多目标重击！请按 [E]（或点击战技按钮）施放【震地裂斩】，打出扩散伤害并给敌方挂上2回合【破甲】！";
+                    st.tutorialHighlightBtn = 1;
+                }
+                case 2 -> {
+                    st.tutorialTitle = "【第1课 · 普攻攒点回能】";
+                    st.tutorialPrompt = "战技消耗战技点！现在按 [Q] 使用【工程重劈】，打伤害的同时回复 1 点战技点并攒满终结技能量！";
+                    st.tutorialHighlightBtn = 0;
+                }
+                case 3 -> {
+                    int idx = Math.max(0, findAllyIndex(st, "linye"));
+                    st.tutorialTitle = "【第1课 · 终结技插队】";
+                    st.tutorialPrompt = "林野能量已满！按数字键 [" + (idx + 1) + "]（或点击左下角林野头像）无需等待回合立刻插队打出【超载崩岩斩】！";
+                    st.tutorialHighlightBtn = 10 + idx;
+                }
+            }
+        } else if (st.tutorialId == 2) {
+            int chenIdx = Math.max(0, findAllyIndex(st, "chenfeng"));
+            switch (st.tutorialStep) {
+                case 1 -> {
+                    st.tutorialTitle = "【第2课 · 陈风群攻】";
+                    st.tutorialPrompt = "现在由新同伴【陈风】主攻！按 [E] 施放【旋风横扫】，同时打击敌方全体削韧，命中2人以上还能额外回能！";
+                    st.tutorialHighlightBtn = 1;
+                }
+                case 2 -> {
+                    st.tutorialTitle = "【第2课 · 弱点击破与乘风追击】";
+                    st.tutorialPrompt = "敌方【甲】只剩少量韧性且带地弱点！按 [Q] 或 [E] 让林野将其【弱点击破】，看陈风自动追加天赋【乘风追击】！";
+                    st.tutorialHighlightBtn = 0;
+                }
+                case 3 -> {
+                    st.tutorialTitle = "【第2课 · 暴风涡流斩】";
+                    st.tutorialPrompt = "陈风能量已满！按数字键 [" + (chenIdx + 1) + "]（或点击左下角陈风卡片）插队打出全屏终结技【暴风涡流斩】！";
+                    st.tutorialHighlightBtn = 10 + chenIdx;
+                }
+            }
+        } else if (st.tutorialId == 3) {
+            int suIdx = Math.max(0, findAllyIndex(st, "suqing"));
+            switch (st.tutorialStep) {
+                case 1 -> {
+                    st.tutorialTitle = "【第3课 · 苏晴群奶与净化】";
+                    st.tutorialPrompt = "队友血线告急！按 [E] 让苏晴施放战技【纳米水雾急救】：大幅恢复全队血量、净化灼烧并赋予全队+25%攻击力！";
+                    st.tutorialHighlightBtn = 1;
+                }
+                case 2 -> {
+                    if (actor != null && "suqing".equals(actor.charId)) {
+                        st.tutorialTitle = "【第3课 · 边打边奶的普攻】";
+                        st.tutorialPrompt = "轮到苏晴行动！请按 [Q] 使用【水冷脉冲】：打水属性伤害+回复1点战技点的同时，还能顺手治疗残血队友！";
+                        st.tutorialHighlightBtn = 0;
+                    } else {
+                        String aname = actor != null ? actor.name : "队友";
+                        st.tutorialTitle = "【第3课 · 等待苏晴轮次】";
+                        st.tutorialPrompt = "当前为 " + aname + " 回合（已享苏晴+25%攻击增益）。请用 [E]/[Q] 攻击重装守卫，马上就轮到苏晴演示普攻！";
+                        st.tutorialHighlightBtn = 0;
+                    }
+                }
+                case 3 -> {
+                    st.tutorialTitle = "【第3课 · 维生力场+回战技点】";
+                    st.tutorialPrompt = "苏晴能量已满！按数字键 [" + (suIdx + 1) + "]（或点击苏晴卡片）插队大招【紧急维生力场】，全队回血套水盾并立刻回复1战技点！";
+                    st.tutorialHighlightBtn = 10 + suIdx;
+                }
+            }
+        }
+    }
+
+    private static int findAllyIndex(BattleState st, String charId) {
+        for (int i = 0; i < st.allies.size(); i++) {
+            if (charId.equals(st.allies.get(i).charId)) return i;
+        }
+        return -1;
     }
 
     private static void populateEnemies(BattleState state, String encounterType, int worldLv, boolean ambush) {
         int lvScale = 1 + worldLv * 10;
         switch (encounterType) {
             case "corridor_cleaner" -> {
-                state.enemies.add(makeEnemy("cleaner_1", "故障清扫机 A", 2, 190f, 60f, 38f, 92, ambush, "EARTH", "AIR"));
-                state.enemies.add(makeEnemy("cleaner_2", "故障清扫机 B", 2, 190f, 60f, 38f, 88, ambush, "EARTH", "FIRE"));
+                state.enemies.add(makeEnemy("cleaner_1", "故障清扫机 A", 2, 240f, 90f, 36f, 92, ambush, "EARTH", "AIR"));
+                state.enemies.add(makeEnemy("cleaner_2", "故障清扫机 B", 2, 240f, 90f, 36f, 88, ambush, "EARTH", "FIRE"));
             }
             case "corridor_patrol" -> {
-                state.enemies.add(makeEnemy("drone_1", "安保巡逻机·甲", 4, 260f, 90f, 48f, 96, ambush, "AIR", "WATER"));
-                state.enemies.add(makeEnemy("drone_2", "安保巡逻机·乙", 4, 260f, 90f, 48f, 94, ambush, "AIR", "EARTH"));
+                state.enemies.add(makeEnemy("drone_1", "安保巡逻机·甲", 4, 290f, 90f, 48f, 96, ambush, "AIR", "EARTH"));
+                state.enemies.add(makeEnemy("drone_2", "安保巡逻机·乙", 4, 290f, 90f, 48f, 94, ambush, "AIR", "WATER"));
             }
             case "bridge_commander" -> {
-                state.enemies.add(makeEnemy("b_escort_1", "数据室僚机·左", 5, 220f, 60f, 44f, 98, ambush, "AIR", "EARTH"));
-                state.enemies.add(makeEnemy("b_cmd", "舰桥防卫统御机", 6, 460f, 120f, 64f, 94, ambush, "EARTH", "WATER"));
-                state.enemies.add(makeEnemy("b_escort_2", "数据室僚机·右", 5, 220f, 60f, 44f, 96, ambush, "AIR", "FIRE"));
+                state.enemies.add(makeEnemy("b_escort_1", "数据室僚机·左", 5, 240f, 60f, 44f, 98, ambush, "AIR", "EARTH"));
+                state.enemies.add(makeEnemy("b_cmd", "舰桥防卫统御机", 6, 480f, 120f, 64f, 94, ambush, "EARTH", "WATER"));
+                state.enemies.add(makeEnemy("b_escort_2", "数据室僚机·右", 5, 240f, 60f, 44f, 96, ambush, "AIR", "FIRE"));
             }
             case "lower_patrol" -> {
-                state.enemies.add(makeEnemy("lp_1", "机房巡逻队长", 7, 360f, 90f, 58f, 98, ambush, "EARTH", "AIR"));
-                state.enemies.add(makeEnemy("lp_2", "机房维修机", 6, 260f, 60f, 46f, 92, ambush, "WATER", "FIRE"));
+                state.enemies.add(makeEnemy("lp_1", "机房巡逻队长", 7, 380f, 90f, 58f, 98, ambush, "EARTH", "AIR"));
+                state.enemies.add(makeEnemy("lp_2", "机房维修机", 6, 280f, 60f, 46f, 92, ambush, "WATER", "FIRE"));
             }
             case "lower_guard" -> {
-                state.enemies.add(makeEnemy("guard_1", "机房巡逻机", 8, 320f, 90f, 60f, 98, ambush, "WATER", "AIR"));
-                state.enemies.add(makeEnemy("guard_2", "重装机房守卫机", 9, 520f, 120f, 74f, 92, ambush, "EARTH", "WATER"));
-                state.enemies.add(makeEnemy("guard_3", "机房巡逻机", 8, 320f, 90f, 60f, 95, ambush, "AIR", "FIRE"));
+                state.enemies.add(makeEnemy("guard_1", "机房巡逻机·左", 8, 340f, 90f, 58f, 98, ambush, "WATER", "AIR"));
+                state.enemies.add(makeEnemy("guard_2", "重装机房守卫机", 9, 580f, 120f, 74f, 92, ambush, "EARTH", "WATER"));
+                state.enemies.add(makeEnemy("guard_3", "机房巡逻机·右", 8, 340f, 90f, 58f, 95, ambush, "AIR", "FIRE"));
             }
             case "ice_hound" -> {
                 state.enemies.add(makeEnemy("hound_1", "旧式机械猎犬·左", 10, 420f, 90f, 76f, 108, ambush, "FIRE", "EARTH"));
@@ -271,7 +457,6 @@ public class TurnBasedCombatManager {
                 state.enemies.add(makeEnemy("trial_2", "试炼重装机", lv + 2, 1050f * mult, 150f, 120f * mult, 98, false, "AIR", "FIRE"));
             }
             default -> {
-                // Simulation domains scale cleanly with worldLv
                 int lv = Math.max(5, lvScale + 4);
                 float mult = 1.0f + worldLv * 0.6f;
                 state.enemies.add(makeEnemy("dom_1", "模拟巡逻机·1型", lv, 380f * mult, 90f, 65f * mult, 96, ambush, "WATER", "EARTH"));
@@ -299,6 +484,27 @@ public class TurnBasedCombatManager {
         return e;
     }
 
+    private static void refreshAllEnemyIntents(BattleState st) {
+        for (BattleState.EnemyUnit e : st.enemies) {
+            if (!e.isAlive()) {
+                e.intentText = "已击毁";
+            } else if (e.broken) {
+                e.intentText = "💫 破盾硬直中";
+            } else if (e.isBossCore && e.chargingUlt) {
+                e.intentText = "🔥 蓄力(" + e.chargeCountdown + "回合)";
+            } else if (e.shieldProtected) {
+                e.intentText = "🛡 双臂减伤中";
+            } else if (e.id.contains("guard") || e.id.contains("cmd") || e.id.contains("driller") || e.id.contains("boss")) {
+                boolean nextAoe = ((st.turnCount + st.enemies.indexOf(e)) % 2 == 1);
+                e.intentText = nextAoe ? "💥 全体震荡炮" : "⚔ 重锤压击";
+            } else if (e.id.contains("hound")) {
+                e.intentText = "⚡ 突袭撕咬";
+            } else {
+                e.intentText = "🔫 脉冲射击";
+            }
+        }
+    }
+
     public static void handleBattleAction(ServerPlayer player, int actionType, int targetEnemyIndex, int allySlotIndex) {
         if (player == null) return;
         BattleSession session = ACTIVE_SESSIONS.get(player.getUUID());
@@ -309,6 +515,10 @@ public class TurnBasedCombatManager {
             exitBattleArena(player, session);
             return;
         }
+
+        // Reset animation queue for this new turn response
+        st.events.clear();
+
         if (st.finished) {
             PacketHandler.sendToPlayer(player, new PacketBattleSync(st.toNbt()));
             return;
@@ -328,13 +538,16 @@ public class TurnBasedCombatManager {
             if (allySlotIndex >= 0 && allySlotIndex < st.allies.size()) {
                 BattleState.AllyUnit actor = st.allies.get(allySlotIndex);
                 if (actor.isAlive() && actor.energy >= actor.maxEnergy) {
-                    executeAllyUltimate(player, st, actor, targetEnemyIndex);
+                    executeAllyUltimate(player, st, allySlotIndex, actor, targetEnemyIndex);
+                    advanceTutorialOnAction(st, actionType, allySlotIndex);
                     checkBattleEndOrPhaseTransition(player, session);
                     if (!st.finished && st.activeAllyIndex < 0) {
                         advanceTimelineUntilPlayerTurn(player, session);
                     }
                 }
             }
+            refreshAllEnemyIntents(st);
+            refreshTutorialPrompt(st);
             PacketHandler.sendToPlayer(player, new PacketBattleSync(st.toNbt()));
             return;
         }
@@ -342,21 +555,26 @@ public class TurnBasedCombatManager {
         // Standard Turn Action (Basic Q or Skill E)
         if (st.activeAllyIndex < 0 || st.activeAllyIndex >= st.allies.size()) {
             advanceTimelineUntilPlayerTurn(player, session);
+            refreshAllEnemyIntents(st);
+            refreshTutorialPrompt(st);
             PacketHandler.sendToPlayer(player, new PacketBattleSync(st.toNbt()));
             return;
         }
 
-        BattleState.AllyUnit actor = st.allies.get(st.activeAllyIndex);
+        int actorSlot = st.activeAllyIndex;
+        BattleState.AllyUnit actor = st.allies.get(actorSlot);
         if (actionType == ACTION_SKILL && st.skillPoints <= 0) {
             st.addLog("战技点不足！请使用 [Q] 普通攻击回复战技点。");
             PacketHandler.sendToPlayer(player, new PacketBattleSync(st.toNbt()));
             return;
         }
 
+        boolean avBoostFromBasic = false;
         if (actionType == ACTION_BASIC) {
-            executeAllyBasic(player, st, actor, targetEnemyIndex);
+            executeAllyBasic(player, st, actorSlot, actor, targetEnemyIndex);
+            if ("chenfeng".equals(actor.charId)) avBoostFromBasic = true;
         } else if (actionType == ACTION_SKILL) {
-            executeAllySkill(player, st, actor, targetEnemyIndex);
+            executeAllySkill(player, st, actorSlot, actor, targetEnemyIndex);
         }
 
         // Tick actor buffs & reset AV
@@ -364,16 +582,88 @@ public class TurnBasedCombatManager {
         if (actor.buffSpdTurns > 0) actor.buffSpdTurns--;
         if (actor.debuffBurnTurns > 0) {
             actor.debuffBurnTurns--;
-            applyDamageToAlly(actor, 35.0f);
+            applyDamageToAlly(actor, 30.0f);
         }
-        actor.actionValue = 10000.0f / Math.max(60, actor.getEffectiveSpeed());
+        float baseAv = 10000.0f / Math.max(60, actor.getEffectiveSpeed());
+        actor.actionValue = avBoostFromBasic ? baseAv * 0.85f : baseAv;
         st.activeAllyIndex = -1;
 
+        advanceTutorialOnAction(st, actionType, actorSlot);
         checkBattleEndOrPhaseTransition(player, session);
         if (!st.finished) {
             advanceTimelineUntilPlayerTurn(player, session);
         }
+        refreshAllEnemyIntents(st);
+        refreshTutorialPrompt(st);
         PacketHandler.sendToPlayer(player, new PacketBattleSync(st.toNbt()));
+    }
+
+    private static void advanceTutorialOnAction(BattleState st, int actionType, int slotIdx) {
+        if (st.tutorialId == 0 || st.tutorialStep == 0) return;
+        BattleState.AllyUnit actor = (slotIdx >= 0 && slotIdx < st.allies.size()) ? st.allies.get(slotIdx) : null;
+
+        if (st.tutorialId == 1) {
+            if (st.tutorialStep == 1 && actionType == ACTION_SKILL) {
+                st.tutorialStep = 2;
+            } else if (st.tutorialStep == 2 && actionType == ACTION_BASIC) {
+                st.tutorialStep = 3;
+                if (!st.allies.isEmpty()) st.allies.get(0).energy = st.allies.get(0).maxEnergy;
+            } else if (st.tutorialStep == 3 && actionType == ACTION_ULT) {
+                st.tutorialStep = 0;
+                st.tutorialId = 0;
+                return;
+            }
+            // Prevent accidental premature enemy wipe before Step 3 showcase
+            if (st.tutorialStep > 0 && st.tutorialStep <= 3) {
+                for (BattleState.EnemyUnit e : st.enemies) {
+                    if (e.hp <= 0f) e.hp = 45f;
+                }
+            }
+        } else if (st.tutorialId == 2) {
+            int chenIdx = Math.max(0, findAllyIndex(st, "chenfeng"));
+            if (st.tutorialStep == 1 && actionType == ACTION_SKILL) {
+                st.tutorialStep = 2;
+                // Ensure either living drone is breakable so Lin Ye triggers Chen Feng's Follow-Up
+                for (BattleState.EnemyUnit e : st.enemies) {
+                    if (e.isAlive()) {
+                        e.toughness = Math.min(e.toughness, 25f);
+                        if (!e.weaknesses.contains("EARTH")) e.weaknesses.add("EARTH");
+                    }
+                }
+            } else if (st.tutorialStep == 2 && (actionType == ACTION_BASIC || actionType == ACTION_SKILL)) {
+                st.tutorialStep = 3;
+                st.allies.get(chenIdx).energy = st.allies.get(chenIdx).maxEnergy;
+            } else if (st.tutorialStep == 3 && actionType == ACTION_ULT) {
+                st.tutorialStep = 0;
+                st.tutorialId = 0;
+                return;
+            }
+            if (st.tutorialStep > 0 && st.tutorialStep <= 3) {
+                for (BattleState.EnemyUnit e : st.enemies) {
+                    if (e.hp <= 0f) e.hp = 60f;
+                }
+            }
+        } else if (st.tutorialId == 3) {
+            int suIdx = Math.max(0, findAllyIndex(st, "suqing"));
+            if (st.tutorialStep == 1 && actionType == ACTION_SKILL && actor != null && "suqing".equals(actor.charId)) {
+                st.tutorialStep = 2;
+                st.skillPoints = Math.max(st.skillPoints, 2);
+                st.allies.get(suIdx).actionValue = Math.min(st.allies.get(suIdx).actionValue, 12f);
+            } else if (st.tutorialStep == 2 && actionType == ACTION_BASIC && actor != null && "suqing".equals(actor.charId)) {
+                st.tutorialStep = 3;
+                st.allies.get(suIdx).energy = st.allies.get(suIdx).maxEnergy;
+            } else if (st.tutorialStep == 3 && actionType == ACTION_ULT && actor != null && "suqing".equals(actor.charId)) {
+                st.tutorialStep = 0;
+                st.tutorialId = 0;
+                return;
+            }
+            if (st.tutorialStep > 0 && st.tutorialStep <= 3) {
+                st.skillPoints = Math.max(st.skillPoints, 1);
+                for (BattleState.EnemyUnit e : st.enemies) {
+                    if (e.id.contains("guard_2") && e.hp <= 0f) e.hp = 120f;
+                }
+            }
+        }
     }
 
     private static BattleState.EnemyUnit pickLivingEnemy(BattleState st, int preferredIdx) {
@@ -386,20 +676,54 @@ public class TurnBasedCombatManager {
         return null;
     }
 
-    private static void executeAllyBasic(ServerPlayer player, BattleState st, BattleState.AllyUnit actor, int targetIdx) {
+    private static void executeAllyBasic(ServerPlayer player, BattleState st, int actorSlot,
+                                         BattleState.AllyUnit actor, int targetIdx) {
         BattleState.EnemyUnit target = pickLivingEnemy(st, targetIdx);
         if (target == null) return;
+        int actualTargetIdx = st.enemies.indexOf(target);
 
         st.skillPoints = Math.min(st.maxSkillPoints, st.skillPoints + 1);
-        actor.energy = Math.min(actor.maxEnergy, actor.energy + 20f);
+        actor.energy = Math.min(actor.maxEnergy, actor.energy + 22f);
 
-        HitResult hit = dealDamageToEnemy(player, st, actor, target, 1.0f, 30.0f);
-        st.addLog(actor.name + " 普攻命中 " + target.name + "，造成 " + hit.damage + (hit.crit ? "(暴击)" : "") + " 伤害，战技点 +1");
+        float toughCost = "suqing".equals(actor.charId) ? 35.0f : 30.0f;
+        // Tutorial 2 Step 2 helper: guarantee Lin Ye breaks Drone 1 smoothly to trigger Chen Feng's Passive!
+        if (st.tutorialId == 2 && st.tutorialStep == 2 && !target.broken && target.toughness <= 35f) {
+            toughCost = Math.max(toughCost, target.toughness + 5f);
+            if (!target.weaknesses.contains(actor.element)) {
+                target.weaknesses.add(actor.element);
+            }
+        }
+
+        String skillName = CharacterData.getBasicNameFor(actor.charId);
+        HitResult hit = dealDamageToEnemy(player, st, actorSlot, actor, target, 1.0f, toughCost,
+                "BASIC", skillName);
+
+        // Su Qing passive: heal lowest ally slightly on basic attack
+        if ("suqing".equals(actor.charId)) {
+            BattleState.AllyUnit lowest = st.allies.stream()
+                    .filter(BattleState.AllyUnit::isAlive)
+                    .min(Comparator.comparingDouble(a -> a.hp / Math.max(1f, a.maxHp)))
+                    .orElse(actor);
+            float heal = (80f + actor.maxHp * 0.12f) * actor.talentScale;
+            lowest.hp = Math.min(lowest.maxHp, lowest.hp + heal);
+            st.addEvent(0, actorSlot, st.allies.indexOf(lowest), "HEAL", actor.charId, actor.name,
+                    "应急协疗", actor.element, Math.round(heal), false,
+                    actor.name + "【水冷脉冲】造成 " + hit.damage + " 伤并为 " + lowest.name + " 恢复 +" + Math.round(heal));
+            st.addLog(actor.name + " 使用【水冷脉冲】命中 " + target.name + "（-" + hit.damage + "），顺带治疗 " + lowest.name + " +" + Math.round(heal));
+        } else {
+            st.addEvent(0, actorSlot, actualTargetIdx, "BASIC", actor.charId, actor.name, skillName,
+                    actor.element, hit.damage, hit.crit,
+                    actor.name + " 施放【" + skillName + "】命中 " + target.name + "（-" + hit.damage + "，战技点+1）");
+            st.addLog(actor.name + "【" + skillName + "】命中 " + target.name + "，造成 " + hit.damage
+                    + (hit.crit ? "(暴击)" : "") + " 伤，战技点+1");
+        }
     }
 
-    private static void executeAllySkill(ServerPlayer player, BattleState st, BattleState.AllyUnit actor, int targetIdx) {
+    private static void executeAllySkill(ServerPlayer player, BattleState st, int actorSlot,
+                                         BattleState.AllyUnit actor, int targetIdx) {
         st.skillPoints = Math.max(0, st.skillPoints - 1);
         actor.energy = Math.min(actor.maxEnergy, actor.energy + 35f);
+        String skillName = CharacterData.getSkillNameFor(actor.charId);
 
         switch (actor.role) {
             case CharacterData.ROLE_HEALER -> {
@@ -407,25 +731,31 @@ public class TurnBasedCombatManager {
                         .filter(BattleState.AllyUnit::isAlive)
                         .min(Comparator.comparingDouble(a -> a.hp / Math.max(1f, a.maxHp)))
                         .orElse(actor);
-                float healAmt = (180f + actor.maxHp * 0.25f) * actor.talentScale;
-                lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
-                lowest.debuffBurnTurns = 0;
+                float healAmt = (210f + actor.maxHp * 0.28f) * actor.talentScale;
                 for (BattleState.AllyUnit a : st.allies) {
-                    if (a.isAlive() && a != lowest) {
-                        a.hp = Math.min(a.maxHp, a.hp + healAmt * 0.35f);
+                    if (a.isAlive()) {
+                        float amt = (a == lowest) ? healAmt : (healAmt * 0.48f);
+                        a.hp = Math.min(a.maxHp, a.hp + amt);
                         a.debuffBurnTurns = 0;
+                        a.buffAtkTurns = Math.max(a.buffAtkTurns, 2);
                     }
                 }
                 player.getLevel().playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 1.0f, 1.3f);
-                st.addLog(actor.name + " 施放治疗战技，为 " + lowest.name + " 恢复 " + Math.round(healAmt) + " 生命并净化异常！");
+                st.addEvent(0, actorSlot, -1, "HEAL", actor.charId, actor.name, skillName,
+                        actor.element, Math.round(healAmt), false,
+                        actor.name + " 施放【" + skillName + "】群疗净化并赋予全队加攻！");
+                st.addLog(actor.name + "【" + skillName + "】为 " + lowest.name + " 回血 +" + Math.round(healAmt) + "，净化异常且全队加攻！");
             }
             case CharacterData.ROLE_SHIELDER -> {
-                float shieldAmt = (160f + actor.def * 1.4f) * actor.talentScale;
+                float shieldAmt = (170f + actor.def * 1.45f) * actor.talentScale;
                 for (BattleState.AllyUnit a : st.allies) {
                     if (a.isAlive()) a.shield = Math.max(a.shield, shieldAmt);
                 }
                 player.getLevel().playSound(null, player.blockPosition(), SoundEvents.SHIELD_BLOCK, SoundSource.PLAYERS, 1.0f, 1.1f);
-                st.addLog(actor.name + " 展开防护力场，全队获得 " + Math.round(shieldAmt) + " 点护盾！");
+                st.addEvent(0, actorSlot, -1, "SHIELD", actor.charId, actor.name, skillName,
+                        actor.element, Math.round(shieldAmt), false,
+                        actor.name + " 施放【" + skillName + "】全队护盾 +" + Math.round(shieldAmt));
+                st.addLog(actor.name + " 展开【" + skillName + "】，全队获得 " + Math.round(shieldAmt) + " 点护盾！");
             }
             case CharacterData.ROLE_BUFFER -> {
                 for (BattleState.AllyUnit a : st.allies) {
@@ -435,70 +765,107 @@ public class TurnBasedCombatManager {
                     }
                 }
                 player.getLevel().playSound(null, player.blockPosition(), SoundEvents.BEACON_POWER_SELECT, SoundSource.PLAYERS, 0.9f, 1.4f);
-                st.addLog(actor.name + " 启动战术调度！全队攻击力 +25%、速度 +15（持续 2 回合）！");
+                st.addEvent(0, actorSlot, -1, "BUFF", actor.charId, actor.name, skillName,
+                        actor.element, 25, false,
+                        actor.name + " 施放【" + skillName + "】全队攻击+25%、速度+15！");
+                st.addLog(actor.name + "【" + skillName + "】全队攻击力 +25%、速度 +15（持续 2 回合）！");
             }
             case CharacterData.ROLE_SINGLE -> {
                 BattleState.EnemyUnit target = pickLivingEnemy(st, targetIdx);
                 if (target != null) {
-                    HitResult hit = dealDamageToEnemy(player, st, actor, target, 2.2f, 75.0f);
-                    st.addLog(actor.name + " 精准狙击 " + target.name + "，造成 " + hit.damage + (hit.crit ? "(暴击)" : "") + " 点高额伤害！");
+                    int tidx = st.enemies.indexOf(target);
+                    HitResult hit = dealDamageToEnemy(player, st, actorSlot, actor, target, 2.3f, 75.0f, "SKILL", skillName);
+                    st.addEvent(0, actorSlot, tidx, "SKILL", actor.charId, actor.name, skillName,
+                            actor.element, hit.damage, hit.crit,
+                            actor.name + " 施放【" + skillName + "】命中 " + target.name + " (-" + hit.damage + ")");
+                    st.addLog(actor.name + "【" + skillName + "】点杀 " + target.name + " 造成 " + hit.damage + (hit.crit ? "(暴击)" : "") + " 伤！");
                 }
             }
             case CharacterData.ROLE_AOE -> {
                 int totalDmg = 0;
+                int hitCount = 0;
+                boolean anyCrit = false;
                 for (BattleState.EnemyUnit e : st.enemies) {
                     if (e.isAlive()) {
-                        totalDmg += dealDamageToEnemy(player, st, actor, e, 1.15f, 40.0f).damage;
+                        HitResult hr = dealDamageToEnemy(player, st, actorSlot, actor, e, 1.25f, 45.0f, "SKILL", skillName);
+                        totalDmg += hr.damage;
+                        if (hr.crit) anyCrit = true;
+                        hitCount++;
                     }
                 }
-                st.addLog(actor.name + " 发动横扫战技，对敌方全体累计造成 " + totalDmg + " 点范围伤害！");
+                if (hitCount >= 2) {
+                    actor.energy = Math.min(actor.maxEnergy, actor.energy + 15f);
+                }
+                st.addEvent(0, actorSlot, -1, "SKILL", actor.charId, actor.name, skillName,
+                        actor.element, totalDmg, anyCrit,
+                        actor.name + " 施放【" + skillName + "】横扫敌阵 累计 -" + totalDmg);
+                st.addLog(actor.name + "【" + skillName + "】对敌方全体造成累计 " + totalDmg + " 伤"
+                        + (hitCount >= 2 ? "（命中多人额外+15能量）！" : "！"));
             }
-            default -> { // BALANCED
-                int mainIdx = (targetIdx >= 0 && targetIdx < st.enemies.size() && st.enemies.get(targetIdx).isAlive())
-                        ? targetIdx : 0;
-                BattleState.EnemyUnit main = pickLivingEnemy(st, mainIdx);
+            default -> { // BALANCED (Lin Ye: 震地裂斩 + 破甲)
+                BattleState.EnemyUnit main = pickLivingEnemy(st, targetIdx);
                 if (main != null) {
                     int actualIdx = st.enemies.indexOf(main);
-                    HitResult hit = dealDamageToEnemy(player, st, actor, main, 1.55f, 60.0f);
+                    HitResult hit = dealDamageToEnemy(player, st, actorSlot, actor, main, 1.60f, 60.0f, "SKILL", skillName);
+                    main.debuffDefTurns = Math.max(main.debuffDefTurns, 2);
+
                     int splashDmg = 0;
                     if (actualIdx - 1 >= 0 && st.enemies.get(actualIdx - 1).isAlive()) {
-                        splashDmg += dealDamageToEnemy(player, st, actor, st.enemies.get(actualIdx - 1), 0.80f, 30.0f).damage;
+                        BattleState.EnemyUnit left = st.enemies.get(actualIdx - 1);
+                        splashDmg += dealDamageToEnemy(player, st, actorSlot, actor, left, 0.85f, 30.0f, "SKILL", skillName).damage;
+                        left.debuffDefTurns = Math.max(left.debuffDefTurns, 2);
                     }
                     if (actualIdx + 1 < st.enemies.size() && st.enemies.get(actualIdx + 1).isAlive()) {
-                        splashDmg += dealDamageToEnemy(player, st, actor, st.enemies.get(actualIdx + 1), 0.80f, 30.0f).damage;
+                        BattleState.EnemyUnit right = st.enemies.get(actualIdx + 1);
+                        splashDmg += dealDamageToEnemy(player, st, actorSlot, actor, right, 0.85f, 30.0f, "SKILL", skillName).damage;
+                        right.debuffDefTurns = Math.max(right.debuffDefTurns, 2);
                     }
-                    st.addLog(actor.name + " 挥斩重击 " + main.name + " 造成 " + hit.damage + " 伤"
-                            + (splashDmg > 0 ? "（溅射周围 " + splashDmg + " 伤）" : ""));
+                    st.addEvent(0, actorSlot, actualIdx, "SKILL", actor.charId, actor.name, skillName,
+                            actor.element, hit.damage + splashDmg, hit.crit,
+                            actor.name + " 施放【" + skillName + "】挂上破甲 造成 -" + (hit.damage + splashDmg));
+                    st.addLog(actor.name + "【" + skillName + "】重击 " + main.name + " -" + hit.damage
+                            + (splashDmg > 0 ? "（溅射 -" + splashDmg + "）" : "") + "，附加【破甲】2回合！");
                 }
             }
         }
     }
 
-    private static void executeAllyUltimate(ServerPlayer player, BattleState st, BattleState.AllyUnit actor, int targetIdx) {
+    private static void executeAllyUltimate(ServerPlayer player, BattleState st, int actorSlot,
+                                            BattleState.AllyUnit actor, int targetIdx) {
         actor.energy = 0f;
-        player.getLevel().playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.8f, 1.35f);
+        String ultName = CharacterData.getUltNameFor(actor.charId);
+        player.getLevel().playSound(null, player.blockPosition(), SoundEvents.END_PORTAL_SPAWN, SoundSource.PLAYERS, 0.85f, 1.35f);
 
         switch (actor.role) {
             case CharacterData.ROLE_HEALER -> {
-                float healAmt = (280f + actor.maxHp * 0.38f) * actor.talentScale;
+                float healAmt = (280f + actor.maxHp * 0.36f) * actor.talentScale;
+                float waterShield = 140f * actor.talentScale;
                 for (BattleState.AllyUnit a : st.allies) {
                     if (a.isAlive()) {
                         a.hp = Math.min(a.maxHp, a.hp + healAmt);
+                        a.shield = Math.max(a.shield, waterShield);
                         a.debuffBurnTurns = 0;
                     }
                 }
-                st.addLog("【终结技插队】" + actor.name + " 全队急救！所有人恢复 " + Math.round(healAmt) + " 生命并净化负面！");
+                st.skillPoints = Math.min(st.maxSkillPoints, st.skillPoints + 1);
+                st.addEvent(0, actorSlot, -1, "ULT", actor.charId, actor.name, ultName,
+                        actor.element, Math.round(healAmt), true,
+                        "★ 终结技【" + ultName + "】全队回血+" + Math.round(healAmt) + " 套盾且战技点+1！");
+                st.addLog("【终结技插队】" + actor.name + " 展开【" + ultName + "】！全队回血 +" + Math.round(healAmt) + "、套盾 +140 并回复 1 战技点！");
             }
             case CharacterData.ROLE_SHIELDER -> {
-                float shieldAmt = (260f + actor.def * 2.0f) * actor.talentScale;
+                float shieldAmt = (270f + actor.def * 2.0f) * actor.talentScale;
                 for (BattleState.AllyUnit a : st.allies) {
                     if (a.isAlive()) a.shield = Math.max(a.shield, shieldAmt);
                 }
                 int dmg = 0;
                 for (BattleState.EnemyUnit e : st.enemies) {
-                    if (e.isAlive()) dmg += dealDamageToEnemy(player, st, actor, e, 1.3f, 50.0f).damage;
+                    if (e.isAlive()) dmg += dealDamageToEnemy(player, st, actorSlot, actor, e, 1.35f, 50.0f, "ULT", ultName).damage;
                 }
-                st.addLog("【终结技插队】" + actor.name + " 铸就全队重盾 " + Math.round(shieldAmt) + "，并震伤敌方 " + dmg + " 伤！");
+                st.addEvent(0, actorSlot, -1, "ULT", actor.charId, actor.name, ultName,
+                        actor.element, Math.round(shieldAmt), true,
+                        "★ 终结技【" + ultName + "】重盾 +" + Math.round(shieldAmt) + " 震伤敌方 -" + dmg);
+                st.addLog("【终结技插队】" + actor.name + "【" + ultName + "】全队重盾 " + Math.round(shieldAmt) + "，震伤敌方 " + dmg + "！");
             }
             case CharacterData.ROLE_BUFFER -> {
                 st.skillPoints = Math.min(st.maxSkillPoints, st.skillPoints + 2);
@@ -508,36 +875,65 @@ public class TurnBasedCombatManager {
                         a.buffSpdTurns = 3;
                     }
                 }
-                st.addLog("【终结技插队】" + actor.name + " 紧急调度！立刻恢复 2 点战技点并强化全队 3 回合！");
+                st.addEvent(0, actorSlot, -1, "ULT", actor.charId, actor.name, ultName,
+                        actor.element, 2, true,
+                        "★ 终结技【" + ultName + "】战技点+2 全队强化3回合！");
+                st.addLog("【终结技插队】" + actor.name + "【" + ultName + "】立刻恢复 2 点战技点并强化全队 3 回合！");
             }
             case CharacterData.ROLE_SINGLE -> {
                 BattleState.EnemyUnit target = pickLivingEnemy(st, targetIdx);
                 if (target != null) {
-                    HitResult hit = dealDamageToEnemy(player, st, actor, target, 3.6f, 110.0f);
-                    st.addLog("【终结技插队】" + actor.name + " 致命穿透命中 " + target.name + "，打出 " + hit.damage + " 巨额伤害！");
+                    int tidx = st.enemies.indexOf(target);
+                    float mult = target.broken ? 4.15f : 3.60f;
+                    HitResult hit = dealDamageToEnemy(player, st, actorSlot, actor, target, mult, 110.0f, "ULT", ultName);
+                    st.addEvent(0, actorSlot, tidx, "ULT", actor.charId, actor.name, ultName,
+                            actor.element, hit.damage, true,
+                            "★ 终结技【" + ultName + "】穿透 " + target.name + " -" + hit.damage + "！");
+                    st.addLog("【终结技插队】" + actor.name + "【" + ultName + "】穿透命中 " + target.name + "，打出 " + hit.damage + " 巨额伤害！");
                 }
             }
             case CharacterData.ROLE_AOE -> {
                 int dmg = 0;
                 for (BattleState.EnemyUnit e : st.enemies) {
-                    if (e.isAlive()) dmg += dealDamageToEnemy(player, st, actor, e, 1.95f, 70.0f).damage;
+                    if (e.isAlive()) {
+                        dmg += dealDamageToEnemy(player, st, actorSlot, actor, e, 2.05f, 70.0f, "ULT", ultName).damage;
+                        if (e.isAlive() && e.statusTurns == 0) {
+                            e.statusEffect = "AIR_BLEED";
+                            e.statusTurns = 2;
+                        }
+                    }
                 }
-                st.addLog("【终结技插队】" + actor.name + " 全场压制轰炸，共造成 " + dmg + " 点伤害！");
+                st.addEvent(0, actorSlot, -1, "ULT", actor.charId, actor.name, ultName,
+                        actor.element, dmg, true,
+                        "★ 终结技【" + ultName + "】全场风暴累计 -" + dmg + "！");
+                st.addLog("【终结技插队】" + actor.name + "【" + ultName + "】全屏风暴打击，共造成 " + dmg + " 伤并附带撕裂！");
             }
-            default -> { // BALANCED
+            default -> { // BALANCED (Lin Ye: 超载崩岩斩 + 余震)
                 BattleState.EnemyUnit main = pickLivingEnemy(st, targetIdx);
                 if (main != null) {
                     int actualIdx = st.enemies.indexOf(main);
-                    HitResult hit = dealDamageToEnemy(player, st, actor, main, 2.55f, 90.0f);
+                    boolean bonusAftershock = main.broken || main.debuffDefTurns > 0;
+                    HitResult hit = dealDamageToEnemy(player, st, actorSlot, actor, main, 2.60f, 90.0f, "ULT", ultName);
                     int splash = 0;
                     if (actualIdx - 1 >= 0 && st.enemies.get(actualIdx - 1).isAlive()) {
-                        splash += dealDamageToEnemy(player, st, actor, st.enemies.get(actualIdx - 1), 1.40f, 55.0f).damage;
+                        splash += dealDamageToEnemy(player, st, actorSlot, actor, st.enemies.get(actualIdx - 1), 1.45f, 55.0f, "ULT", ultName).damage;
                     }
                     if (actualIdx + 1 < st.enemies.size() && st.enemies.get(actualIdx + 1).isAlive()) {
-                        splash += dealDamageToEnemy(player, st, actor, st.enemies.get(actualIdx + 1), 1.40f, 55.0f).damage;
+                        splash += dealDamageToEnemy(player, st, actorSlot, actor, st.enemies.get(actualIdx + 1), 1.45f, 55.0f, "ULT", ultName).damage;
                     }
-                    st.addLog("【终结技插队】" + actor.name + " 全力重击 " + main.name + " 打出 " + hit.damage
-                            + " 伤" + (splash > 0 ? " + 扩散 " + splash + " 伤！" : "！"));
+                    int total = hit.damage + splash;
+                    if (bonusAftershock) {
+                        for (BattleState.EnemyUnit e : st.enemies) {
+                            if (e.isAlive()) {
+                                total += dealDamageToEnemy(player, st, actorSlot, actor, e, 0.80f, 20.0f, "ULT", ultName).damage;
+                            }
+                        }
+                    }
+                    st.addEvent(0, actorSlot, actualIdx, "ULT", actor.charId, actor.name, ultName,
+                            actor.element, total, true,
+                            "★ 终结技【" + ultName + "】" + (bonusAftershock ? "+崩岩余震 " : "") + "总计 -" + total + "！");
+                    st.addLog("【终结技插队】" + actor.name + "【" + ultName + "】打出 " + hit.damage
+                            + (bonusAftershock ? "（触发全屏崩岩余震，合计 " + total + " 伤！）" : " 伤！"));
                 }
             }
         }
@@ -545,15 +941,17 @@ public class TurnBasedCombatManager {
 
     private record HitResult(int damage, boolean crit) {}
 
-    private static HitResult dealDamageToEnemy(ServerPlayer player, BattleState st, BattleState.AllyUnit actor,
-                                               BattleState.EnemyUnit enemy, float mult, float toughnessCost) {
+    private static HitResult dealDamageToEnemy(ServerPlayer player, BattleState st, int actorSlot,
+                                               BattleState.AllyUnit actor, BattleState.EnemyUnit enemy,
+                                               float mult, float toughnessCost,
+                                               String sourceAnimType, String skillName) {
         Random rng = player.getRandom();
         float atk = actor.getEffectiveAtk() * actor.talentScale;
         float bonus = 1.0f + actor.elemDmgBonus / 100.0f;
         boolean crit = rng.nextFloat() * 100.0f < actor.critRate;
         float critMult = crit ? (1.0f + actor.critDmg / 100.0f) : 1.0f;
 
-        float defShred = "EARTH_SHRED".equals(enemy.statusEffect) ? 0.72f : 1.0f;
+        float defShred = ("EARTH_SHRED".equals(enemy.statusEffect) || enemy.debuffDefTurns > 0) ? 0.72f : 1.0f;
         float defMult = 240.0f / (240.0f + enemy.def * defShred);
         float shieldMult = enemy.shieldProtected ? 0.20f : (enemy.broken ? 1.15f : 0.90f);
 
@@ -562,17 +960,18 @@ public class TurnBasedCombatManager {
 
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.PLAYER_ATTACK_STRONG, SoundSource.PLAYERS, 0.8f, crit ? 1.3f : 1.0f);
 
-        // Toughness reduction if element matches enemy weakness
         if (!enemy.broken && enemy.hasWeakness(actor.element)) {
             enemy.toughness = Math.max(0f, enemy.toughness - toughnessCost);
             if (enemy.toughness <= 0f) {
-                triggerWeaknessBreak(player, st, actor, enemy);
+                triggerWeaknessBreak(player, st, actorSlot, actor, enemy, sourceAnimType);
             }
         }
         return new HitResult(dmg, crit);
     }
 
-    private static void triggerWeaknessBreak(ServerPlayer player, BattleState st, BattleState.AllyUnit actor, BattleState.EnemyUnit enemy) {
+    private static void triggerWeaknessBreak(ServerPlayer player, BattleState st, int breakerSlot,
+                                             BattleState.AllyUnit actor, BattleState.EnemyUnit enemy,
+                                             String sourceAnimType) {
         enemy.broken = true;
         enemy.actionValue += 38.0f;
         int breakDmg = Math.round(80f + actor.atk * 0.65f);
@@ -589,9 +988,12 @@ public class TurnBasedCombatManager {
             default -> enemy.statusEffect = "FIRE_BURN";
         }
 
+        int eIdx = st.enemies.indexOf(enemy);
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.SHIELD_BREAK, SoundSource.PLAYERS, 1.1f, 0.9f);
-        st.addLog("【弱点击破！】" + actor.name + "(" + BattleState.getElementShort(actor.element) + ") 击破了 "
-                + enemy.name + "，附加【" + BattleState.getStatusDisplay(enemy.statusEffect) + "】并造成 " + breakDmg + " 破盾伤！");
+        st.addEvent(0, breakerSlot, eIdx, "BREAK", actor.charId, actor.name, "弱点击破",
+                actor.element, breakDmg, true,
+                "💥 弱点击破！" + enemy.name + " 陷入【" + BattleState.getStatusDisplay(enemy.statusEffect) + "】 -" + breakDmg);
+        st.addLog("【弱点击破！】" + actor.name + " 击破了 " + enemy.name + "，造成 " + breakDmg + " 破盾伤！");
 
         // Boss Phase 2 Ultimate Interrupt check
         if (enemy.isBossCore && enemy.chargingUlt) {
@@ -601,6 +1003,27 @@ public class TurnBasedCombatManager {
             enemy.hp = Math.max(0f, enemy.hp - overloadDmg);
             enemy.actionValue += 50.0f;
             st.addLog("【蓄力打断！】挖掘机炉心过载反噬，自损 " + overloadDmg + " 生命并陷入大硬直！");
+        }
+
+        // Chen Feng Passive Talent: 【乘风追击】 upon any ally triggering Weakness Break (no infinite self-recursion)
+        if (!"FOLLOWUP".equals(sourceAnimType)) {
+            int chenIdx = findAllyIndex(st, "chenfeng");
+            if (chenIdx >= 0) {
+                BattleState.AllyUnit chen = st.allies.get(chenIdx);
+                if (chen.isAlive()) {
+                    chen.energy = Math.min(chen.maxEnergy, chen.energy + 12f);
+                    int fDmg = 0;
+                    for (BattleState.EnemyUnit e : st.enemies) {
+                        if (e.isAlive()) {
+                            fDmg += dealDamageToEnemy(player, st, chenIdx, chen, e, 0.70f, 20.0f, "FOLLOWUP", "乘风追击").damage;
+                        }
+                    }
+                    st.addEvent(0, chenIdx, -1, "FOLLOWUP", chen.charId, chen.name, "乘风追击",
+                            chen.element, fDmg, false,
+                            "⚡ 陈风天赋触发【乘风追击】！横扫全敌 -" + fDmg);
+                    st.addLog("【天赋追击】陈风抓住破盾空档发动【乘风追击】，对敌全体追加 " + fDmg + " 点气伤！");
+                }
+            }
         }
     }
 
@@ -667,7 +1090,9 @@ public class TurnBasedCombatManager {
     }
 
     private static void executeEnemyTurn(ServerPlayer player, BattleState st, BattleState.EnemyUnit enemy) {
-        // Apply DoT status at start of enemy turn
+        int enemyIdx = st.enemies.indexOf(enemy);
+        if (enemy.debuffDefTurns > 0) enemy.debuffDefTurns--;
+
         if (enemy.statusTurns > 0) {
             if ("AIR_BLEED".equals(enemy.statusEffect) || "FIRE_BURN".equals(enemy.statusEffect)) {
                 int dot = Math.round(enemy.maxHp * 0.08f + 45f);
@@ -682,7 +1107,7 @@ public class TurnBasedCombatManager {
         if (enemy.broken) {
             enemy.broken = false;
             enemy.toughness = enemy.maxToughness;
-            st.addLog(enemy.name + " 从弱点击破中恢复了行动能力，韧性条重置。");
+            st.addLog(enemy.name + " 从弱点击破中恢复行动，韧性条重置。");
             if (enemy.isBossCore && st.bossPhase == 2 && !enemy.chargingUlt) {
                 enemy.chargingUlt = true;
                 enemy.chargeCountdown = 2;
@@ -697,36 +1122,59 @@ public class TurnBasedCombatManager {
             if (enemy.chargeCountdown <= 0) {
                 enemy.chargingUlt = false;
                 float aoeDmg = enemy.atk * 2.1f;
+                int avgDmg = 0;
                 for (BattleState.AllyUnit a : st.allies) {
                     if (a.isAlive()) {
                         float dmg = aoeDmg * (140f / (140f + a.def));
                         applyDamageToAlly(a, dmg);
                         a.debuffBurnTurns = 2;
                         a.energy = Math.min(a.maxEnergy, a.energy + 15f);
+                        avgDmg = Math.round(dmg);
                     }
                 }
                 player.getLevel().playSound(null, player.blockPosition(), SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 1.1f, 0.8f);
-                st.addLog("【全屏高温喷射！】大型工程挖掘机完成蓄力释放烈焰冲击！我方全体受创并陷入灼烧！");
+                st.addEvent(1, enemyIdx, -1, "BOSS_AOE", enemy.id, enemy.name, "全屏高温喷射", "FIRE", avgDmg, true,
+                        "🔥 " + enemy.name + " 释放【全屏高温喷射】！我方全体受创并灼烧！");
+                st.addLog("【全屏高温喷射！】" + enemy.name + " 蓄力完成释放烈焰冲击！我方全体受创并灼烧！");
                 return;
             } else {
                 st.addLog("【炉心警报】" + enemy.name + " 蓄力倒计时剩余 " + enemy.chargeCountdown + " 回合！快用【水/火】击破打断！");
             }
         }
 
-        // Normal Enemy Attack on a living ally (Shielders slightly favored if alive)
         List<BattleState.AllyUnit> living = st.allies.stream().filter(BattleState.AllyUnit::isAlive).toList();
         if (living.isEmpty()) return;
+
+        // If enemy intended an AOE震荡炮 attack, execute AOE
+        if (enemy.intentText != null && enemy.intentText.contains("全体")) {
+            int maxHit = 0;
+            for (BattleState.AllyUnit a : living) {
+                float dmg = Math.max(10f, enemy.atk * 0.72f * (150f / (150f + a.def)));
+                applyDamageToAlly(a, dmg);
+                a.energy = Math.min(a.maxEnergy, a.energy + 10f);
+                maxHit = Math.max(maxHit, Math.round(dmg));
+            }
+            st.addEvent(1, enemyIdx, -1, "BOSS_AOE", enemy.id, enemy.name, "全体震荡炮", "FIRE", maxHit, false,
+                    enemy.name + " 发射【全体震荡炮】命中我方全体 (-" + maxHit + ")");
+            st.addLog(enemy.name + " 发射【全体震荡炮】，我方全员受到约 " + maxHit + " 点范围伤害。");
+            return;
+        }
+
+        // Single-target attack
         BattleState.AllyUnit target = living.get(player.getRandom().nextInt(living.size()));
         for (BattleState.AllyUnit a : living) {
-            if (CharacterData.ROLE_SHIELDER.equals(a.role) && player.getRandom().nextFloat() < 0.55f) {
+            if (CharacterData.ROLE_SHIELDER.equals(a.role) && player.getRandom().nextFloat() < 0.60f) {
                 target = a;
                 break;
             }
         }
-
+        int targetSlot = st.allies.indexOf(target);
         float dmg = Math.max(12f, enemy.atk * (150f / (150f + target.def)));
         applyDamageToAlly(target, dmg);
         target.energy = Math.min(target.maxEnergy, target.energy + 12f);
+
+        st.addEvent(1, enemyIdx, targetSlot, "ENEMY_ATK", enemy.id, enemy.name, "机械冲击", "EARTH", Math.round(dmg), false,
+                enemy.name + " 攻击了 " + target.name + " (-" + Math.round(dmg) + ")");
         st.addLog(enemy.name + " 攻击了 " + target.name + "，造成 " + Math.round(dmg) + " 点伤害。");
     }
 
@@ -751,7 +1199,6 @@ public class TurnBasedCombatManager {
                 st.addLog("【双臂拆解！】护罩已破碎！大型工程挖掘机本体瘫痪暴露，全员集火输出！");
             }
             if (core != null && !core.isAlive()) {
-                // Transition to Phase 2!
                 st.bossPhase = 2;
                 st.enemies.clear();
                 BattleState.EnemyUnit p2 = makeEnemy("boss_core_p2", "大型工程挖掘机·过载核心", 18, 1250f, 120f, 118f, 98, false, "WATER", "FIRE");
@@ -803,7 +1250,6 @@ public class TurnBasedCombatManager {
             default -> 18 + rng.nextInt(12);
         };
 
-        // Sync surviving ally HP back to TeamCapability + add playerExp
         player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             for (BattleState.AllyUnit au : st.allies) {
                 CharacterData cd = team.getCharacterById(au.charId);
@@ -825,7 +1271,6 @@ public class TurnBasedCombatManager {
         giveItem(player, new ItemStack(ModItems.CREDIT_COIN.get(), credits));
         drops.add("信用币 x" + credits);
 
-        // Strictly controlled, low-inflation material drops
         switch (enc) {
             case "domain_exp" -> {
                 giveItem(player, new ItemStack(ModItems.EXP_BOTTLE.get(), 3));
@@ -854,7 +1299,6 @@ public class TurnBasedCombatManager {
                 drops.add("角色经验瓶 x4 · 强化粉尘 x5");
             }
             default -> {
-                // Normal overworld encounter: only 1 low-tier part, zero equipment XP!
                 int pick = rng.nextInt(3);
                 if (pick == 0) {
                     giveItem(player, new ItemStack(ModItems.CHAR_MAT_1.get(), 1));
@@ -897,7 +1341,6 @@ public class TurnBasedCombatManager {
         }
 
         if (!st.victory && st.finished) {
-            // Defeat respawn at safe spot with 50% HP
             if (player.getX() > 90 || session.returnPos.x > 90) {
                 player.teleportTo(level, 110.5, 61.0, 28.5, 270.0f, 0.0f);
             } else {

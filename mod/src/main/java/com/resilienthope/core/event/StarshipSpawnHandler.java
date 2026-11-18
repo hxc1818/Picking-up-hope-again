@@ -34,8 +34,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import java.util.List;
 
 public class StarshipSpawnHandler {
-    private static final String SPAWN_TAG = "picking_hope_v2_clean_init_v3";
-    private static final String V2_WORLD_TAG = "picking_hope_v2_custom_world_v3";
+    private static final String SPAWN_TAG = "picking_hope_v2_clean_init_v4";
+    private static final String V2_WORLD_TAG = "picking_hope_v2_custom_world_v4";
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {

@@ -248,7 +248,7 @@ public class CharacterProfileScreen extends Screen {
             font.drawShadow(ps, new TextComponent("【技能效果 (天赋Lv." + active.getTalentLevel() + ")】"), mx + 5, sy + 48, 0xFF7DD3FC);
 
             int textY = sy + 60;
-            for (String desc : new String[]{active.getBasicDesc(), active.getSkillDesc(), active.getUltDesc()}) {
+            for (String desc : new String[]{active.getBasicDesc(), active.getSkillDesc(), active.getUltDesc(), active.getPassiveDesc()}) {
                 for (FormattedCharSequence line : font.split(new TextComponent(desc), mw - 10)) {
                     if (textY + 9 <= pTop + pH - 3) {
                         font.draw(ps, line, mx + 5, textY, 0xFFCBD5E1);

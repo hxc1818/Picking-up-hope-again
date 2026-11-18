@@ -28,23 +28,47 @@ public class TurnBasedBattleScreen extends Screen {
     private static final ResourceLocation TEX_ZHOU = new ResourceLocation(PickingHopeCore.MOD_ID, "textures/gui/portrait_zhou.png");
 
     private BattleState state;
+    private final BattleStageRenderer stageRenderer = new BattleStageRenderer();
     private int selectedEnemyIdx = 0;
     private int pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
     private int introTicks = 12;
+    private int pulseTicks = 0;
 
     private SciFiButton basicBtn;
     private SciFiButton skillBtn;
     private SciFiButton confirmBtn;
     private SciFiButton fleeBtn;
 
+    // Last rendered floating enemy plate boxes for click selection
+    private final List<int[]> plateBoxes = new ArrayList<>(); // {enemyIdx, x, y, w, h}
+
     public TurnBasedBattleScreen(BattleState initialState) {
-        super(new TextComponent("回合制战术舞台"));
+        super(new TextComponent("3D 回合制战术舞台"));
         this.state = initialState;
+        if (initialState != null) {
+            if (!initialState.events.isEmpty()) {
+                stageRenderer.enqueueEvents(initialState.events);
+            }
+            // In Tutorial 1/2/3 step 1, pre-select Skill [E] to feel snappy
+            if (initialState.tutorialId > 0 && initialState.tutorialStep == 1 && initialState.skillPoints > 0) {
+                pendingActionMode = TurnBasedCombatManager.ACTION_SKILL;
+            }
+        }
         ensureValidTarget();
     }
 
     public void updateState(BattleState newState) {
         this.state = newState;
+        if (newState != null && !newState.events.isEmpty()) {
+            stageRenderer.enqueueEvents(newState.events);
+        }
+        if (newState != null && newState.tutorialId > 0) {
+            if (newState.tutorialHighlightBtn == 1 && newState.skillPoints > 0) {
+                pendingActionMode = TurnBasedCombatManager.ACTION_SKILL;
+            } else if (newState.tutorialHighlightBtn == 0) {
+                pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
+            }
+        }
         ensureValidTarget();
         refreshButtons();
     }
@@ -75,46 +99,61 @@ public class TurnBasedBattleScreen extends Screen {
         refreshButtons();
     }
 
+    private BattleState.AllyUnit getActiveActor() {
+        if (state == null || state.activeAllyIndex < 0 || state.activeAllyIndex >= state.allies.size()) return null;
+        return state.allies.get(state.activeAllyIndex);
+    }
+
     private void refreshButtons() {
         clearWidgets();
         if (state == null) return;
 
         if (state.finished) {
-            int cw = 150;
-            addRenderableWidget(new SciFiButton(this.width / 2 - cw / 2, this.height / 2 + 40, cw, 20,
+            int cw = 156;
+            addRenderableWidget(new SciFiButton(this.width / 2 - cw / 2, this.height / 2 + 42, cw, 20,
                     new TextComponent("[Space] 返回大地图"),
                     btn -> sendAction(TurnBasedCombatManager.ACTION_EXIT_FINISHED, -1), 0xFFFBBF24));
             return;
         }
 
-        int rightPanelW = 166;
-        int ctrlX = this.width - rightPanelW - 8;
-        int ctrlY = this.height - 76;
+        BattleState.AllyUnit actor = getActiveActor();
+        String basicTitle = actor != null ? CharacterData.getBasicNameFor(actor.charId) : "普攻";
+        String skillTitle = actor != null ? CharacterData.getSkillNameFor(actor.charId) : "战技";
+        if (basicTitle.length() > 4) basicTitle = basicTitle.substring(0, 4);
+        if (skillTitle.length() > 4) skillTitle = skillTitle.substring(0, 4);
 
-        this.basicBtn = addRenderableWidget(new SciFiButton(ctrlX + 4, ctrlY + 20, 77, 20,
-                new TextComponent("[Q]普攻 +1"), btn -> {
+        int rightPanelW = 172;
+        int ctrlX = this.width - rightPanelW - 6;
+        int ctrlY = this.height - 86;
+
+        this.basicBtn = addRenderableWidget(new SciFiButton(ctrlX + 4, ctrlY + 32, 80, 20,
+                new TextComponent("[Q]" + basicTitle), btn -> {
             if (pendingActionMode == TurnBasedCombatManager.ACTION_BASIC) executePendingAction();
             else pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
         }, 0xFF4ADE80));
 
-        this.skillBtn = addRenderableWidget(new SciFiButton(ctrlX + 85, ctrlY + 20, 77, 20,
-                new TextComponent("[E]战技 -1"), btn -> {
+        this.skillBtn = addRenderableWidget(new SciFiButton(ctrlX + 88, ctrlY + 32, 80, 20,
+                new TextComponent("[E]" + skillTitle), btn -> {
             if (state.skillPoints <= 0) return;
             if (pendingActionMode == TurnBasedCombatManager.ACTION_SKILL) executePendingAction();
             else pendingActionMode = TurnBasedCombatManager.ACTION_SKILL;
         }, 0xFF38BDF8));
         this.skillBtn.active = state.skillPoints > 0;
 
-        this.confirmBtn = addRenderableWidget(new SciFiButton(ctrlX + 4, ctrlY + 44, 108, 20,
+        this.confirmBtn = addRenderableWidget(new SciFiButton(ctrlX + 4, ctrlY + 56, 114, 20,
                 new TextComponent("[Space] 确认出手"), btn -> executePendingAction(), 0xFFFBBF24));
 
-        this.fleeBtn = addRenderableWidget(new SciFiButton(ctrlX + 116, ctrlY + 44, 46, 20,
+        this.fleeBtn = addRenderableWidget(new SciFiButton(ctrlX + 122, ctrlY + 56, 46, 20,
                 new TextComponent("撤退"), btn -> sendAction(TurnBasedCombatManager.ACTION_FLEE, -1), 0xFFEF4444));
         this.fleeBtn.active = state.canFlee;
     }
 
     private void executePendingAction() {
         if (state == null || state.finished) return;
+        if (stageRenderer.isAnimating()) {
+            stageRenderer.skipAllAnimations();
+            return;
+        }
         if (pendingActionMode == TurnBasedCombatManager.ACTION_SKILL && state.skillPoints <= 0) {
             pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
         }
@@ -122,6 +161,9 @@ public class TurnBasedBattleScreen extends Screen {
     }
 
     private void sendAction(int type, int allyUltIdx) {
+        if (stageRenderer.isAnimating()) {
+            stageRenderer.skipAllAnimations();
+        }
         PacketHandler.INSTANCE.sendToServer(new PacketBattleAction(type, selectedEnemyIdx, allyUltIdx));
     }
 
@@ -141,6 +183,8 @@ public class TurnBasedBattleScreen extends Screen {
     public void tick() {
         super.tick();
         if (introTicks > 0) introTicks--;
+        pulseTicks++;
+        stageRenderer.tick(state);
     }
 
     @Override
@@ -155,14 +199,22 @@ public class TurnBasedBattleScreen extends Screen {
         }
 
         if (keyCode == GLFW.GLFW_KEY_Q) {
-            if (pendingActionMode == TurnBasedCombatManager.ACTION_BASIC) executePendingAction();
-            else pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
+            if (pendingActionMode == TurnBasedCombatManager.ACTION_BASIC && !stageRenderer.isAnimating()) {
+                executePendingAction();
+            } else {
+                stageRenderer.skipAllAnimations();
+                pendingActionMode = TurnBasedCombatManager.ACTION_BASIC;
+            }
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_E) {
             if (state.skillPoints > 0) {
-                if (pendingActionMode == TurnBasedCombatManager.ACTION_SKILL) executePendingAction();
-                else pendingActionMode = TurnBasedCombatManager.ACTION_SKILL;
+                if (pendingActionMode == TurnBasedCombatManager.ACTION_SKILL && !stageRenderer.isAnimating()) {
+                    executePendingAction();
+                } else {
+                    stageRenderer.skipAllAnimations();
+                    pendingActionMode = TurnBasedCombatManager.ACTION_SKILL;
+                }
             }
             return true;
         }
@@ -194,32 +246,35 @@ public class TurnBasedBattleScreen extends Screen {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (state != null && !state.finished) {
-            int count = state.enemies.size();
-            int availW = this.width - 100;
-            int cardW = Math.min(130, Math.max(84, (availW - (count - 1) * 6) / Math.max(1, count)));
-            int totalW = count * (cardW + 6) - 6;
-            int startX = 92 + Math.max(0, (availW - totalW) / 2);
-            int enemyY = 28;
-            for (int i = 0; i < count; i++) {
-                int cx = startX + i * (cardW + 6);
-                if (mouseX >= cx && mouseX <= cx + cardW && mouseY >= enemyY && mouseY <= enemyY + 74) {
-                    if (state.enemies.get(i).isAlive()) {
-                        this.selectedEnemyIdx = i;
-                        return true;
-                    }
+            // 1. Click floating enemy plate or 3D enemy model hitbox
+            for (int[] box : plateBoxes) {
+                if (mouseX >= box[1] && mouseX <= box[1] + box[3] && mouseY >= box[2] && mouseY <= box[2] + box[4]) {
+                    this.selectedEnemyIdx = box[0];
+                    return true;
+                }
+            }
+            for (int i = 0; i < stageRenderer.enemyAnchors.size() && i < state.enemies.size(); i++) {
+                if (!state.enemies.get(i).isAlive()) continue;
+                var anc = stageRenderer.enemyAnchors.get(i);
+                int dx = (int) mouseX - anc.screenX();
+                int dy = (int) mouseY - anc.screenY();
+                if (dx * dx + dy * dy <= anc.hitRadius() * anc.hitRadius()) {
+                    this.selectedEnemyIdx = i;
+                    return true;
                 }
             }
 
-            int rightPanelW = 166;
-            int ctrlPanelX = this.width - rightPanelW - 8;
+            // 2. Click Ally Card for Ultimate Interrupt
+            int rightPanelW = 172;
+            int ctrlPanelX = this.width - rightPanelW - 6;
             int allyAvailW = ctrlPanelX - 14;
             int nAllies = Math.max(1, state.allies.size());
             int cardGap = 4;
-            int allyW = Math.min(86, (allyAvailW - (nAllies - 1) * cardGap) / nAllies);
-            int allyY = this.height - 76;
+            int allyW = Math.min(88, (allyAvailW - (nAllies - 1) * cardGap) / nAllies);
+            int allyY = this.height - 74;
             for (int i = 0; i < state.allies.size(); i++) {
                 int ax = 8 + i * (allyW + cardGap);
-                if (mouseX >= ax && mouseX <= ax + allyW && mouseY >= allyY && mouseY <= allyY + 70) {
+                if (mouseX >= ax && mouseX <= ax + allyW && mouseY >= allyY && mouseY <= allyY + 68) {
                     BattleState.AllyUnit u = state.allies.get(i);
                     if (u.isAlive() && u.energy >= u.maxEnergy) {
                         sendAction(TurnBasedCombatManager.ACTION_ULT, i);
@@ -247,14 +302,22 @@ public class TurnBasedBattleScreen extends Screen {
     public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
         if (state == null) return;
 
-        GuiComponent.fill(ps, 0, 0, this.width, this.height, 0x58060B14);
+        // Scenic tactical backdrop (space starship interior vs frozen cavern)
+        int topGrad = state.iceTheme ? 0x90071828 : 0x90080D16;
+        int botGrad = state.iceTheme ? 0xB80E2236 : 0xB80B1422;
+        fillGradient(ps, 0, 0, this.width, this.height, topGrad, botGrad);
 
+        // Render full 3D Battle Stage (3D characters, 3D mechs, 3D weapons, dash & slash VFX)
+        stageRenderer.renderStage(ps, font, this.width, this.height, state, selectedEnemyIdx, partialTicks);
+
+        // Render clean 2D Tactical HUD over 3D Stage
         renderTopHeader(ps);
         renderActionTimeline(ps);
-        renderEnemyCards(ps);
-        renderBattleLogs(ps);
+        renderEnemyFloatingPlates(ps);
         renderAllyCards(ps);
         renderSkillPointPanel(ps);
+        renderActionBanner(ps);
+        renderTutorialOverlay(ps);
 
         if (state.finished) {
             renderResultModal(ps);
@@ -269,23 +332,40 @@ public class TurnBasedBattleScreen extends Screen {
     }
 
     private void renderTopHeader(PoseStack ps) {
-        String title = "回合制战术 · 第 " + state.turnCount + " 回合"
+        String title = "3D 战术回合 · 第 " + state.turnCount + " 回合"
                 + ("boss_excavator".equals(state.encounterType) ? " | 阶段 " + state.bossPhase + "/2" : "");
-        GenshinHudOverlay.drawVoxelPanel(ps, 8, 4, this.width - 16, 18, 0xD00A111C, 0xFF284664, 0xFF38BDF8);
-        font.drawShadow(ps, new TextComponent(title), 14, 9, 0xFFE2E8F0);
-        String hint = this.width >= 500
-                ? "[Q]普攻  [E]战技  [1-4]大招  [A/D/Tab]选敌  [Space]确认"
-                : "[Q]普 [E]技 [1-4]大 [Tab]选敌";
-        font.draw(ps, new TextComponent(hint), this.width - font.width(hint) - 14, 9, 0xFF94A3B8);
+        GenshinHudOverlay.drawVoxelPanel(ps, 6, 4, this.width - 12, 18, 0xD00A111C, 0xFF284664, 0xFF38BDF8);
+        font.drawShadow(ps, new TextComponent(title), 12, 9, 0xFFE2E8F0);
+        String hint = stageRenderer.isAnimating()
+                ? "[Space] 跳过动画演出"
+                : (this.width >= 520 ? "[Q]普攻  [E]战技  [1-4]大招插队  [Tab/点击3D敌]选目标" : "[Q]普 [E]技 [1-4]大 [Tab]选敌");
+        font.draw(ps, new TextComponent(hint), this.width - font.width(hint) - 12, 9,
+                stageRenderer.isAnimating() ? 0xFFFBBF24 : 0xFF94A3B8);
+    }
+
+    private void renderActionBanner(PoseStack ps) {
+        BattleState.AnimEvent ev = stageRenderer.getCurrentAnim();
+        String txt = (ev != null && ev.bannerText != null && !ev.bannerText.isEmpty())
+                ? ev.bannerText
+                : (!state.logs.isEmpty() && state.tutorialId == 0 ? state.logs.get(state.logs.size() - 1) : "");
+        if (txt.isEmpty()) return;
+        if (state.tutorialId > 0 && state.tutorialStep > 0 && ev == null) return; // Don't crowd tutorial box
+
+        int bw = Math.min(this.width - 104, font.width(txt) + 18);
+        int bx = 82 + Math.max(0, (this.width - 88 - bw) / 2);
+        int by = 25;
+        int border = ev != null ? CharacterData.getElementColor(ev.element) : 0xFF38BDF8;
+        GenshinHudOverlay.drawVoxelPanel(ps, bx, by, bw, 16, 0xD809121E, border, 0xFFFBBF24);
+        font.drawShadow(ps, new TextComponent(txt), bx + (bw - font.width(txt)) / 2.0f, by + 4, 0xFFF8FAFC);
     }
 
     private void renderActionTimeline(PoseStack ps) {
-        int x = 8;
+        int x = 6;
         int y = 26;
-        int w = 78;
-        int h = this.height - 108;
-        GenshinHudOverlay.drawVoxelPanel(ps, x, y, w, h, 0xD009101A, 0xFF1E3A5F, 0xFF38BDF8);
-        font.draw(ps, new TextComponent("行动队列"), x + 16, y + 5, 0xFF7DD3FC);
+        int w = 72;
+        int h = this.height - 106;
+        GenshinHudOverlay.drawVoxelPanel(ps, x, y, w, h, 0xC809101A, 0xFF1E3A5F, 0xFF38BDF8);
+        font.draw(ps, new TextComponent("行动序"), x + 18, y + 5, 0xFF7DD3FC);
 
         record TimelineEntry(String label, float av, int color, boolean isCurrent, int warnCount) {}
         List<TimelineEntry> entries = new ArrayList<>();
@@ -305,144 +385,137 @@ public class TurnBasedBattleScreen extends Screen {
 
         int ey = y + 17;
         for (TimelineEntry te : entries) {
-            if (ey + 18 > y + h - 3) break;
+            if (ey + 17 > y + h - 3) break;
             int bg = te.isCurrent ? 0xD0263B52 : 0x90111B27;
-            GenshinHudOverlay.drawVoxelPanel(ps, x + 3, ey, w - 6, 16, bg, te.color, te.color);
+            GenshinHudOverlay.drawVoxelPanel(ps, x + 3, ey, w - 6, 15, bg, te.color, te.color);
             String shortName = te.label.length() > 4 ? te.label.substring(0, 4) : te.label;
             font.draw(ps, new TextComponent((te.isCurrent ? "▶" : "") + shortName), x + 5, ey + 4, te.color);
             String avStr = te.warnCount > 0 ? ("蓄" + te.warnCount) : String.valueOf(Math.round(te.av));
             font.draw(ps, new TextComponent(avStr), x + w - font.width(avStr) - 5, ey + 4, te.warnCount > 0 ? 0xFFFF5252 : 0xFF94A3B8);
-            ey += 18;
+            ey += 17;
         }
     }
 
-    private void renderEnemyCards(PoseStack ps) {
-        int count = state.enemies.size();
-        if (count == 0) return;
-        int availW = this.width - 100;
-        int cardW = Math.min(130, Math.max(84, (availW - (count - 1) * 6) / count));
-        int totalW = count * (cardW + 6) - 6;
-        int startX = 92 + Math.max(0, (availW - totalW) / 2);
-        int y = 28;
+    private void renderEnemyFloatingPlates(PoseStack ps) {
+        plateBoxes.clear();
+        if (state.enemies.isEmpty() || stageRenderer.enemyAnchors.isEmpty()) return;
 
-        for (int i = 0; i < count; i++) {
-            BattleState.EnemyUnit e = state.enemies.get(i);
-            int cx = startX + i * (cardW + 6);
-            boolean sel = (i == selectedEnemyIdx && e.isAlive());
-            int border = !e.isAlive() ? 0xFF28303D : (sel ? 0xFFFBBF24 : (e.chargingUlt ? 0xFFEF4444 : 0xFF334155));
+        List<Integer> living = new ArrayList<>();
+        for (int i = 0; i < state.enemies.size(); i++) {
+            if (state.enemies.get(i).isAlive()) living.add(i);
+        }
+        if (living.isEmpty()) return;
 
-            GenshinHudOverlay.drawVoxelPanel(ps, cx, y, cardW, 74,
-                    e.isAlive() ? (sel ? 0xD81B283A : 0xB80E1622) : 0x700A0E14, border, border);
+        int plateW = Math.min(96, Math.max(72, (this.width - 104) / Math.max(1, living.size()) - 4));
+        int plateH = 42;
+        int minAllowedX = 82;
+        int maxAllowedX = this.width - plateW - 6;
+        int minY = (state.tutorialId > 0 && state.tutorialStep > 0) ? 74 : 44;
 
-            if (sel) {
-                String tag = "▼ 锁定目标 ▼";
-                font.drawShadow(ps, new TextComponent(tag), cx + (cardW - font.width(tag)) / 2.0f, y - 9, 0xFFFBBF24);
+        // Compute non-overlapping horizontal slots aligned to each 3D enemy's screenX
+        List<int[]> positioned = new ArrayList<>();
+        for (int idx : living) {
+            if (idx >= stageRenderer.enemyAnchors.size()) continue;
+            var anc = stageRenderer.enemyAnchors.get(idx);
+            int px = Mth.clamp(anc.screenX() - plateW / 2, minAllowedX, Math.max(minAllowedX, maxAllowedX));
+            int py = Mth.clamp(anc.topY() - plateH - 6, minY, this.height - 135);
+            positioned.add(new int[]{idx, px, py});
+        }
+        positioned.sort(Comparator.comparingInt(a -> a[1]));
+        for (int k = 1; k < positioned.size(); k++) {
+            if (positioned.get(k)[1] < positioned.get(k - 1)[1] + plateW + 3) {
+                positioned.get(k)[1] = positioned.get(k - 1)[1] + plateW + 3;
             }
-
-            String title = e.name;
-            int maxTitleW = cardW - 34;
-            while (font.width(title) > maxTitleW && title.length() > 3) {
-                title = title.substring(0, title.length() - 1);
-            }
-            font.drawShadow(ps, new TextComponent(title), cx + 5, y + 5, e.isAlive() ? 0xFFF8FAFC : 0xFF64748B);
-            String lvStr = "Lv" + e.level;
-            font.draw(ps, new TextComponent(lvStr), cx + cardW - font.width(lvStr) - 4, y + 5, 0xFF94A3B8);
-
-            // Weaknesses
-            int wx = cx + 5;
-            font.draw(ps, new TextComponent("弱:"), wx, y + 17, 0xFF94A3B8);
-            wx += 16;
-            for (String w : e.weaknesses) {
-                int wCol = CharacterData.getElementColor(w);
-                GuiComponent.fill(ps, wx, y + 16, wx + 13, y + 26, 0xCC0B131E);
-                font.draw(ps, new TextComponent(BattleState.getElementShort(w)), wx + 2, y + 17, wCol);
-                wx += 15;
-            }
-
-            // White Toughness Bar
-            int barW = cardW - 10;
-            GuiComponent.fill(ps, cx + 5, y + 29, cx + 5 + barW, y + 34, 0xCC1E293B);
-            float tPct = Mth.clamp(e.toughness / Math.max(1f, e.maxToughness), 0f, 1f);
-            GuiComponent.fill(ps, cx + 5, y + 29, cx + 5 + (int) (barW * tPct), y + 34, e.broken ? 0xFF64748B : 0xFFF8FAFC);
-
-            // Red HP Bar
-            GuiComponent.fill(ps, cx + 5, y + 37, cx + 5 + barW, y + 46, 0xCC1E293B);
-            float hPct = Mth.clamp(e.hp / Math.max(1f, e.maxHp), 0f, 1f);
-            GuiComponent.fill(ps, cx + 5, y + 37, cx + 5 + (int) (barW * hPct), y + 46, 0xFFEF4444);
-            String hpStr = e.isAlive() ? ((int) e.hp + "/" + (int) e.maxHp) : "已击毁";
-            font.draw(ps, new TextComponent(hpStr), cx + (cardW - font.width(hpStr)) / 2, y + 38, 0xFFFFFFFF);
-
-            // Status tags
-            StringBuilder statusSb = new StringBuilder();
-            if (e.shieldProtected) statusSb.append("[双臂减伤] ");
-            if (e.broken) statusSb.append("[破盾] ");
-            if (e.chargingUlt) statusSb.append("[蓄力:").append(e.chargeCountdown).append("] ");
-            String sDisp = BattleState.getStatusDisplay(e.statusEffect);
-            if (!sDisp.isEmpty() && e.statusTurns > 0) statusSb.append("[").append(sDisp).append("]");
-
-            String stStr = statusSb.toString();
-            if (!stStr.isEmpty()) {
-                for (FormattedCharSequence line : font.split(new TextComponent(stStr), barW)) {
-                    font.draw(ps, line, cx + 5, y + 51,
-                            e.chargingUlt ? 0xFFFF5252 : (e.broken ? 0xFFFBBF24 : 0xFF7DD3FC));
-                    break;
+        }
+        for (int k = positioned.size() - 1; k >= 0; k--) {
+            if (positioned.get(k)[1] > maxAllowedX) {
+                positioned.get(k)[1] = maxAllowedX;
+                if (k > 0 && positioned.get(k - 1)[1] > positioned.get(k)[1] - plateW - 3) {
+                    positioned.get(k - 1)[1] = positioned.get(k)[1] - plateW - 3;
                 }
             }
         }
-    }
 
-    private void renderBattleLogs(PoseStack ps) {
-        int x = 92;
-        int y = 106;
-        int w = this.width - 100;
-        int h = Math.max(36, this.height - 190);
-        GenshinHudOverlay.drawVoxelPanel(ps, x, y, w, h, 0xA8090F18, 0xFF1E293B, 0xFF38BDF8);
+        for (int[] p : positioned) {
+            int i = p[0];
+            int cx = p[1];
+            int cy = p[2];
+            BattleState.EnemyUnit e = state.enemies.get(i);
+            plateBoxes.add(new int[]{i, cx, cy, plateW, plateH});
 
-        List<FormattedCharSequence> wrappedLines = new ArrayList<>();
-        List<Integer> lineColors = new ArrayList<>();
-        for (String line : state.logs) {
-            int col = line.contains("弱点击破") || line.contains("终结技") ? 0xFFFBBF24
-                    : (line.contains("警告") || line.contains("喷射") ? 0xFFF87171 : 0xFFE2E8F0);
-            for (FormattedCharSequence seq : font.split(new TextComponent("• " + line), w - 14)) {
-                wrappedLines.add(seq);
-                lineColors.add(col);
+            boolean sel = (i == selectedEnemyIdx);
+            int border = sel ? 0xFFFBBF24 : (e.chargingUlt ? 0xFFEF4444 : 0xFF334155);
+            GenshinHudOverlay.drawVoxelPanel(ps, cx, cy, plateW, plateH, sel ? 0xDC1B293C : 0xC00D1520, border, border);
+
+            if (sel) {
+                String tag = "▼ 锁定";
+                font.drawShadow(ps, new TextComponent(tag), cx + (plateW - font.width(tag)) / 2.0f, cy - 9, 0xFFFBBF24);
             }
-        }
 
-        int maxShow = Math.max(2, (h - 8) / 11);
-        int start = Math.max(0, wrappedLines.size() - maxShow);
-        int ly = y + 5;
-        for (int i = start; i < wrappedLines.size(); i++) {
-            if (ly + 9 > y + h - 3) break;
-            font.draw(ps, wrappedLines.get(i), x + 7, ly, lineColors.get(i));
-            ly += 11;
+            String title = e.name;
+            int maxTitleW = plateW - 8;
+            while (font.width(title) > maxTitleW && title.length() > 3) {
+                title = title.substring(0, title.length() - 1);
+            }
+            font.drawShadow(ps, new TextComponent(title), cx + 4, cy + 3, 0xFFF8FAFC);
+
+            // Weaknesses + status badge
+            int wx = cx + 4;
+            font.draw(ps, new TextComponent("弱:"), wx, cy + 12, 0xFF94A3B8);
+            wx += 14;
+            for (String w : e.weaknesses) {
+                font.draw(ps, new TextComponent(BattleState.getElementShort(w)), wx, cy + 12, CharacterData.getElementColor(w));
+                wx += 11;
+            }
+            if (e.debuffDefTurns > 0) {
+                font.draw(ps, new TextComponent("破甲"), cx + plateW - 22, cy + 12, 0xFFFBBF24);
+            } else if (e.broken) {
+                font.draw(ps, new TextComponent("破盾"), cx + plateW - 22, cy + 12, 0xFFFBBF24);
+            }
+
+            // Toughness Bar + HP Bar
+            int barW = plateW - 8;
+            GuiComponent.fill(ps, cx + 4, cy + 21, cx + 4 + barW, cy + 24, 0xCC1E293B);
+            float tPct = Mth.clamp(e.toughness / Math.max(1f, e.maxToughness), 0f, 1f);
+            GuiComponent.fill(ps, cx + 4, cy + 21, cx + 4 + (int) (barW * tPct), cy + 24, e.broken ? 0xFF64748B : 0xFFF8FAFC);
+
+            GuiComponent.fill(ps, cx + 4, cy + 25, cx + 4 + barW, cy + 31, 0xCC1E293B);
+            float hPct = Mth.clamp(e.hp / Math.max(1f, e.maxHp), 0f, 1f);
+            GuiComponent.fill(ps, cx + 4, cy + 25, cx + 4 + (int) (barW * hPct), cy + 31, 0xFFEF4444);
+
+            String intent = e.intentText != null ? e.intentText : "";
+            int intentCol = intent.contains("全体") || intent.contains("蓄力") ? 0xFFFF6B6B : 0xFFFCD34D;
+            font.draw(ps, new TextComponent(intent), cx + 4, cy + 33, intentCol);
         }
     }
 
     private void renderAllyCards(PoseStack ps) {
-        int rightPanelW = 166;
-        int ctrlPanelX = this.width - rightPanelW - 8;
+        int rightPanelW = 172;
+        int ctrlPanelX = this.width - rightPanelW - 6;
         int availW = ctrlPanelX - 14;
         int n = Math.max(1, state.allies.size());
         int gap = 4;
-        int cardW = Math.min(86, (availW - (n - 1) * gap) / n);
-        int y = this.height - 76;
+        int cardW = Math.min(88, (availW - (n - 1) * gap) / n);
+        int y = this.height - 74;
 
         for (int i = 0; i < state.allies.size(); i++) {
             BattleState.AllyUnit a = state.allies.get(i);
             int ax = 8 + i * (cardW + gap);
             boolean isTurn = (i == state.activeAllyIndex);
             boolean ultReady = a.isAlive() && a.energy >= a.maxEnergy;
+            boolean tutUltHighlight = (state.tutorialId > 0 && state.tutorialHighlightBtn == (10 + i));
             int elemCol = CharacterData.getElementColor(a.element);
-            int border = isTurn ? 0xFFFBBF24 : (ultReady ? 0xFF38BDF8 : 0xFF334155);
+            int border = tutUltHighlight ? ((pulseTicks % 10 < 5) ? 0xFFFBBF24 : 0xFFFFFFFF)
+                    : (isTurn ? 0xFFFBBF24 : (ultReady ? 0xFF38BDF8 : 0xFF334155));
 
-            GenshinHudOverlay.drawVoxelPanel(ps, ax, y, cardW, 70,
+            GenshinHudOverlay.drawVoxelPanel(ps, ax, y, cardW, 68,
                     isTurn ? 0xD81A2E44 : 0xB80E1622, border, border);
 
             GenshinHudOverlay.drawPortrait(ps, getPortraitForChar(a.charId), ax + 4, y + 4, 20, 20);
             String shortName = a.name.contains("·") ? a.name.substring(a.name.indexOf('·') + 1) : a.name;
             font.drawShadow(ps, new TextComponent(shortName), ax + 27, y + 4, elemCol);
-            font.draw(ps, new TextComponent(BattleState.getElementShort(a.element)), ax + 27, y + 14, elemCol);
+            font.draw(ps, new TextComponent(BattleState.getElementShort(a.element) + (a.buffAtkTurns > 0 ? " +攻" : "")),
+                    ax + 27, y + 14, a.buffAtkTurns > 0 ? 0xFF4ADE80 : elemCol);
 
             int barW = cardW - 8;
             GuiComponent.fill(ps, ax + 4, y + 27, ax + 4 + barW, y + 34, 0xCC1E293B);
@@ -454,19 +527,25 @@ public class TurnBasedBattleScreen extends Screen {
             }
             font.draw(ps, new TextComponent((int) a.hp + "/" + (int) a.maxHp), ax + 4, y + 37, 0xFFE2E8F0);
 
-            GuiComponent.fill(ps, ax + 4, y + 48, ax + 4 + barW, y + 53, 0xCC1E293B);
+            GuiComponent.fill(ps, ax + 4, y + 47, ax + 4 + barW, y + 52, 0xCC1E293B);
             float ePct = Mth.clamp(a.energy / Math.max(1f, a.maxEnergy), 0f, 1f);
-            GuiComponent.fill(ps, ax + 4, y + 48, ax + 4 + (int) (barW * ePct), y + 53, ultReady ? 0xFFFBBF24 : 0xFF38BDF8);
-            String uText = ultReady ? ("[" + (i + 1) + "] 大招!") : ((int) a.energy + "%");
-            font.draw(ps, new TextComponent(uText), ax + 4, y + 57, ultReady ? 0xFFFBBF24 : 0xFF94A3B8);
+            GuiComponent.fill(ps, ax + 4, y + 47, ax + 4 + (int) (barW * ePct), y + 52, ultReady ? 0xFFFBBF24 : 0xFF38BDF8);
+            String uText = ultReady ? ("[" + (i + 1) + "]大招") : ((int) a.energy + "%");
+            font.draw(ps, new TextComponent(uText), ax + 4, y + 56, ultReady ? 0xFFFBBF24 : 0xFF94A3B8);
+
+            if (tutUltHighlight) {
+                int bounce = (pulseTicks % 12 < 6) ? -2 : 1;
+                String arrow = "▼ 按[" + (i + 1) + "]";
+                font.drawShadow(ps, new TextComponent(arrow), ax + (cardW - font.width(arrow)) / 2.0f, y - 11 + bounce, 0xFFFBBF24);
+            }
         }
     }
 
     private void renderSkillPointPanel(PoseStack ps) {
-        int rightPanelW = 166;
-        int ctrlX = this.width - rightPanelW - 8;
-        int ctrlY = this.height - 76;
-        GenshinHudOverlay.drawVoxelPanel(ps, ctrlX, ctrlY, rightPanelW, 70, 0xD00A121D, 0xFF284664, 0xFFFBBF24);
+        int rightPanelW = 172;
+        int ctrlX = this.width - rightPanelW - 6;
+        int ctrlY = this.height - 86;
+        GenshinHudOverlay.drawVoxelPanel(ps, ctrlX, ctrlY, rightPanelW, 80, 0xD40A121D, 0xFF284664, 0xFFFBBF24);
 
         font.draw(ps, new TextComponent("战技点:"), ctrlX + 6, ctrlY + 6, 0xFFE2E8F0);
         for (int i = 0; i < state.maxSkillPoints; i++) {
@@ -478,6 +557,58 @@ public class TurnBasedBattleScreen extends Screen {
         String modeLabel = pendingActionMode == TurnBasedCombatManager.ACTION_SKILL ? "战技(-1)" : "普攻(+1)";
         font.draw(ps, new TextComponent(modeLabel), ctrlX + rightPanelW - font.width(modeLabel) - 6, ctrlY + 6,
                 pendingActionMode == TurnBasedCombatManager.ACTION_SKILL ? 0xFF38BDF8 : 0xFF4ADE80);
+
+        BattleState.AllyUnit actor = getActiveActor();
+        if (actor != null) {
+            String desc = pendingActionMode == TurnBasedCombatManager.ACTION_SKILL
+                    ? CharacterData.getSkillDescFor(actor.charId, actor.role, actor.element)
+                    : CharacterData.getBasicDescFor(actor.charId, actor.element);
+            int colon = desc.indexOf('：');
+            String clean = colon > 0 ? desc.substring(colon + 1) : desc;
+            while (font.width(clean) > rightPanelW - 12 && clean.length() > 6) {
+                clean = clean.substring(0, clean.length() - 1);
+            }
+            font.draw(ps, new TextComponent(clean), ctrlX + 6, ctrlY + 19, 0xFFCBD5E1);
+        }
+
+        // Bouncing tutorial arrow above [Q] or [E] button
+        if (state.tutorialId > 0 && state.tutorialStep > 0 && !stageRenderer.isAnimating()) {
+            int bounce = (pulseTicks % 12 < 6) ? -2 : 1;
+            if (state.tutorialHighlightBtn == 0 && basicBtn != null) {
+                String tag = "▼ 按[Q]";
+                font.drawShadow(ps, new TextComponent(tag), ctrlX + 44 - font.width(tag) / 2.0f, ctrlY - 10 + bounce, 0xFF4ADE80);
+            } else if (state.tutorialHighlightBtn == 1 && skillBtn != null) {
+                String tag = "▼ 按[E]";
+                font.drawShadow(ps, new TextComponent(tag), ctrlX + 128 - font.width(tag) / 2.0f, ctrlY - 10 + bounce, 0xFF38BDF8);
+            }
+        }
+    }
+
+    private void renderTutorialOverlay(PoseStack ps) {
+        if (state.tutorialId <= 0 || state.tutorialStep <= 0 || state.finished) return;
+        if (state.tutorialPrompt == null || state.tutorialPrompt.isEmpty()) return;
+
+        int boxW = Math.min(280, this.width - 100);
+        int bx = 82 + Math.max(0, (this.width - 88 - boxW) / 2);
+        int by = 24;
+
+        String speakerId = switch (state.tutorialId) {
+            case 2 -> "chenfeng";
+            case 3 -> "suqing";
+            default -> "linye";
+        };
+        List<FormattedCharSequence> lines = font.split(new TextComponent(state.tutorialPrompt), boxW - 42);
+        int boxH = Math.max(36, 16 + Math.min(3, lines.size()) * 10);
+
+        GenshinHudOverlay.drawVoxelPanel(ps, bx, by, boxW, boxH, 0xE60A1522, 0xFFFBBF24, 0xFF38BDF8);
+        GenshinHudOverlay.drawPortrait(ps, getPortraitForChar(speakerId), bx + 5, by + 5, 24, 24);
+        font.drawShadow(ps, new TextComponent(state.tutorialTitle), bx + 34, by + 4, 0xFFFBBF24);
+
+        int ty = by + 15;
+        for (int i = 0; i < Math.min(3, lines.size()); i++) {
+            font.draw(ps, lines.get(i), bx + 34, ty, 0xFFF8FAFC);
+            ty += 10;
+        }
     }
 
     private void renderResultModal(PoseStack ps) {

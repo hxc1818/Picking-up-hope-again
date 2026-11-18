@@ -286,31 +286,104 @@ public class CharacterData {
         };
     }
 
-    public String getBasicDesc() {
-        return "普通攻击 (+1战技点)：造成 100% 攻击力的" + getElementLabel() + "属性伤害，削减 30 点韧性。";
-    }
-
-    public String getSkillDesc() {
-        return switch (role) {
-            case ROLE_HEALER -> "战技 (-1战技点)：为生命最低队友恢复大量血量并清除负面状态，同时微弱回血全队。";
-            case ROLE_SHIELDER -> "战技 (-1战技点)：为我方全体套上厚实护盾，并吸引敌方部分火力。";
-            case ROLE_SINGLE -> "战技 (-1战技点)：对指定目标发动 220% 高伤点杀，削减 75 点韧性。";
-            case ROLE_AOE -> "战技 (-1战技点)：攻击敌方全体造成 115% 范围伤害，全体削减 40 点韧性。";
-            case ROLE_BUFFER -> "战技 (-1战技点)：为我方全体提升 25% 攻击力与 15 点速度，持续 2 回合。";
-            default -> "战技 (-1战技点)：主目标造成 155% 伤害(削韧60)，相邻目标承受 80% 溅射(削韧30)。";
+    public static String getBasicNameFor(String charId) {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "疾风刺";
+            case "suqing" -> "水冷脉冲";
+            case "laozheng" -> "火锤敲击";
+            case "hanbing" -> "精准点射";
+            case "zhoumin" -> "水弹压制";
+            default -> "工程重劈";
         };
     }
 
-    public String getUltDesc() {
-        return switch (role) {
-            case ROLE_HEALER -> "终结技 (满能量随时插队)：立刻为我方全体大幅恢复生命并解除全部异常状态！";
-            case ROLE_SHIELDER -> "终结技 (满能量随时插队)：全队获得高额重型护盾，并对敌方全体造成" + getElementLabel() + "属性冲击！";
-            case ROLE_SINGLE -> "终结技 (满能量随时插队)：对单体目标打出 360% 贯穿伤害，强力削减 110 点韧性！";
-            case ROLE_AOE -> "终结技 (满能量随时插队)：对敌方全体造成 195% 覆盖打击，全体削减 70 点韧性！";
-            case ROLE_BUFFER -> "终结技 (满能量随时插队)：立刻恢复 2 点战技点，并大幅提高全队暴击率与攻击力！";
-            default -> "终结技 (满能量随时插队)：对主目标造成 250% 伤害并向两侧扩散 140% 伤害！";
+    public static String getSkillNameFor(String charId) {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "旋风横扫";
+            case "suqing" -> "纳米水雾急救";
+            case "laozheng" -> "重装热能护盾";
+            case "hanbing" -> "穿透狙击";
+            case "zhoumin" -> "全队战术调度";
+            default -> "震地裂斩";
         };
     }
+
+    public static String getUltNameFor(String charId) {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "暴风涡流斩";
+            case "suqing" -> "紧急维生力场";
+            case "laozheng" -> "铁壁震荡波";
+            case "hanbing" -> "高爆穿甲弹";
+            case "zhoumin" -> "紧急指令回充";
+            default -> "超载崩岩斩";
+        };
+    }
+
+    public static String getBasicDescFor(String charId, String element) {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "普攻【疾风刺】(+1点)：造成100%气伤(削韧30)，自身行动值提前15%。";
+            case "suqing" -> "普攻【水冷脉冲】(+1点)：造成100%水伤(削韧35)，顺带治疗残血队友。";
+            default -> "普攻【" + getBasicNameFor(charId) + "】(+1点)：造成100%" + getElementLabel(element) + "属性伤害，削减30点韧性。";
+        };
+    }
+
+    public static String getSkillDescFor(String charId, String role, String element) {
+        return switch (charId != null ? charId : "") {
+            case "linye" -> "战技【震地裂斩】(-1点)：主目标160%+两侧85%地伤(削韧60/30)，附2回合【破甲】。";
+            case "chenfeng" -> "战技【旋风横扫】(-1点)：敌全体125%气伤(削韧45)，命中2名及以上额外+15能量。";
+            case "suqing" -> "战技【纳米水雾急救】(-1点)：残血重疗+其余45%群疗，净化异常并全队加攻25%(2回合)。";
+            default -> switch (role != null ? role : "") {
+                case ROLE_SHIELDER -> "战技【重装热能护盾】(-1点)：为我方全体套上厚实护盾，并吸引敌方部分火力。";
+                case ROLE_SINGLE -> "战技【穿透狙击】(-1点)：对指定目标发动230%高伤点杀，削减75点韧性。";
+                case ROLE_BUFFER -> "战技【全队战术调度】(-1点)：为我方全体提升25%攻击力与15点速度(2回合)。";
+                default -> "战技【" + getSkillNameFor(charId) + "】(-1点)：对目标造成强化" + getElementLabel(element) + "属性效果。";
+            };
+        };
+    }
+
+    public static String getUltDescFor(String charId, String role, String element) {
+        return switch (charId != null ? charId : "") {
+            case "linye" -> "大招【超载崩岩斩】(插队)：主260%+两侧145%地伤(削韧90)，目标破甲/破盾时追加80%全屏余震！";
+            case "chenfeng" -> "大招【暴风涡流斩】(插队)：敌全体205%气伤(削韧70)，附加2回合【撕裂】持续失血！";
+            case "suqing" -> "大招【紧急维生力场】(插队)：全队大幅回血、清异常、套140点应急水盾，并回复1点战技点！";
+            default -> switch (role != null ? role : "") {
+                case ROLE_SHIELDER -> "大招【铁壁震荡波】(插队)：全队获得高额重型护盾，并震伤敌方全体！";
+                case ROLE_SINGLE -> "大招【高爆穿甲弹】(插队)：对单体打出360%贯穿火伤(削韧110)，无视部分防御！";
+                case ROLE_BUFFER -> "大招【紧急指令回充】(插队)：立刻恢复2点战技点，全队大幅强化3回合！";
+                default -> "大招【" + getUltNameFor(charId) + "】(插队)：强力爆发" + getElementLabel(element) + "属性终结技！";
+            };
+        };
+    }
+
+    public String getBasicName() { return getBasicNameFor(charId); }
+    public String getSkillName() { return getSkillNameFor(charId); }
+    public String getUltName() { return getUltNameFor(charId); }
+
+    public String getPassiveName() {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "乘风追击";
+            case "suqing" -> "应急协疗";
+            case "laozheng" -> "重盾稳固";
+            case "hanbing" -> "弱点锁定";
+            case "zhoumin" -> "效率统筹";
+            default -> "破甲余震";
+        };
+    }
+
+    public String getPassiveDesc() {
+        return switch (charId != null ? charId : "") {
+            case "chenfeng" -> "被动【乘风追击】：任意队友触发弱点击破时，自动追加全屏70%气伤与20削韧。";
+            case "suqing" -> "被动【应急协疗】：普攻攻击敌人同时为残血队友回血，大招额外回复1点战技点。";
+            case "laozheng" -> "被动【重盾稳固】：存在护盾时更容易吸引敌方单攻火力，保护后排输出。";
+            case "hanbing" -> "被动【弱点锁定】：攻击已破盾目标时额外追加35%爆伤穿透。";
+            case "zhoumin" -> "被动【效率统筹】：在场时提升全队出手节奏并兼顾战技点循环。";
+            default -> "被动【破甲余震】：战技附加2回合破甲(降防25%)，大招命中破甲或破盾敌触发全屏余震。";
+        };
+    }
+
+    public String getBasicDesc() { return getBasicDescFor(charId, element); }
+    public String getSkillDesc() { return getSkillDescFor(charId, role, element); }
+    public String getUltDesc() { return getUltDescFor(charId, role, element); }
 
     public DamageResult computeDamage(float skillMultiplier, Random rng) {
         float atk = getTotalAtk() * getTalentScale();

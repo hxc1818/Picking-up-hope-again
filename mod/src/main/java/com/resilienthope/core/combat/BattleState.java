@@ -108,11 +108,13 @@ public class BattleState {
         public boolean shieldProtected;
         public String statusEffect = ""; // WATER_SLOW, EARTH_SHRED, AIR_BLEED, FIRE_BURN
         public int statusTurns;
+        public int debuffDefTurns;
         public boolean chargingUlt;
         public int chargeCountdown;
         public boolean isBossCore;
         public boolean isBossArm;
         public float actionValue;
+        public String intentText = "⚔ 单体冲击";
 
         public boolean isAlive() { return hp > 0.0f; }
 
@@ -145,11 +147,13 @@ public class BattleState {
             t.putBoolean("ShieldProtected", shieldProtected);
             t.putString("StatusEffect", statusEffect != null ? statusEffect : "");
             t.putInt("StatusTurns", statusTurns);
+            t.putInt("DebuffDefTurns", debuffDefTurns);
             t.putBoolean("ChargingUlt", chargingUlt);
             t.putInt("ChargeCountdown", chargeCountdown);
             t.putBoolean("IsBossCore", isBossCore);
             t.putBoolean("IsBossArm", isBossArm);
             t.putFloat("AV", actionValue);
+            t.putString("IntentText", intentText != null ? intentText : "");
             return t;
         }
 
@@ -175,12 +179,60 @@ public class BattleState {
             e.shieldProtected = t.getBoolean("ShieldProtected");
             e.statusEffect = t.getString("StatusEffect");
             e.statusTurns = t.getInt("StatusTurns");
+            e.debuffDefTurns = t.getInt("DebuffDefTurns");
             e.chargingUlt = t.getBoolean("ChargingUlt");
             e.chargeCountdown = t.getInt("ChargeCountdown");
             e.isBossCore = t.getBoolean("IsBossCore");
             e.isBossArm = t.getBoolean("IsBossArm");
             e.actionValue = t.getFloat("AV");
+            e.intentText = t.contains("IntentText") ? t.getString("IntentText") : "⚔ 单体冲击";
             return e;
+        }
+    }
+
+    public static class AnimEvent {
+        public int actorSide = 0; // 0 = ally, 1 = enemy
+        public int actorIdx = 0;
+        public int targetIdx = 0; // -1 = AOE / team-wide
+        public String animType = "BASIC"; // BASIC, SKILL, ULT, HEAL, SHIELD, BUFF, FOLLOWUP, BREAK, ENEMY_ATK, BOSS_AOE
+        public String actorId = "";
+        public String actorName = "";
+        public String skillTitle = "";
+        public String element = "EARTH";
+        public int value = 0;
+        public boolean crit = false;
+        public String bannerText = "";
+
+        public CompoundTag toNbt() {
+            CompoundTag t = new CompoundTag();
+            t.putInt("Side", actorSide);
+            t.putInt("ActorIdx", actorIdx);
+            t.putInt("TargetIdx", targetIdx);
+            t.putString("AnimType", animType != null ? animType : "BASIC");
+            t.putString("ActorId", actorId != null ? actorId : "");
+            t.putString("ActorName", actorName != null ? actorName : "");
+            t.putString("SkillTitle", skillTitle != null ? skillTitle : "");
+            t.putString("Element", element != null ? element : "EARTH");
+            t.putInt("Value", value);
+            t.putBoolean("Crit", crit);
+            t.putString("Banner", bannerText != null ? bannerText : "");
+            return t;
+        }
+
+        public static AnimEvent fromNbt(CompoundTag t) {
+            AnimEvent ev = new AnimEvent();
+            ev.actorSide = t.getInt("Side");
+            ev.actorIdx = t.getInt("ActorIdx");
+            ev.targetIdx = t.getInt("TargetIdx");
+            ev.animType = t.getString("AnimType");
+            ev.actorId = t.getString("ActorId");
+            ev.actorName = t.getString("ActorName");
+            ev.skillTitle = t.getString("SkillTitle");
+            ev.element = t.getString("Element");
+            ev.value = t.getInt("Value");
+            ev.crit = t.getBoolean("Crit");
+            ev.bannerText = t.getString("Banner");
+            return ev;
         }
     }
 
@@ -189,21 +241,49 @@ public class BattleState {
     public boolean finished = false;
     public boolean victory = false;
     public boolean canFlee = true;
+    public boolean iceTheme = false;
     public int skillPoints = 3;
     public int maxSkillPoints = 5;
     public int turnCount = 1;
     public int bossPhase = 1;
     public int activeAllyIndex = 0;
     public String rewardSummary = "";
+
+    // Interactive Skill Tutorial State
+    public int tutorialId = 0; // 0=none, 1=LinYe, 2=ChenFeng, 3=SuQing
+    public int tutorialStep = 0;
+    public String tutorialTitle = "";
+    public String tutorialPrompt = "";
+    public int tutorialHighlightBtn = -1; // -1=none, 0=Q, 1=E, 10..13=Ult ally slot
+
     public final List<AllyUnit> allies = new ArrayList<>();
     public final List<EnemyUnit> enemies = new ArrayList<>();
     public final List<String> logs = new ArrayList<>();
+    public final List<AnimEvent> events = new ArrayList<>();
 
     public void addLog(String line) {
         logs.add(line);
         while (logs.size() > 6) {
             logs.remove(0);
         }
+    }
+
+    public void addEvent(int side, int actorIdx, int targetIdx, String animType,
+                         String actorId, String actorName, String skillTitle,
+                         String element, int value, boolean crit, String bannerText) {
+        AnimEvent ev = new AnimEvent();
+        ev.actorSide = side;
+        ev.actorIdx = actorIdx;
+        ev.targetIdx = targetIdx;
+        ev.animType = animType;
+        ev.actorId = actorId;
+        ev.actorName = actorName;
+        ev.skillTitle = skillTitle;
+        ev.element = element;
+        ev.value = value;
+        ev.crit = crit;
+        ev.bannerText = bannerText;
+        events.add(ev);
     }
 
     public CompoundTag toNbt() {
@@ -213,12 +293,18 @@ public class BattleState {
         root.putBoolean("Finished", finished);
         root.putBoolean("Victory", victory);
         root.putBoolean("CanFlee", canFlee);
+        root.putBoolean("IceTheme", iceTheme);
         root.putInt("SkillPoints", skillPoints);
         root.putInt("MaxSkillPoints", maxSkillPoints);
         root.putInt("TurnCount", turnCount);
         root.putInt("BossPhase", bossPhase);
         root.putInt("ActiveAllyIndex", activeAllyIndex);
         root.putString("RewardSummary", rewardSummary);
+        root.putInt("TutorialId", tutorialId);
+        root.putInt("TutorialStep", tutorialStep);
+        root.putString("TutorialTitle", tutorialTitle != null ? tutorialTitle : "");
+        root.putString("TutorialPrompt", tutorialPrompt != null ? tutorialPrompt : "");
+        root.putInt("TutorialBtn", tutorialHighlightBtn);
 
         ListTag allyList = new ListTag();
         for (AllyUnit a : allies) allyList.add(a.toNbt());
@@ -235,6 +321,10 @@ public class BattleState {
             logList.add(lt);
         }
         root.put("Logs", logList);
+
+        ListTag evList = new ListTag();
+        for (AnimEvent ev : events) evList.add(ev.toNbt());
+        root.put("Events", evList);
         return root;
     }
 
@@ -246,12 +336,18 @@ public class BattleState {
         st.finished = root.getBoolean("Finished");
         st.victory = root.getBoolean("Victory");
         st.canFlee = root.getBoolean("CanFlee");
+        st.iceTheme = root.getBoolean("IceTheme");
         st.skillPoints = root.getInt("SkillPoints");
         st.maxSkillPoints = Math.max(1, root.getInt("MaxSkillPoints"));
         st.turnCount = root.getInt("TurnCount");
         st.bossPhase = Math.max(1, root.getInt("BossPhase"));
         st.activeAllyIndex = root.getInt("ActiveAllyIndex");
         st.rewardSummary = root.getString("RewardSummary");
+        st.tutorialId = root.getInt("TutorialId");
+        st.tutorialStep = root.getInt("TutorialStep");
+        st.tutorialTitle = root.getString("TutorialTitle");
+        st.tutorialPrompt = root.getString("TutorialPrompt");
+        st.tutorialHighlightBtn = root.contains("TutorialBtn") ? root.getInt("TutorialBtn") : -1;
 
         ListTag allyList = root.getList("Allies", Tag.TAG_COMPOUND);
         for (int i = 0; i < allyList.size(); i++) st.allies.add(AllyUnit.fromNbt(allyList.getCompound(i)));
@@ -262,13 +358,16 @@ public class BattleState {
         ListTag logList = root.getList("Logs", Tag.TAG_COMPOUND);
         for (int i = 0; i < logList.size(); i++) st.logs.add(logList.getCompound(i).getString("Text"));
 
+        ListTag evList = root.getList("Events", Tag.TAG_COMPOUND);
+        for (int i = 0; i < evList.size(); i++) st.events.add(AnimEvent.fromNbt(evList.getCompound(i)));
+
         return st;
     }
 
     public static String getStatusDisplay(String statusEffect) {
         return switch (statusEffect) {
             case "WATER_SLOW" -> "减速";
-            case "EARTH_SHRED" -> "破甲";
+            case "EARTH_SHRED" -> "碎甲";
             case "AIR_BLEED" -> "撕裂";
             case "FIRE_BURN" -> "灼烧";
             default -> "";

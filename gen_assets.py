@@ -792,61 +792,175 @@ def gen_gui_textures():
 # ============================================================
 # 5. ENTITY TEXTURES (64x64)
 # ============================================================
-def make_humanoid_skin(hair, skin, visor, torso, legs, accent):
+def make_humanoid_skin(hair, hair_hi, skin, eye_col, coat, pants, accent, visor_on_hat=False):
     img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
+    skin_sh = (max(0, skin[0] - 24), max(0, skin[1] - 24), max(0, skin[2] - 20), 255)
+    coat_sh = (max(0, coat[0] - 20), max(0, coat[1] - 20), max(0, coat[2] - 20), 255)
+    boot_col = (28, 32, 40, 255)
+
+    # Head base UV (0..32, 0..16), box (8, 8, 8)
+    # Right(0,8,8x8), Front(8,8,8x8), Left(16,8,8x8), Back(24,8,8x8), Top(8,0,8x8), Bottom(16,0,8x8)
     rect(img, 0, 0, 31, 15, hair)
-    rect(img, 8, 8, 15, 15, skin)
-    rect(img, 8, 10, 15, 12, (25, 32, 42, 255))
-    rect(img, 9, 11, 10, 11, visor)
-    rect(img, 13, 11, 14, 11, visor)
-    rect(img, 16, 16, 39, 31, torso)
-    rect(img, 20, 20, 27, 31, accent)
-    rect(img, 0, 16, 15, 31, legs)
-    rect(img, 40, 16, 55, 31, torso)
-    rect(img, 44, 28, 47, 31, skin)
-    rect(img, 16, 48, 31, 63, legs)
-    rect(img, 32, 48, 47, 63, torso)
-    rect(img, 36, 60, 39, 63, skin)
+    rect(img, 8, 0, 15, 7, hair_hi)
+    rect(img, 8, 8, 15, 15, skin)      # Face front
+    rect(img, 16, 0, 23, 7, skin_sh)   # Chin/bottom
+    # Hair fringe & sideburns on head
+    rect(img, 8, 8, 15, 10, hair)
+    px(img, 9, 10, hair_hi)
+    px(img, 14, 10, hair_hi)
+    rect(img, 8, 11, 8, 13, hair)
+    rect(img, 15, 11, 15, 13, hair)
+    # Eyes & mouth on face front (8..15, 8..15)
+    px(img, 9, 12, (250, 252, 255, 255))
+    px(img, 10, 12, eye_col)
+    px(img, 13, 12, eye_col)
+    px(img, 14, 12, (250, 252, 255, 255))
+    rect(img, 11, 14, 12, 14, skin_sh)
+
+    # Hat / Helmet / Goggles layer (32..64, 0..16)
+    if visor_on_hat:
+        # Forehead goggles + headset
+        rect(img, 40, 9, 47, 11, (36, 42, 54, 255))
+        rect(img, 41, 9, 43, 10, accent)
+        rect(img, 44, 9, 46, 10, accent)
+        rect(img, 32, 10, 39, 12, (48, 56, 70, 255))
+        rect(img, 48, 10, 55, 12, (48, 56, 70, 255))
+    else:
+        # Extra hair lock + headset piece
+        rect(img, 40, 8, 47, 9, hair_hi)
+        rect(img, 48, 11, 49, 13, accent)
+        px(img, 45, 13, (190, 220, 245, 255))
+
+    # Torso UV (16..40, 16..32), box (8, 12, 4)
+    # Front (20..27, 20..31), Back (32..39, 20..31)
+    rect(img, 16, 16, 39, 31, coat)
+    rect(img, 20, 20, 27, 21, (225, 232, 240, 255))  # Inner collar
+    rect(img, 23, 21, 24, 30, coat_sh)               # Jacket zipper line
+    rect(img, 21, 22, 22, 24, accent)                # Chest emblem
+    rect(img, 20, 29, 27, 30, (32, 36, 46, 255))     # Tactical belt
+    rect(img, 23, 29, 24, 30, accent)                # Belt buckle
+    rect(img, 33, 22, 38, 25, coat_sh)               # Back pack detail
+    rect(img, 35, 23, 36, 24, accent)
+
+    # Right Arm UV (40..56, 16..32) + Left Arm UV (32..48, 48..64)
+    for ax, ay in ((40, 16), (32, 48)):
+        rect(img, ax, ay, ax + 15, ay + 15, coat)
+        rect(img, ax + 4, ay + 4, ax + 11, ay + 6, accent)   # Shoulder band
+        rect(img, ax + 4, ay + 12, ax + 11, ay + 13, (40, 46, 56, 255))  # Glove cuff
+        rect(img, ax + 4, ay + 14, ax + 11, ay + 15, skin)   # Hand
+
+    # Right Leg UV (0..16, 16..32) + Left Leg UV (16..32, 48..64)
+    for lx, ly in ((0, 16), (16, 48)):
+        rect(img, lx, ly, lx + 15, ly + 15, pants)
+        rect(img, lx + 4, ly + 8, lx + 11, ly + 9, coat_sh)   # Knee pad
+        rect(img, lx + 4, ly + 10, lx + 11, ly + 15, boot_col) # Boots
+        rect(img, lx + 4, ly + 11, lx + 7, ly + 11, accent)   # Boot stripe
+
+    return img
+
+
+def make_mech_sheet(hull, hull_dark, trim, eye_col, stripe_col):
+    """Creates a structured 64x64 industrial mech texture sheet with clean non-overlapping panel zones:
+    - (0..48, 0..24): Main Chassis & Armor (beveled hull plates, rivets, sensor lens)
+    - (0..32, 24..44): Structural Legs / Frame / Hazard Trim
+    - (32..64, 24..44): Thrusters / Coils / Neon Energy Vents
+    - (0..64, 44..64): Weapons / Drill / Saw / Heavy Armor Plates
+    """
+    img = Image.new("RGBA", (64, 64), hull)
+
+    # Zone 1: Main chassis panels (0..48, 0..24)
+    rect(img, 0, 0, 47, 23, hull)
+    for bx in range(0, 48, 8):
+        rect(img, bx, 0, bx, 23, hull_dark)
+    for by in range(0, 24, 8):
+        rect(img, 0, by, 47, by, hull_dark)
+    # Trim band across middle
+    rect(img, 1, 10, 46, 12, trim)
+    # Central optic sensor & armor glow at common front UV zones (8..20, 8..18)
+    rect(img, 7, 7, 17, 15, hull_dark)
+    rect(img, 9, 9, 15, 13, eye_col)
+    rect(img, 11, 10, 13, 12, (255, 255, 255, 255))
+    # Side core vents (24..38, 8..18)
+    rect(img, 24, 8, 38, 16, hull_dark)
+    for vx in range(26, 37, 3):
+        rect(img, vx, 10, vx + 1, 14, trim)
+
+    # Zone 2: Legs / Chassis Frame / Hazard Stripes (0..32, 24..44)
+    rect(img, 0, 24, 31, 43, hull_dark)
+    for x in range(0, 32):
+        for y in range(24, 30):
+            px(img, x, y, stripe_col if ((x + y) // 3) % 2 == 0 else (28, 32, 38, 255))
+    rect(img, 2, 32, 29, 41, hull)
+    rect(img, 6, 34, 25, 38, trim)
+
+    # Zone 3: Glowing Thrusters & Rotor Rings (32..64, 24..44)
+    rect(img, 32, 24, 63, 43, (26, 32, 42, 255))
+    rect(img, 35, 27, 60, 40, eye_col)
+    rect(img, 39, 30, 56, 37, (225, 250, 255, 255))
+    # Outer ring accent
+    rect(img, 48, 0, 63, 23, trim)
+    rect(img, 50, 2, 61, 21, eye_col)
+
+    # Zone 4: Heavy Shield / Weapons / Drill Blades (0..64, 44..64)
+    rect(img, 0, 44, 63, 63, hull_dark)
+    for x in range(2, 62, 4):
+        rect(img, x, 46, x + 2, 61, hull)
+    rect(img, 4, 52, 59, 55, trim)
+    rect(img, 26, 48, 38, 59, eye_col)
     return img
 
 
 def gen_entities():
-    img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
-    for x in range(0, 48):
-        for y in range(0, 24):
-            color = (48, 54, 65, 255)
-            if x % 12 == 0 or x % 12 == 11 or y % 12 == 0 or y % 12 == 11:
-                color = (25, 28, 35, 255)
-            px(img, x, y, color)
-    rect(img, 15, 15, 20, 20, (255, 50, 50, 255))
-    rect(img, 17, 17, 18, 18, (255, 220, 220, 255))
-    save_img(img, "textures/entity/security_drone.png")
+    # 6 Playable Character 3D Skins (64x64)
+    save_img(make_humanoid_skin((42, 48, 60, 255), (76, 86, 106, 255), (238, 206, 186, 255),
+                                (235, 175, 45, 255), (62, 74, 92, 255), (38, 44, 56, 255),
+                                (235, 175, 45, 255), True), "textures/entity/char_linye.png")
+    save_img(make_humanoid_skin((32, 82, 70, 255), (62, 134, 114, 255), (238, 206, 186, 255),
+                                (74, 222, 128, 255), (44, 68, 62, 255), (30, 42, 40, 255),
+                                (74, 222, 128, 255), True), "textures/entity/char_chenfeng.png")
+    save_img(make_humanoid_skin((40, 62, 98, 255), (78, 110, 158, 255), (244, 218, 208, 255),
+                                (56, 189, 248, 255), (222, 234, 244, 255), (52, 72, 98, 255),
+                                (56, 189, 248, 255), False), "textures/entity/char_suqing.png")
+    save_img(make_humanoid_skin((92, 96, 108, 255), (145, 148, 162, 255), (224, 182, 152, 255),
+                                (251, 146, 60, 255), (175, 105, 32, 255), (46, 52, 64, 255),
+                                (251, 191, 36, 255), True), "textures/entity/char_laozheng.png")
+    save_img(make_humanoid_skin((28, 30, 42, 255), (58, 62, 82, 255), (236, 202, 188, 255),
+                                (239, 68, 68, 255), (46, 34, 42, 255), (28, 26, 34, 255),
+                                (239, 68, 68, 255), True), "textures/entity/char_hanbing.png")
+    save_img(make_humanoid_skin((165, 188, 216, 255), (215, 230, 248, 255), (242, 214, 198, 255),
+                                (96, 165, 250, 255), (44, 68, 108, 255), (32, 44, 68, 255),
+                                (96, 165, 250, 255), False), "textures/entity/char_zhoumin.png")
 
-    mech = Image.new("RGBA", (64, 64), (48, 52, 62, 255))
-    for x in range(0, 64, 8):
-        for y in range(0, 64):
-            px(mech, x, y, (24, 26, 32, 255))
-    for y in range(0, 64, 8):
-        for x in range(0, 64):
-            px(mech, x, y, (24, 26, 32, 255))
-    rect(mech, 8, 8, 15, 15, (235, 165, 40, 255))
-    rect(mech, 9, 10, 14, 12, (255, 120, 45, 255))
-    rect(mech, 20, 22, 32, 30, (235, 165, 40, 255))
-    rect(mech, 23, 24, 29, 28, (60, 205, 255, 255))
-    save_img(mech, "textures/entity/precursor_mech.png")
+    # Legacy NPC skin paths kept compatible with updated detail
+    save_img(make_humanoid_skin((92, 96, 108, 255), (145, 148, 162, 255), (224, 182, 152, 255),
+                                (251, 146, 60, 255), (175, 105, 32, 255), (46, 52, 64, 255),
+                                (251, 191, 36, 255), True), "textures/entity/npc_zheng.png")
+    save_img(make_humanoid_skin((32, 82, 70, 255), (62, 134, 114, 255), (238, 206, 186, 255),
+                                (74, 222, 128, 255), (44, 68, 62, 255), (30, 42, 40, 255),
+                                (74, 222, 128, 255), True), "textures/entity/npc_han.png")
+    save_img(make_humanoid_skin((40, 62, 98, 255), (78, 110, 158, 255), (244, 218, 208, 255),
+                                (56, 189, 248, 255), (222, 234, 244, 255), (52, 72, 98, 255),
+                                (56, 189, 248, 255), False), "textures/entity/npc_su.png")
 
-    save_img(
-        make_humanoid_skin((75, 80, 90, 255), (220, 180, 150, 255), (255, 185, 45, 255), (185, 125, 28, 255), (45, 50, 60, 255), (255, 205, 65, 255)),
-        "textures/entity/npc_zheng.png",
-    )
-    save_img(
-        make_humanoid_skin((40, 85, 75, 255), (230, 195, 175, 255), (90, 240, 185, 255), (42, 62, 58, 255), (32, 42, 40, 255), (74, 222, 128, 255)),
-        "textures/entity/npc_han.png",
-    )
-    save_img(
-        make_humanoid_skin((45, 65, 95, 255), (242, 215, 205, 255), (95, 225, 255, 255), (215, 228, 240, 255), (50, 65, 85, 255), (56, 189, 248, 255)),
-        "textures/entity/npc_su.png",
-    )
+    # 6 Detailed Mechanical Enemy Textures (64x64)
+    save_img(make_mech_sheet((76, 86, 98, 255), (42, 48, 58, 255), (235, 175, 45, 255),
+                             (56, 189, 248, 255), (235, 175, 45, 255)),
+             "textures/entity/cleaner_bot.png")
+    save_img(make_mech_sheet((58, 68, 84, 255), (32, 38, 48, 255), (56, 189, 248, 255),
+                             (255, 65, 65, 255), (245, 158, 11, 255)),
+             "textures/entity/security_drone.png")
+    save_img(make_mech_sheet((50, 56, 68, 255), (28, 32, 40, 255), (239, 68, 68, 255),
+                             (255, 95, 65, 255), (225, 95, 45, 255)),
+             "textures/entity/mech_hound.png")
+    save_img(make_mech_sheet((68, 76, 90, 255), (36, 42, 54, 255), (245, 185, 55, 255),
+                             (56, 189, 248, 255), (245, 185, 55, 255)),
+             "textures/entity/heavy_guard_mech.png")
+    save_img(make_mech_sheet((165, 92, 34, 255), (44, 48, 56, 255), (245, 195, 65, 255),
+                             (56, 225, 255, 255), (245, 175, 45, 255)),
+             "textures/entity/mine_driller.png")
+    save_img(make_mech_sheet((138, 84, 30, 255), (38, 42, 52, 255), (251, 191, 36, 255),
+                             (255, 85, 45, 255), (251, 191, 36, 255)),
+             "textures/entity/precursor_mech.png")
 
 
 # ============================================================
