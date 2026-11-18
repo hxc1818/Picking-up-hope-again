@@ -1,5 +1,7 @@
 {
   "variants": {
-    "": { "model": "picking_hope_core:block/engineering_terminal" }
+    "": {
+      "model": "picking_hope_core:block/engineering_terminal"
+    }
   }
 }

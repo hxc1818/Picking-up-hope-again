@@ -222,7 +222,10 @@ public class EquipmentStatsHelper {
     public static int getEnhanceLevel(ItemStack stack) {
         ensureStats(stack);
         CompoundTag tag = stack.getTag();
-        return tag != null ? tag.getInt(TAG_ENHANCE_LV) : (isWeapon(stack) ? 1 : 0);
+        int minLv = isWeapon(stack) ? 1 : 0;
+        int maxLv = Math.max(minLv, getMaxEnhanceLevel(stack));
+        int lv = tag != null ? tag.getInt(TAG_ENHANCE_LV) : minLv;
+        return Math.max(minLv, Math.min(maxLv, lv));
     }
 
     public static int getAscension(ItemStack stack) {
@@ -283,7 +286,7 @@ public class EquipmentStatsHelper {
         CompoundTag tag = stack.getTag();
         if (tag == null) return 0f;
         float base = tag.getFloat(TAG_MAIN_VAL);
-        int lv = tag.getInt(TAG_ENHANCE_LV);
+        int lv = getEnhanceLevel(stack);
         int r = getRarity(stack);
         String type = tag.getString(TAG_MAIN_TYPE);
         if (MAIN_WEAPON_ATK.equals(type)) {

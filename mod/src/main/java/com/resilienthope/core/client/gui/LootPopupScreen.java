@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketLootChest;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
@@ -20,7 +19,7 @@ public class LootPopupScreen extends Screen {
     private final List<ItemStack> lootItems = new ArrayList<>();
 
     public LootPopupScreen(BlockPos chestPos, Container container) {
-        super(new TextComponent("应急物资箱"));
+        super(new TextComponent("装甲物资箱"));
         this.chestPos = chestPos;
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
@@ -36,8 +35,8 @@ public class LootPopupScreen extends Screen {
         int boxX = this.width / 2 - 120;
         int boxY = this.height / 2 - 86;
 
-        addRenderableWidget(new Button(boxX + 16, boxY + 138, 100, 20, new TextComponent("[ F ] 全部拾取"), btn -> takeAll()));
-        addRenderableWidget(new Button(boxX + 124, boxY + 138, 100, 20, new TextComponent("关闭 (ESC)"), btn -> onClose()));
+        addRenderableWidget(new SciFiButton(boxX + 16, boxY + 138, 100, 20, new TextComponent("[F] 全部拾取"), btn -> takeAll(), 0xFF4ADE80));
+        addRenderableWidget(new SciFiButton(boxX + 124, boxY + 138, 100, 20, new TextComponent("关闭 (ESC)"), btn -> onClose(), 0xFFEF4444));
     }
 
     private void takeAll() {
@@ -64,7 +63,7 @@ public class LootPopupScreen extends Screen {
         int boxY = (this.height - boxH) / 2;
 
         GenshinHudOverlay.drawVoxelPanel(poseStack, boxX, boxY, boxW, boxH, 0xEE0D1520, 0xFF4A90E2, 0xFFFBBF24);
-        font.drawShadow(poseStack, new TextComponent("【应急物资箱】"), boxX + 14, boxY + 12, 0xFF38BDF8);
+        font.drawShadow(poseStack, new TextComponent("【装甲物资箱】"), boxX + 14, boxY + 12, 0xFF38BDF8);
 
         if (lootItems.isEmpty()) {
             font.draw(poseStack, new TextComponent("（箱内物资已清空）"), boxX + 16, boxY + 54, 0xFFAAAAAA);

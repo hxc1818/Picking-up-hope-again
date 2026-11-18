@@ -1,5 +1,7 @@
 package com.resilienthope.core.combat;
 
+import com.resilienthope.core.combat.BattleState;
+import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketBattleSync;
@@ -48,28 +50,40 @@ public class TurnBasedCombatManager {
 
     public static void ensureBattleArena(ServerLevel level, boolean iceTheme) {
         int minX = 0, maxX = 28, minZ = 0, maxZ = 24, floorY = 150;
+        var floorBase = iceTheme ? ModBlocks.PERMAFROST_ROCK.get().defaultBlockState() : ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
+        var laneBlock = ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
+        var wallBlock = iceTheme ? ModBlocks.PERMAFROST_ROCK.get().defaultBlockState() : ModBlocks.STARSHIP_WALL.get().defaultBlockState();
+        var ceilingBlock = ModBlocks.STARSHIP_HULL.get().defaultBlockState();
+        var lightBlock = ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
+        var oreOrAlarm = iceTheme ? ModBlocks.FROZEN_ORE_VEIN.get().defaultBlockState() : ModBlocks.ALARM_BEACON.get().defaultBlockState();
+
         for (int x = minX; x <= maxX; x++) {
             for (int z = minZ; z <= maxZ; z++) {
                 boolean isBorder = (x == minX || x == maxX || z == minZ || z == maxZ);
                 boolean isAllyLane = (x >= 5 && x <= 7 && z >= 6 && z <= 18);
                 boolean isEnemyLane = (x >= 19 && x <= 22 && z >= 5 && z <= 19);
-                var floorBlock = isAllyLane ? Blocks.LIGHT_BLUE_CONCRETE :
-                        (isEnemyLane ? Blocks.RED_CONCRETE : (iceTheme ? Blocks.PACKED_ICE : Blocks.POLISHED_DEEPSLATE));
-                level.setBlock(new BlockPos(x, floorY, z), floorBlock.defaultBlockState(), 2);
+                var floorBlock = (isAllyLane || isEnemyLane) ? laneBlock : floorBase;
+                level.setBlock(new BlockPos(x, floorY, z), floorBlock, 2);
 
                 boolean isCeilingLight = (x % 7 == 0 && z % 6 == 0);
-                level.setBlock(new BlockPos(x, floorY + 12, z),
-                        isCeilingLight ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(x, floorY + 12, z), isCeilingLight ? lightBlock : ceilingBlock, 2);
 
                 for (int y = floorY + 1; y < floorY + 12; y++) {
                     if (isBorder) {
                         level.setBlock(new BlockPos(x, y, z),
-                                (y == floorY + 5) ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.GRAY_CONCRETE.defaultBlockState(), 2);
+                                (y == floorY + 5) ? lightBlock : ((y == floorY + 2 && (x + z) % 6 == 0) ? oreOrAlarm : wallBlock), 2);
                     } else {
                         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
+        }
+        // Corner Conduit Pillars inside tactical stage
+        for (int y = floorY + 1; y < floorY + 12; y++) {
+            level.setBlock(new BlockPos(2, y, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(26, y, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(2, y, 22), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(26, y, 22), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
         }
     }
 
@@ -116,14 +130,29 @@ public class TurnBasedCombatManager {
     }
 
     private static String resolveOverworldEncounterType(LivingEntity target) {
-        int stage = QuestManager.getQuestStage();
-        if (target != null && target.getName().getString().contains("挖掘机")) {
-            return "boss_excavator";
+        if (target != null) {
+            String n = target.getName().getString();
+            if (n.contains("挖掘机")) return "boss_excavator";
+            if (n.contains("钻探")) return "mine_driller";
+            if (n.contains("轨道巡逻")) return "mine_patrol";
+            if (n.contains("配电室")) return "substation_guard";
+            if (n.contains("统御")) return "bridge_commander";
+            if (n.contains("重装守卫")) return "lower_guard";
+            if (n.contains("机房巡逻")) return "lower_patrol";
+            if (n.contains("猎犬") || n.contains("外围防卫")) return "ice_hound";
+            if (n.contains("安保巡逻")) return "corridor_patrol";
+            if (n.contains("清扫机")) return "corridor_cleaner";
         }
-        if (stage <= 1) return "corridor_cleaner";
-        if (stage <= 4) return "corridor_patrol";
-        if (stage <= 7) return "lower_guard";
-        return "ice_hound";
+        int stage = QuestManager.getQuestStage();
+        if (stage <= 3) return "corridor_cleaner";
+        if (stage <= 5) return "corridor_patrol";
+        if (stage == 6) return "bridge_commander";
+        if (stage <= 10) return "lower_patrol";
+        if (stage <= 14) return "lower_guard";
+        if (stage <= 18) return "ice_hound";
+        if (stage == 20) return "substation_guard";
+        if (stage == 21) return "mine_patrol";
+        return "mine_driller";
     }
 
     private static void startBattleInternal(ServerPlayer player, ServerLevel level, String encounterType,
@@ -191,15 +220,37 @@ public class TurnBasedCombatManager {
                 state.enemies.add(makeEnemy("drone_1", "安保巡逻机·甲", 4, 260f, 90f, 48f, 96, ambush, "AIR", "WATER"));
                 state.enemies.add(makeEnemy("drone_2", "安保巡逻机·乙", 4, 260f, 90f, 48f, 94, ambush, "AIR", "EARTH"));
             }
+            case "bridge_commander" -> {
+                state.enemies.add(makeEnemy("b_escort_1", "数据室僚机·左", 5, 220f, 60f, 44f, 98, ambush, "AIR", "EARTH"));
+                state.enemies.add(makeEnemy("b_cmd", "舰桥防卫统御机", 6, 460f, 120f, 64f, 94, ambush, "EARTH", "WATER"));
+                state.enemies.add(makeEnemy("b_escort_2", "数据室僚机·右", 5, 220f, 60f, 44f, 96, ambush, "AIR", "FIRE"));
+            }
+            case "lower_patrol" -> {
+                state.enemies.add(makeEnemy("lp_1", "机房巡逻队长", 7, 360f, 90f, 58f, 98, ambush, "EARTH", "AIR"));
+                state.enemies.add(makeEnemy("lp_2", "机房维修机", 6, 260f, 60f, 46f, 92, ambush, "WATER", "FIRE"));
+            }
             case "lower_guard" -> {
-                state.enemies.add(makeEnemy("guard_1", "机房巡逻机", 6, 300f, 90f, 56f, 98, ambush, "WATER", "AIR"));
-                state.enemies.add(makeEnemy("guard_2", "重装守卫机", 7, 460f, 120f, 68f, 92, ambush, "EARTH", "WATER"));
-                state.enemies.add(makeEnemy("guard_3", "机房巡逻机", 6, 300f, 90f, 56f, 95, ambush, "AIR", "FIRE"));
+                state.enemies.add(makeEnemy("guard_1", "机房巡逻机", 8, 320f, 90f, 60f, 98, ambush, "WATER", "AIR"));
+                state.enemies.add(makeEnemy("guard_2", "重装机房守卫机", 9, 520f, 120f, 74f, 92, ambush, "EARTH", "WATER"));
+                state.enemies.add(makeEnemy("guard_3", "机房巡逻机", 8, 320f, 90f, 60f, 95, ambush, "AIR", "FIRE"));
             }
             case "ice_hound" -> {
                 state.enemies.add(makeEnemy("hound_1", "旧式机械猎犬·左", 10, 420f, 90f, 76f, 108, ambush, "FIRE", "EARTH"));
                 state.enemies.add(makeEnemy("hound_2", "科考防卫机", 11, 580f, 120f, 85f, 98, ambush, "WATER", "AIR"));
                 state.enemies.add(makeEnemy("hound_3", "旧式机械猎犬·右", 10, 420f, 90f, 76f, 105, ambush, "FIRE", "WATER"));
+            }
+            case "substation_guard" -> {
+                state.enemies.add(makeEnemy("sub_1", "配电室哨戒机", 12, 460f, 90f, 80f, 102, ambush, "AIR", "WATER"));
+                state.enemies.add(makeEnemy("sub_2", "配电室重装守卫", 13, 680f, 120f, 92f, 94, ambush, "EARTH", "FIRE"));
+                state.enemies.add(makeEnemy("sub_3", "配电室哨戒机", 12, 460f, 90f, 80f, 100, ambush, "WATER", "EARTH"));
+            }
+            case "mine_patrol" -> {
+                state.enemies.add(makeEnemy("mp_1", "矿坑轨道巡逻机·甲", 14, 520f, 120f, 88f, 104, ambush, "EARTH", "WATER"));
+                state.enemies.add(makeEnemy("mp_2", "矿坑轨道巡逻机·乙", 14, 520f, 120f, 88f, 102, ambush, "AIR", "FIRE"));
+            }
+            case "mine_driller" -> {
+                state.enemies.add(makeEnemy("md_1", "岩脉开采辅机", 15, 480f, 90f, 84f, 104, ambush, "WATER", "AIR"));
+                state.enemies.add(makeEnemy("md_core", "矿坑钻探重机", 16, 860f, 150f, 102f, 96, ambush, "EARTH", "FIRE"));
             }
             case "boss_excavator" -> {
                 BattleState.EnemyUnit leftArm = makeEnemy("boss_left", "左挖掘臂", 15, 480f, 90f, 78f, 98, false, "EARTH", "WATER");

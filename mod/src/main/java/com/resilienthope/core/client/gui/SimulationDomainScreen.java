@@ -5,10 +5,13 @@ import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketProgressionAction;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Player;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class SimulationDomainScreen extends Screen {
     private static final String[][] DOMAINS = {
@@ -21,7 +24,8 @@ public class SimulationDomainScreen extends Screen {
     };
 
     private int selectedIdx = 0;
-    private Button enterBtn;
+    private SciFiButton enterBtn;
+    private final List<SciFiButton> listButtons = new ArrayList<>();
 
     public SimulationDomainScreen() {
         super(new TextComponent("模拟训练副本终端 (E)"));
@@ -30,43 +34,56 @@ public class SimulationDomainScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        listButtons.clear();
 
-        int listX = 32;
-        int listY = 60;
+        int listX = 20;
+        int listY = 48;
+        int listW = Math.min(180, (int) ((this.width - 56) * 0.44f));
         for (int i = 0; i < DOMAINS.length; i++) {
             final int idx = i;
-            addRenderableWidget(new Button(listX, listY + i * 26, 175, 22,
-                    new TextComponent(DOMAINS[i][1]), btn -> this.selectedIdx = idx));
+            SciFiButton b = addRenderableWidget(new SciFiButton(listX, listY + i * 24, listW, 20,
+                    new TextComponent(DOMAINS[i][1]), btn -> {
+                this.selectedIdx = idx;
+                updateSelectionColors();
+            }));
+            listButtons.add(b);
         }
 
-        int rightX = 226;
-        int bottomY = this.height - 46;
-        this.enterBtn = addRenderableWidget(new Button(rightX, bottomY, 150, 22,
+        int rightX = listX + listW + 10;
+        int rightW = this.width - rightX - 20;
+        this.enterBtn = addRenderableWidget(new SciFiButton(rightX, this.height - 38, Math.min(160, rightW), 20,
                 new TextComponent("进入副本战斗"), btn -> {
             String domainId = DOMAINS[selectedIdx][0];
             onClose();
             PacketHandler.INSTANCE.sendToServer(
                     new PacketProgressionAction(PacketProgressionAction.ACT_START_DOMAIN, 0, 0, domainId));
-        }));
+        }, 0xFF4ADE80));
 
-        addRenderableWidget(new Button(this.width - 70, 14, 48, 18, new TextComponent("关闭"), btn -> onClose()));
+        addRenderableWidget(new SciFiButton(this.width - 62, 12, 42, 16, new TextComponent("关闭"), btn -> onClose(), 0xFFEF4444));
+        updateSelectionColors();
+    }
+
+    private void updateSelectionColors() {
+        for (int i = 0; i < listButtons.size(); i++) {
+            listButtons.get(i).setAccentColor(i == selectedIdx ? 0xFFFBBF24 : 0xFF38BDF8);
+        }
     }
 
     @Override
     public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
         renderBackground(ps);
 
-        GenshinHudOverlay.drawVoxelPanel(ps, 18, 10, this.width - 36, this.height - 20,
+        GenshinHudOverlay.drawVoxelPanel(ps, 12, 8, this.width - 24, this.height - 16,
                 0xEE0B121D, 0xFF284868, 0xFF38BDF8);
-        font.drawShadow(ps, getTitle(), 32, 18, 0xFF38BDF8);
+        font.drawShadow(ps, getTitle(), 20, 14, 0xFF38BDF8);
 
         Player p = Minecraft.getInstance().player;
         if (p != null) {
             p.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
-                String info = String.format("主等级 Lv.%d/%d   |   世界等级 Lv.%d   |   当前体力: %d / 180",
+                String info = String.format("主Lv.%d/%d   |   世界Lv.%d   |   体力: %d / 180",
                         team.getPlayerLevel(), team.getPlayerLevelCapForWorldLevel(),
                         team.getWorldLevel(), team.getStamina());
-                font.draw(ps, new TextComponent(info), 32, 36, 0xFFFBBF24);
+                font.draw(ps, new TextComponent(info), 20, 30, 0xFFFBBF24);
 
                 boolean isTrial = "world_trial".equals(DOMAINS[selectedIdx][0]);
                 if (enterBtn != null) {
@@ -75,19 +92,33 @@ public class SimulationDomainScreen extends Screen {
             });
         }
 
-        int rightX = 226;
-        int rightW = this.width - rightX - 32;
-        GenshinHudOverlay.drawVoxelPanel(ps, rightX, 60, rightW, this.height - 118,
+        int listW = Math.min(180, (int) ((this.width - 56) * 0.44f));
+        int rightX = 20 + listW + 10;
+        int rightW = this.width - rightX - 20;
+        int detailH = Math.max(80, this.height - 96);
+        GenshinHudOverlay.drawVoxelPanel(ps, rightX, 48, rightW, detailH,
                 0xA00D1724, 0xFF26425C, 0xFFFBBF24);
 
         String[] sel = DOMAINS[selectedIdx];
-        font.drawShadow(ps, new TextComponent("【" + sel[1] + "】"), rightX + 12, 74, 0xFFFBBF24);
-        font.draw(ps, new TextComponent(sel[2]), rightX + 12, 96, 0xFFE2E8F0);
-        font.draw(ps, new TextComponent("说明："), rightX + 12, 122, 0xFF7DD3FC);
-        font.draw(ps, new TextComponent("• 所有战斗均进入平坦独立的回合制舞台进行。"), rightX + 12, 138, 0xFF94A3B8);
-        font.draw(ps, new TextComponent("• 战斗不会自动给角色或装备增加经验，请用刷取的道具手动培养。"), rightX + 12, 154, 0xFF94A3B8);
-        if ("world_trial".equals(sel[0])) {
-            font.draw(ps, new TextComponent("• 当主等级到达当前档位上限后，突破试炼按钮将自动点亮。"), rightX + 12, 170, 0xFF4ADE80);
+        font.drawShadow(ps, new TextComponent("【" + sel[1] + "】"), rightX + 10, 58, 0xFFFBBF24);
+        int dy = 74;
+        for (FormattedCharSequence line : font.split(new TextComponent(sel[2]), rightW - 20)) {
+            font.draw(ps, line, rightX + 10, dy, 0xFFE2E8F0);
+            dy += 11;
+        }
+        dy += 6;
+        font.draw(ps, new TextComponent("说明："), rightX + 10, dy, 0xFF7DD3FC);
+        dy += 12;
+        for (String tip : new String[]{
+                "• 所有战斗均进入独立平坦回合制舞台。",
+                "• 打怪不自动加角色或装备经验，请使用产出道具手动升级。",
+                "• 达到主等级上限后可挑战世界突破试炼。"
+        }) {
+            for (FormattedCharSequence line : font.split(new TextComponent(tip), rightW - 20)) {
+                if (dy + 10 > 48 + detailH - 4) break;
+                font.draw(ps, line, rightX + 10, dy, 0xFF94A3B8);
+                dy += 11;
+            }
         }
 
         super.render(ps, mouseX, mouseY, partialTicks);

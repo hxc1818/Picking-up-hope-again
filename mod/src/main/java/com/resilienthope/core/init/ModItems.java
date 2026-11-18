@@ -29,6 +29,48 @@ public class ModItems {
     public static final RegistryObject<Item> PRECURSOR_ALTAR = ITEMS.register("precursor_altar",
             () -> new BlockItem(ModBlocks.PRECURSOR_ALTAR.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
 
+    public static final RegistryObject<Item> SUPPLY_CRATE = ITEMS.register("supply_crate",
+            () -> new BlockItem(ModBlocks.SUPPLY_CRATE.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> CRYO_SLEEP_POD = ITEMS.register("cryo_sleep_pod",
+            () -> new BlockItem(ModBlocks.CRYO_SLEEP_POD.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> CONDUIT_PILLAR = ITEMS.register("conduit_pillar",
+            () -> new BlockItem(ModBlocks.CONDUIT_PILLAR.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> HOLOTABLE_PROP = ITEMS.register("holotable_prop",
+            () -> new BlockItem(ModBlocks.HOLOTABLE_PROP.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> STARSHIP_FLOOR = ITEMS.register("starship_floor",
+            () -> new BlockItem(ModBlocks.STARSHIP_FLOOR.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> STARSHIP_WALL = ITEMS.register("starship_wall",
+            () -> new BlockItem(ModBlocks.STARSHIP_WALL.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> STARSHIP_HULL = ITEMS.register("starship_hull",
+            () -> new BlockItem(ModBlocks.STARSHIP_HULL.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> HAZARD_STRIPE_BLOCK = ITEMS.register("hazard_stripe_block",
+            () -> new BlockItem(ModBlocks.HAZARD_STRIPE_BLOCK.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> STARSHIP_LIGHT = ITEMS.register("starship_light",
+            () -> new BlockItem(ModBlocks.STARSHIP_LIGHT.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> ALARM_BEACON = ITEMS.register("alarm_beacon",
+            () -> new BlockItem(ModBlocks.ALARM_BEACON.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> VIEWPORT_GLASS = ITEMS.register("viewport_glass",
+            () -> new BlockItem(ModBlocks.VIEWPORT_GLASS.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> PERMAFROST_ROCK = ITEMS.register("permafrost_rock",
+            () -> new BlockItem(ModBlocks.PERMAFROST_ROCK.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> GLACIER_SNOW = ITEMS.register("glacier_snow",
+            () -> new BlockItem(ModBlocks.GLACIER_SNOW.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
+    public static final RegistryObject<Item> FROZEN_ORE_VEIN = ITEMS.register("frozen_ore_vein",
+            () -> new BlockItem(ModBlocks.FROZEN_ORE_VEIN.get(), new Item.Properties().tab(CreativeModeTab.TAB_MISC)));
+
     // Legacy & Base Valuables / Consumables
     public static final RegistryObject<Item> QUANTUM_CORE = ITEMS.register("quantum_core",
             () -> new Item(new Item.Properties().tab(CreativeModeTab.TAB_MISC).stacksTo(64)));

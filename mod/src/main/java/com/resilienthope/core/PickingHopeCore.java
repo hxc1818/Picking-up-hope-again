@@ -11,6 +11,8 @@ import com.resilienthope.core.init.ModEntities;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.team.TeamCapability;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -64,7 +66,19 @@ public class PickingHopeCore {
     }
 
     private void setupClient(final FMLClientSetupEvent event) {
-        event.enqueueWork(KeyInit::registerKeybinds);
+        event.enqueueWork(() -> {
+            KeyInit.registerKeybinds();
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.VIEWPORT_GLASS.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CRYO_SLEEP_POD.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.HOLOTABLE_PROP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.TELEPORT_WAYPOINT.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.ENGINEERING_TERMINAL.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.SUPPLY_CRATE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CONDUIT_PILLAR.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.AUXILIARY_ENERGY_CORE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.ORBITAL_DROP_POD.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PRECURSOR_ALTAR.get(), RenderType.cutout());
+        });
         LOGGER.info("Picking Hope Core: Client HUD & Keybinds initialized.");
     }
 }

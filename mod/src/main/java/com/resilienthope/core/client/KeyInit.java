@@ -5,6 +5,7 @@ import com.resilienthope.core.client.gui.InfiniteInventoryScreen;
 import com.resilienthope.core.client.gui.SimulationDomainScreen;
 import com.resilienthope.core.client.gui.TerminalWishScreen;
 import com.resilienthope.core.entity.FactionNpcEntity;
+import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketSwitchCharacter;
 import com.resilienthope.core.quest.QuestManager;
@@ -12,11 +13,16 @@ import com.resilienthope.core.subtitle.RadioSubtitleManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -90,8 +96,8 @@ public class KeyInit {
         }
 
         if (KEY_SKILL_E.consumeClick()) {
-            if (QuestManager.getQuestStage() < 10) {
-                RadioSubtitleManager.postRadioMessage("模拟终端", "模拟训练副本将在第 10 阶段抵达地面科考站后解锁！", 90);
+            if (QuestManager.getQuestStage() < 15) {
+                RadioSubtitleManager.postRadioMessage("模拟终端", "模拟训练副本将在第 15 阶段抵达地面科考站后开放！", 90);
             } else {
                 mc.setScreen(new SimulationDomainScreen());
             }
@@ -132,14 +138,52 @@ public class KeyInit {
         }
         if (mc.hitResult instanceof BlockHitResult blockHit) {
             if (mc.player.getEyePosition().distanceTo(blockHit.getLocation()) <= 4.8) {
-                mc.gameMode.useItemOn(mc.player, mc.level, InteractionHand.MAIN_HAND, blockHit);
-                return;
+                Block hitBlock = mc.level.getBlockState(blockHit.getBlockPos()).getBlock();
+                if (isInteractiveBlock(hitBlock)) {
+                    mc.gameMode.useItemOn(mc.player, mc.level, InteractionHand.MAIN_HAND, blockHit);
+                    return;
+                }
             }
         }
         List<FactionNpcEntity> npcs = mc.level.getEntitiesOfClass(FactionNpcEntity.class,
                 new AABB(mc.player.blockPosition()).inflate(3.2));
-        npcs.stream()
-                .min(Comparator.comparingDouble(e -> e.distanceToSqr(mc.player)))
-                .ifPresent(npc -> mc.gameMode.interact(mc.player, npc, InteractionHand.MAIN_HAND));
+        if (!npcs.isEmpty()) {
+            npcs.stream()
+                    .min(Comparator.comparingDouble(e -> e.distanceToSqr(mc.player)))
+                    .ifPresent(npc -> mc.gameMode.interact(mc.player, npc, InteractionHand.MAIN_HAND));
+            return;
+        }
+        // Fallback: trigger nearest interactive custom block within 2.5 blocks if crosshair was slightly off
+        BlockPos pPos = mc.player.blockPosition();
+        BlockPos nearest = null;
+        double bestDist = Double.MAX_VALUE;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -1; dy <= 2; dy++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    BlockPos check = pPos.offset(dx, dy, dz);
+                    if (isInteractiveBlock(mc.level.getBlockState(check).getBlock())) {
+                        double d = check.distSqr(pPos);
+                        if (d < bestDist) {
+                            bestDist = d;
+                            nearest = check;
+                        }
+                    }
+                }
+            }
+        }
+        if (nearest != null) {
+            mc.gameMode.useItemOn(mc.player, mc.level, InteractionHand.MAIN_HAND,
+                    new BlockHitResult(Vec3.atCenterOf(nearest), Direction.UP, nearest, false));
+        }
+    }
+
+    private static boolean isInteractiveBlock(Block b) {
+        return b == ModBlocks.SUPPLY_CRATE.get()
+                || b == ModBlocks.ENGINEERING_TERMINAL.get()
+                || b == ModBlocks.TELEPORT_WAYPOINT.get()
+                || b == ModBlocks.AUXILIARY_ENERGY_CORE.get()
+                || b == ModBlocks.ORBITAL_DROP_POD.get()
+                || b == ModBlocks.PRECURSOR_ALTAR.get()
+                || b == Blocks.CHEST;
     }
 }

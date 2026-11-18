@@ -1,6 +1,9 @@
 package com.resilienthope.core.event;
 
 import com.resilienthope.core.combat.TurnBasedCombatManager;
+import com.resilienthope.core.entity.FactionNpcEntity;
+import com.resilienthope.core.entity.PrecursorMechBossEntity;
+import com.resilienthope.core.entity.SecurityDroneEntity;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
@@ -14,14 +17,13 @@ import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingFallEvent;
@@ -29,38 +31,64 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
+import java.util.List;
+
 public class StarshipSpawnHandler {
-    private static final String SPAWN_TAG = "picking_hope_v2_spawned";
-    private static final String V2_WORLD_TAG = "picking_hope_v2_map_built";
+    private static final String SPAWN_TAG = "picking_hope_v2_clean_init_v3";
+    private static final String V2_WORLD_TAG = "picking_hope_v2_custom_world_v3";
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player)) return;
 
-        if (!player.isCreative() && !player.isSpectator()) {
-            player.setGameMode(GameType.ADVENTURE);
-        }
-
         ServerLevel level = player.getLevel();
         BlockPos origin = new BlockPos(0, 60, 0);
+        boolean freshReset = !player.getTags().contains(SPAWN_TAG);
 
-        if (!player.getTags().contains(SPAWN_TAG)) {
+        if (freshReset) {
+            // Unconditionally reset legacy Creative mode, inventory, quest NBT, and Lv.20 capability!
+            player.setGameMode(GameType.ADVENTURE);
             player.getInventory().clearContent();
+            player.getPersistentData().remove("PickingHopeQuest");
+
+            List<String> oldTags = player.getTags().stream()
+                    .filter(t -> t.startsWith("picking_hope_") || t.startsWith("hope_crate_"))
+                    .toList();
+            for (String oldTag : oldTags) {
+                player.removeTag(oldTag);
+            }
+
+            clearOldWorldEntities(level);
+
             ItemStack starterSword = new ItemStack(ModItems.PLASMA_CUTTER.get());
             EquipmentStatsHelper.ensureStats(starterSword, player.getRandom());
             player.getInventory().setItem(0, starterSword);
             player.setItemInHand(InteractionHand.MAIN_HAND, starterSword);
 
             player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
+                team.resetToFreshV2();
                 team.getCharacter(0).setEquippedWeapon(starterSword);
+                team.syncHealthToPlayer(player);
             });
 
-            buildExpandedStarship(level, origin);
-            player.teleportTo(level, 6.5, 62.0, 10.5, 270.0f, 0.0f);
-            player.setRespawnPosition(level.dimension(), new BlockPos(6, 62, 10), 270.0f, true, false);
-            player.addTag(SPAWN_TAG);
             QuestManager.resetAll();
+            StoryDirector.saveAndSyncQuest(player);
+
+            buildExpandedStarship(level, origin);
+            ensureUpperShipProps(level, origin);
+            buildLowerDeck(level);
+            buildIceOutpostAndMine(level);
+
+            player.teleportTo(level, 6.5, 61.0, 10.5, 270.0f, 0.0f);
+            player.setRespawnPosition(level.dimension(), new BlockPos(6, 61, 10), 270.0f, true, false);
+            player.addTag(SPAWN_TAG);
+            player.addTag(V2_WORLD_TAG);
         } else {
+            if (!player.isCreative() && !player.isSpectator()) {
+                player.setGameMode(GameType.ADVENTURE);
+            }
+            StoryDirector.loadQuest(player);
+
             player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
                 CharacterData active = team.getCharacter(team.getActiveSlotIndex());
                 if (active.getEquippedWeapon().isEmpty()) {
@@ -73,29 +101,43 @@ public class StarshipSpawnHandler {
                     player.setItemInHand(InteractionHand.MAIN_HAND, active.getEquippedWeapon().copy());
                 }
             });
+
+            if (!player.getTags().contains(V2_WORLD_TAG) || level.getBlockState(new BlockPos(168, 36, 28)).isAir()) {
+                buildExpandedStarship(level, origin);
+                ensureUpperShipProps(level, origin);
+                buildLowerDeck(level);
+                buildIceOutpostAndMine(level);
+                player.addTag(V2_WORLD_TAG);
+            }
         }
 
-        if (!player.getTags().contains(V2_WORLD_TAG) || level.getBlockState(new BlockPos(168, 36, 28)).isAir()) {
-            buildExpandedStarship(level, origin);
-            ensureUpperShipProps(level, origin, player);
-            buildLowerDeck(level);
-            buildIceOutpostAndMine(level, player);
-            player.addTag(V2_WORLD_TAG);
-        }
-
-        StoryDirector.loadQuest(player);
         int stage = QuestManager.getQuestStage();
-        if (stage >= 2) StoryDirector.ensureNpc(level, "chen", 31.5, 61.0, 14.5, -145.0f);
-        if (stage >= 4) StoryDirector.openElevatorShaft(level);
-        if (stage >= 5) StoryDirector.ensureNpc(level, "su", 30.5, 36.0, 7.5, -45.0f);
-        if (stage >= 10) StoryDirector.ensureNpc(level, "zheng", 131.5, 61.0, 31.5, 135.0f);
-        if (stage >= 12) StoryDirector.openMineElevatorShaft(level);
+        if (stage >= 2) StoryDirector.openSleepCorridorGate(level);
+        if (stage >= 3) StoryDirector.openHallCorridorGate(level);
+        if (stage >= 4) StoryDirector.ensureNpc(level, "chen", 31.5, 61.0, 14.5, -145.0f);
+        if (stage >= 9) StoryDirector.openElevatorShaft(level);
+        if (stage >= 10) StoryDirector.ensureNpc(level, "su", 30.5, 36.0, 7.5, -45.0f);
+        if (stage >= 17) StoryDirector.ensureNpc(level, "zheng", 131.5, 61.0, 31.5, 135.0f);
+        if (stage >= 21) StoryDirector.openMineElevatorShaft(level);
 
         PacketSyncTeamData.syncToPlayer(player);
 
         if (stage == 0) {
             PacketHandler.sendToPlayer(player, new PacketRadioDialogue("船舱应急广播",
-                    "警告：重拾希望号遭遇不明撞击，B区供电中断。林野，先打开身旁的物资箱检查装备！", 200));
+                    "警告：重拾希望号遭遇不明撞击，B区供电中断。林野，先按 [F] 开启身旁的【装甲物资箱】检查装备！", 200));
+        }
+    }
+
+    private static void clearOldWorldEntities(ServerLevel level) {
+        AABB shipAndPlanet = new AABB(-10, 20, -10, 190, 90, 60);
+        for (FactionNpcEntity npc : level.getEntitiesOfClass(FactionNpcEntity.class, shipAndPlanet)) {
+            npc.discard();
+        }
+        for (SecurityDroneEntity drone : level.getEntitiesOfClass(SecurityDroneEntity.class, shipAndPlanet)) {
+            drone.discard();
+        }
+        for (PrecursorMechBossEntity boss : level.getEntitiesOfClass(PrecursorMechBossEntity.class, shipAndPlanet)) {
+            boss.discard();
         }
     }
 
@@ -113,16 +155,12 @@ public class StarshipSpawnHandler {
                 player.setGameMode(GameType.ADVENTURE);
             }
 
-            if (QuestManager.getQuestStage() == 0 && player.getX() >= 12.0 && player.getY() >= 55.0) {
-                StoryDirector.triggerStage0To1(player, false);
-            }
-
             // Void rescue
             if (player.getY() < 10.0) {
                 if (player.getX() > 85.0) {
-                    player.teleportTo(player.getLevel(), 110.5, 61.0, 28.5, 270.0f, 0.0f);
+                    player.teleportTo(player.getLevel(), 108.5, 61.0, 28.5, 270.0f, 0.0f);
                 } else {
-                    player.teleportTo(player.getLevel(), 34.5, 61.0, 10.5, 90.0f, 0.0f);
+                    player.teleportTo(player.getLevel(), 34.5, 61.0, 12.5, 270.0f, 0.0f);
                 }
             }
 
@@ -206,58 +244,84 @@ public class StarshipSpawnHandler {
         }
     }
 
-    private static void ensureUpperShipProps(ServerLevel level, BlockPos origin, ServerPlayer player) {
-        level.setBlock(origin.offset(6, 1, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-        BlockPos chestPos = origin.offset(6, 2, 10);
-        if (!level.getBlockState(chestPos).is(Blocks.CHEST)) {
-            level.setBlock(chestPos, Blocks.CHEST.defaultBlockState(), 2);
-        }
-        if (level.getBlockEntity(chestPos) instanceof Container container && isContainerEmpty(container)) {
-            ItemStack chip1 = EquipmentStatsHelper.createChipWithRarity(ModItems.FUSION_CORE_CHIP.get(), 2, player.getRandom());
-            container.setItem(0, chip1);
-            container.setItem(1, new ItemStack(ModItems.EXP_BOTTLE.get(), 4));
-            container.setItem(2, new ItemStack(ModItems.CREDIT_COIN.get(), 20));
-        }
+    private static void ensureUpperShipProps(ServerLevel level, BlockPos origin) {
+        // Sleep Room Crate (7, 61, 10) & Gate Switch Terminal (11, 61, 8)
+        level.setBlock(origin.offset(7, 1, 10), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
+        level.setBlock(origin.offset(11, 1, 8), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
 
-        // Waypoint & Terminal in Relay Hall
+        // North Storage Alcove Crate (20, 61, 3) & Conduits
+        level.setBlock(origin.offset(20, 1, 3), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
+        level.setBlock(origin.offset(18, 1, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+        level.setBlock(origin.offset(21, 1, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+
+        // Relay Hall Props: Holotable (31, 61, 10), Waypoint (34, 61, 10), Terminal (38, 61, 14)
+        level.setBlock(origin.offset(31, 1, 10), ModBlocks.HOLOTABLE_PROP.get().defaultBlockState(), 2);
         level.setBlock(origin.offset(34, 1, 10), ModBlocks.TELEPORT_WAYPOINT.get().defaultBlockState(), 2);
         level.setBlock(origin.offset(38, 1, 14), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
 
-        if (QuestManager.getQuestStage() < 4) {
-            level.setBlock(new BlockPos(35, 60, 15), Blocks.YELLOW_CONCRETE.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(36, 60, 15), Blocks.YELLOW_CONCRETE.defaultBlockState(), 2);
-        }
-    }
+        // Bridge Data Room Props: Holotable (43, 61, 4) & Crate (44, 61, 3)
+        level.setBlock(origin.offset(43, 1, 4), ModBlocks.HOLOTABLE_PROP.get().defaultBlockState(), 2);
+        level.setBlock(origin.offset(44, 1, 3), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
 
-    private static boolean isContainerEmpty(Container c) {
-        for (int i = 0; i < c.getContainerSize(); i++) {
-            if (!c.getItem(i).isEmpty()) return false;
+        // Seal Bulkhead Doors & Elevator until unlocked
+        if (QuestManager.getQuestStage() < 2) {
+            for (int y = 61; y <= 63; y++) {
+                level.setBlock(new BlockPos(12, y, 9), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+                level.setBlock(new BlockPos(12, y, 10), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+            }
         }
-        return true;
+        if (QuestManager.getQuestStage() < 3) {
+            for (int y = 61; y <= 63; y++) {
+                level.setBlock(new BlockPos(25, y, 9), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+                level.setBlock(new BlockPos(25, y, 10), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+            }
+        }
+        if (QuestManager.getQuestStage() < 9) {
+            level.setBlock(new BlockPos(35, 60, 15), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(36, 60, 15), ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState(), 2);
+        }
     }
 
     private static void buildExpandedStarship(ServerLevel level, BlockPos origin) {
-        int sizeX = 44;
+        int sizeX = 48;
         int sizeZ = 20;
+
+        BlockState floor = ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
+        BlockState wall = ModBlocks.STARSHIP_WALL.get().defaultBlockState();
+        BlockState hull = ModBlocks.STARSHIP_HULL.get().defaultBlockState();
+        BlockState hazard = ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
+        BlockState light = ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
+        BlockState alarm = ModBlocks.ALARM_BEACON.get().defaultBlockState();
+        BlockState glass = ModBlocks.VIEWPORT_GLASS.get().defaultBlockState();
 
         for (int x = 0; x < sizeX; x++) {
             for (int z = 0; z < sizeZ; z++) {
-                boolean isHazard = (x == 12 || x == 13 || x == 24 || x == 25) && (z >= 7 && z <= 12);
-                level.setBlock(origin.offset(x, 0, z), isHazard ? Blocks.YELLOW_CONCRETE.defaultBlockState() : Blocks.GRAY_CONCRETE.defaultBlockState(), 2);
+                boolean isHazard = (x == 12 || x == 25 || (x >= 34 && x <= 37 && z >= 14 && z <= 16));
+                level.setBlock(origin.offset(x, 0, z), isHazard ? hazard : floor, 2);
 
-                boolean isLight = (x % 6 == 3) && (z % 6 == 3);
-                boolean isRedAlarm = (x >= 13 && x <= 23) && (x % 4 == 1) && (z == 8 || z == 11);
-                level.setBlock(origin.offset(x, 6, z),
-                        isRedAlarm ? Blocks.REDSTONE_LAMP.defaultBlockState() :
-                                (isLight ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.BLACK_CONCRETE.defaultBlockState()), 2);
+                boolean isLight = (x % 6 == 3) && (z % 5 == 2);
+                boolean isRedAlarm = (x >= 13 && x <= 24) && (x % 4 == 1) && (z == 8 || z == 11);
+                level.setBlock(origin.offset(x, 6, z), isRedAlarm ? alarm : (isLight ? light : hull), 2);
+
+                boolean inStorageAlcove = (x >= 17 && x <= 22 && z >= 1 && z <= 6);
+                boolean isBridgePartition = (x == 39 && z >= 0 && z <= 8 && !(z >= 3 && z <= 5));
 
                 for (int y = 1; y < 6; y++) {
                     if (x == 0 || x == sizeX - 1 || z == 0 || z == sizeZ - 1) {
-                        level.setBlock(origin.offset(x, y, z), Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
-                    } else if ((x >= 13 && x <= 24) && !(z >= 7 && z <= 12)) {
-                        level.setBlock(origin.offset(x, y, z), Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
-                    } else if ((x == 12 || x == 24) && !(z >= 8 && z <= 11)) {
-                        level.setBlock(origin.offset(x, y, z), Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
+                        boolean isViewport = ((x == 0 && z >= 7 && z <= 12) || (z == sizeZ - 1 && x >= 29 && x <= 42 && x % 4 != 0))
+                                && (y == 2 || y == 3);
+                        level.setBlock(origin.offset(x, y, z), isViewport ? glass : hull, 2);
+                    } else if ((x >= 13 && x <= 24) && !(z >= 7 && z <= 12) && !inStorageAlcove) {
+                        level.setBlock(origin.offset(x, y, z), wall, 2);
+                    } else if (x == 12 && !((z == 9 || z == 10) && y <= 3)) {
+                        level.setBlock(origin.offset(x, y, z), wall, 2);
+                    } else if (x == 25 && !((z == 9 || z == 10) && y <= 3)) {
+                        level.setBlock(origin.offset(x, y, z), wall, 2);
+                    } else if (isBridgePartition) {
+                        boolean isWindow = (y == 2 || y == 3) && (z == 1 || z == 7);
+                        level.setBlock(origin.offset(x, y, z), isWindow ? glass : wall, 2);
+                    } else if (x >= 39 && z == 8) {
+                        level.setBlock(origin.offset(x, y, z), (y == 2 || y == 3) ? glass : wall, 2);
                     } else {
                         level.setBlock(origin.offset(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                     }
@@ -265,34 +329,47 @@ public class StarshipSpawnHandler {
             }
         }
 
-        // Cryo Pods & Pipes inside Awakening Room (X: 2..10)
-        for (int x : new int[]{3, 6, 9}) {
-            level.setBlock(origin.offset(x, 1, 2), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(origin.offset(x, 2, 2), Blocks.GLASS.defaultBlockState(), 2);
-            level.setBlock(origin.offset(x, 1, 17), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(origin.offset(x, 2, 17), Blocks.GLASS.defaultBlockState(), 2);
+        // Open doorway between Corridor (z=7) and North Storage Alcove (x=19..20, z=6)
+        for (int y = 1; y <= 3; y++) {
+            level.setBlock(origin.offset(19, y, 7), Blocks.AIR.defaultBlockState(), 2);
+            level.setBlock(origin.offset(20, y, 7), Blocks.AIR.defaultBlockState(), 2);
         }
-        // Overhead industrial pipes in corridor
-        for (int x = 13; x <= 24; x++) {
-            level.setBlock(origin.offset(x, 5, 7), Blocks.IRON_BARS.defaultBlockState(), 2);
-            level.setBlock(origin.offset(x, 5, 12), Blocks.IRON_BARS.defaultBlockState(), 2);
+
+        // Cryo Sleep Pods & Structural Conduits in Awakening Room (X: 2..10)
+        for (int x : new int[]{3, 6, 9}) {
+            level.setBlock(origin.offset(x, 1, 2), ModBlocks.CRYO_SLEEP_POD.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(x, 1, 17), ModBlocks.CRYO_SLEEP_POD.get().defaultBlockState(), 2);
+        }
+        for (int y = 1; y <= 5; y++) {
+            level.setBlock(origin.offset(2, y, 5), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(2, y, 14), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(28, y, 3), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(28, y, 16), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(37, y, 16), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(origin.offset(45, y, 2), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
         }
     }
 
     private static void buildLowerDeck(ServerLevel level) {
+        BlockState floor = ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
+        BlockState wall = ModBlocks.STARSHIP_WALL.get().defaultBlockState();
+        BlockState hull = ModBlocks.STARSHIP_HULL.get().defaultBlockState();
+        BlockState hazard = ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
+        BlockState light = ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
+        BlockState glass = ModBlocks.VIEWPORT_GLASS.get().defaultBlockState();
+
         for (int x = 18; x <= 42; x++) {
             for (int z = 4; z <= 17; z++) {
                 boolean isDropZone = (x >= 20 && x <= 24 && z >= 8 && z <= 12);
-                level.setBlock(new BlockPos(x, 35, z),
-                        isDropZone ? Blocks.YELLOW_CONCRETE.defaultBlockState() : Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(x, 35, z), isDropZone ? hazard : floor, 2);
 
                 boolean isLight = (x % 5 == 2) && (z % 4 == 2);
-                level.setBlock(new BlockPos(x, 41, z),
-                        isLight ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
+                level.setBlock(new BlockPos(x, 41, z), isLight ? light : hull, 2);
 
                 for (int y = 36; y <= 40; y++) {
                     if (x == 18 || x == 42 || z == 4 || z == 17) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), 2);
+                        boolean isWin = (x == 18 && z >= 8 && z <= 12 && (y == 37 || y == 38));
+                        level.setBlock(new BlockPos(x, y, z), isWin ? glass : wall, 2);
                     } else {
                         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                     }
@@ -300,53 +377,70 @@ public class StarshipSpawnHandler {
             }
         }
 
-        // Backup Generator & Escape Pod
-        level.setBlock(new BlockPos(34, 35, 10), Blocks.NETHERITE_BLOCK.defaultBlockState(), 2);
+        // Backup Generator Core & Orbital Escape Pod
+        level.setBlock(new BlockPos(34, 35, 10), hull, 2);
         level.setBlock(new BlockPos(34, 36, 10), ModBlocks.AUXILIARY_ENERGY_CORE.get().defaultBlockState(), 2);
-
-        level.setBlock(new BlockPos(22, 35, 10), Blocks.IRON_BLOCK.defaultBlockState(), 2);
+        level.setBlock(new BlockPos(22, 35, 10), hazard, 2);
         level.setBlock(new BlockPos(22, 36, 10), ModBlocks.ORBITAL_DROP_POD.get().defaultBlockState(), 2);
 
-        // Pillars & Pipes
+        // Medbay Crate at (32, 36, 5)
+        level.setBlock(new BlockPos(32, 36, 5), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
+
+        // Structural Conduits
         for (int y = 36; y <= 40; y++) {
-            level.setBlock(new BlockPos(20, y, 7), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(20, y, 13), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(38, y, 7), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(38, y, 13), Blocks.IRON_BLOCK.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(20, y, 7), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(20, y, 13), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(38, y, 7), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(38, y, 13), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
         }
 
-        // Elevator Enclosure Y=36..59
+        // Enclosed Elevator Shaft Y=36..59
         for (int y = 36; y <= 59; y++) {
-            level.setBlock(new BlockPos(34, y, 15), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(37, y, 15), Blocks.IRON_BARS.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(35, y, 14), Blocks.IRON_BARS.defaultBlockState(), 2);
-            level.setBlock(new BlockPos(35, y, 16), Blocks.IRON_BARS.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(34, y, 15), wall, 2);
+            level.setBlock(new BlockPos(37, y, 15), (y >= 41) ? wall : Blocks.AIR.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(35, y, 14), glass, 2);
+            level.setBlock(new BlockPos(36, y, 14), glass, 2);
+            level.setBlock(new BlockPos(35, y, 16), wall, 2);
+            level.setBlock(new BlockPos(36, y, 16), wall, 2);
         }
     }
 
-    private static void buildIceOutpostAndMine(ServerLevel level, ServerPlayer player) {
+    private static void buildIceOutpostAndMine(ServerLevel level) {
+        BlockState snow = ModBlocks.GLACIER_SNOW.get().defaultBlockState();
+        BlockState permafrost = ModBlocks.PERMAFROST_ROCK.get().defaultBlockState();
+        BlockState ore = ModBlocks.FROZEN_ORE_VEIN.get().defaultBlockState();
+        BlockState floor = ModBlocks.STARSHIP_FLOOR.get().defaultBlockState();
+        BlockState wall = ModBlocks.STARSHIP_WALL.get().defaultBlockState();
+        BlockState hull = ModBlocks.STARSHIP_HULL.get().defaultBlockState();
+        BlockState hazard = ModBlocks.HAZARD_STRIPE_BLOCK.get().defaultBlockState();
+        BlockState light = ModBlocks.STARSHIP_LIGHT.get().defaultBlockState();
+        BlockState glass = ModBlocks.VIEWPORT_GLASS.get().defaultBlockState();
+
         // 1. Ice Canyon + Ground Research Outpost (X: 102..152, Z: 10..46, Y: 60..72)
         for (int x = 102; x <= 152; x++) {
             for (int z = 10; z <= 46; z++) {
                 boolean isRim = (x <= 103 || x >= 151 || z <= 11 || z >= 45);
                 boolean isSafeHouse = (x >= 126 && x <= 136 && z >= 20 && z <= 36);
+                boolean isSubstation = (x >= 140 && x <= 145 && z >= 23 && z <= 32);
                 boolean isPath = (z >= 26 && z <= 30);
 
-                if (isSafeHouse) {
-                    level.setBlock(new BlockPos(x, 60, z), Blocks.POLISHED_DEEPSLATE.defaultBlockState(), 2);
+                if (isSafeHouse || isSubstation) {
+                    level.setBlock(new BlockPos(x, 60, z), isSubstation ? floor : hull, 2);
                 } else if (isPath) {
-                    level.setBlock(new BlockPos(x, 60, z), Blocks.GRAY_CONCRETE.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(x, 60, z), floor, 2);
                 } else {
-                    level.setBlock(new BlockPos(x, 60, z), ((x + z) % 5 == 0) ? Blocks.PACKED_ICE.defaultBlockState() : Blocks.SNOW_BLOCK.defaultBlockState(), 2);
+                    level.setBlock(new BlockPos(x, 60, z), ((x + z) % 4 == 0) ? permafrost : snow, 2);
                 }
 
                 for (int y = 61; y <= 72; y++) {
                     if (isSafeHouse && y == 65) {
-                        level.setBlock(new BlockPos(x, y, z), ((x % 4 == 0 && z % 4 == 0) ? Blocks.SEA_LANTERN : Blocks.IRON_BLOCK).defaultBlockState(), 2);
+                        level.setBlock(new BlockPos(x, y, z), (x % 4 == 0 && z % 4 == 0) ? light : hull, 2);
                     } else if (isSafeHouse && y < 65 && (x == 126 || x == 136 || z == 20 || z == 36) && !isPath) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.GRAY_CONCRETE.defaultBlockState(), 2);
-                    } else if (isRim && y <= 65) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.PACKED_ICE.defaultBlockState(), 2);
+                        boolean isWin = (y == 62 || y == 63) && (z == 22 || z == 34 || x == 129 || x == 133);
+                        level.setBlock(new BlockPos(x, y, z), isWin ? glass : wall, 2);
+                    } else if (isRim && y <= 66) {
+                        boolean isRimOre = (y == 63) && ((x + z) % 7 == 0);
+                        level.setBlock(new BlockPos(x, y, z), isRimOre ? ore : ((y >= 65) ? snow : permafrost), 2);
                     } else {
                         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                     }
@@ -354,63 +448,72 @@ public class StarshipSpawnHandler {
             }
         }
 
-        // Crashed Escape Pod debris near (108, 61, 28)
-        level.setBlock(new BlockPos(107, 61, 26), Blocks.IRON_BLOCK.defaultBlockState(), 2);
-        level.setBlock(new BlockPos(108, 62, 25), Blocks.BLACK_CONCRETE.defaultBlockState(), 2);
+        // Crashed Escape Pod wreckage near (108, 61, 28)
+        level.setBlock(new BlockPos(107, 61, 25), hull, 2);
+        level.setBlock(new BlockPos(107, 62, 25), hazard, 2);
+        level.setBlock(new BlockPos(108, 61, 24), wall, 2);
 
-        // Wreckage Chest at (110, 61, 25)
-        BlockPos wreckChest = new BlockPos(110, 61, 25);
-        level.setBlock(wreckChest, Blocks.CHEST.defaultBlockState(), 2);
-        if (level.getBlockEntity(wreckChest) instanceof Container c && isContainerEmpty(c)) {
-            c.setItem(0, new ItemStack(ModItems.EXP_BOTTLE.get(), 6));
-            c.setItem(1, new ItemStack(ModItems.CHAR_MAT_1.get(), 4));
-            c.setItem(2, EquipmentStatsHelper.createChipWithRarity(ModItems.VOID_DRIVE_CHIP.get(), 2, player.getRandom()));
-        }
-
-        // Ice Waypoint at (114, 61, 28)
+        // Wreckage Crate (110, 61, 25) & Ice Waypoint (114, 61, 28)
+        level.setBlock(new BlockPos(110, 61, 25), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
         level.setBlock(new BlockPos(114, 61, 28), ModBlocks.TELEPORT_WAYPOINT.get().defaultBlockState(), 2);
 
-        // Outpost Safe Room Terminal & Chest
+        // Outpost Safe Room Terminal, Holotable & Crate
         level.setBlock(new BlockPos(130, 61, 33), ModBlocks.ENGINEERING_TERMINAL.get().defaultBlockState(), 2);
-        BlockPos outpostChest = new BlockPos(133, 61, 33);
-        level.setBlock(outpostChest, Blocks.CHEST.defaultBlockState(), 2);
-        if (level.getBlockEntity(outpostChest) instanceof Container oc && isContainerEmpty(oc)) {
-            oc.setItem(0, EquipmentStatsHelper.createChipWithRarity(ModItems.SERVO_BATTERY_CHIP.get(), 3, player.getRandom()));
-            oc.setItem(1, EquipmentStatsHelper.createChipWithRarity(ModItems.OVERCLOCK_CHIP.get(), 2, player.getRandom()));
-            oc.setItem(2, EquipmentStatsHelper.createChipWithRarity(ModItems.OVERCLOCK_CHIP.get(), 2, player.getRandom()));
-            oc.setItem(3, new ItemStack(ModItems.EQUIP_ESSENCE.get(), 2));
-            oc.setItem(4, new ItemStack(ModItems.EXP_BOTTLE.get(), 3));
-        }
+        level.setBlock(new BlockPos(133, 61, 33), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
+        level.setBlock(new BlockPos(130, 61, 24), ModBlocks.HOLOTABLE_PROP.get().defaultBlockState(), 2);
 
-        // Seal Mine Freight Elevator at (146, 60, 28) until Stage 12
-        if (QuestManager.getQuestStage() < 12) {
-            level.setBlock(new BlockPos(146, 60, 28), Blocks.YELLOW_CONCRETE.defaultBlockState(), 2);
+        // East Substation Core (143, 61, 25)
+        level.setBlock(new BlockPos(143, 60, 25), hazard, 2);
+        level.setBlock(new BlockPos(143, 61, 25), ModBlocks.AUXILIARY_ENERGY_CORE.get().defaultBlockState(), 2);
+
+        // Seal Mine Freight Elevator at (146..147, 60, 28) until Stage 21
+        if (QuestManager.getQuestStage() < 21) {
+            level.setBlock(new BlockPos(146, 60, 28), hazard, 2);
+            level.setBlock(new BlockPos(147, 60, 28), hazard, 2);
         }
 
         // 2. Underground Frozen Mine (X: 144..176, Z: 14..42, Y: 35..43)
         for (int x = 144; x <= 176; x++) {
             for (int z = 14; z <= 42; z++) {
                 boolean isBossDais = (x >= 164 && x <= 172 && z >= 24 && z <= 32);
+                boolean isDaisRim = isBossDais && (x == 164 || x == 172 || z == 24 || z == 32);
+                boolean isMineRoad = (z >= 27 && z <= 29 && x >= 148 && x <= 163);
                 level.setBlock(new BlockPos(x, 35, z),
-                        isBossDais ? Blocks.POLISHED_BLACKSTONE.defaultBlockState() : Blocks.DEEPSLATE_BRICKS.defaultBlockState(), 2);
+                        isDaisRim ? hazard : (isBossDais ? hull : (isMineRoad ? floor : permafrost)), 2);
+
                 boolean isLight = (x % 6 == 0) && (z % 6 == 0);
                 level.setBlock(new BlockPos(x, 43, z),
-                        isLight ? Blocks.SEA_LANTERN.defaultBlockState() : Blocks.PACKED_ICE.defaultBlockState(), 2);
+                        isLight ? light : (((x + z) % 9 == 0) ? ore : permafrost), 2);
 
                 for (int y = 36; y < 43; y++) {
                     if (x == 144 || x == 176 || z == 14 || z == 42) {
-                        level.setBlock(new BlockPos(x, y, z), Blocks.DEEPSLATE.defaultBlockState(), 2);
+                        boolean crystal = (y == 38 || y == 39) && ((x + z) % 5 == 0);
+                        level.setBlock(new BlockPos(x, y, z), crystal ? ore : permafrost, 2);
                     } else {
                         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 2);
                     }
                 }
             }
         }
-        // Mine railway details
-        for (int x = 148; x <= 163; x++) {
-            level.setBlock(new BlockPos(x, 36, 28), Blocks.RAIL.defaultBlockState(), 2);
+
+        // Enclosed Mine Freight Elevator Shaft Y=36..59 around (146..147, y, 28)
+        for (int y = 36; y <= 59; y++) {
+            level.setBlock(new BlockPos(145, y, 28), permafrost, 2);
+            level.setBlock(new BlockPos(148, y, 28), (y >= 41) ? permafrost : Blocks.AIR.defaultBlockState(), 2);
+            level.setBlock(new BlockPos(146, y, 27), wall, 2);
+            level.setBlock(new BlockPos(147, y, 27), wall, 2);
+            level.setBlock(new BlockPos(146, y, 29), wall, 2);
+            level.setBlock(new BlockPos(147, y, 29), wall, 2);
         }
-        // Deep-Space Comms Console (Boss trigger) at (168, 36, 28)
+
+        // Mine Conduits, Crate (158, 36, 24) & Comms Console (168, 36, 28)
+        for (int y = 36; y <= 42; y++) {
+            level.setBlock(new BlockPos(156, y, 23), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(156, y, 33), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(164, y, 23), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+            level.setBlock(new BlockPos(164, y, 33), ModBlocks.CONDUIT_PILLAR.get().defaultBlockState(), 2);
+        }
+        level.setBlock(new BlockPos(158, 36, 24), ModBlocks.SUPPLY_CRATE.get().defaultBlockState(), 2);
         level.setBlock(new BlockPos(168, 36, 28), ModBlocks.PRECURSOR_ALTAR.get().defaultBlockState(), 2);
     }
 }

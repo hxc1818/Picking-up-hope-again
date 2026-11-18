@@ -19,6 +19,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
@@ -101,7 +102,9 @@ public class GenshinHudOverlay {
         renderBottomCenterPlayerStatus(poseStack, player, screenWidth, screenHeight, font);
         renderOverworldEncounterTip(poseStack, screenWidth, screenHeight, font);
         renderInteractionPrompt(poseStack, mc, player, screenWidth, screenHeight, font);
-        renderRadioDialogue(poseStack, screenWidth, screenHeight, font);
+        if (!(mc.screen instanceof NpcDialogueScreen)) {
+            renderRadioDialogue(poseStack, screenWidth, screenHeight, font);
+        }
     }
 
     public static void drawVoxelPanel(PoseStack ps, int x, int y, int w, int h, int bgCol, int borderCol, int cornerCol) {
@@ -122,6 +125,10 @@ public class GenshinHudOverlay {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, tex);
         GuiComponent.blit(ps, x, y, dstW, dstH, 0.0F, 0.0F, srcW, srcH, srcW, srcH);
+    }
+
+    public static void drawPortrait(PoseStack ps, ResourceLocation tex, int x, int y, int dstW, int dstH) {
+        drawTexture(ps, tex, x, y, dstW, dstH, 64, 64);
     }
 
     private static Vec3 viewVector(float xRotDeg, float yRotDeg) {
@@ -181,7 +188,7 @@ public class GenshinHudOverlay {
         if (target == null) return;
 
         double dist = Math.sqrt(player.distanceToSqr(target.getX() + 0.5, target.getY() + 0.5, target.getZ() + 0.5));
-        int[] proj = projectWorldToScreen(mc, target.getX() + 0.5, target.getY() + 1.65, target.getZ() + 0.5, width, height);
+        int[] proj = projectWorldToScreen(mc, target.getX() + 0.5, target.getY() + 1.5, target.getZ() + 0.5, width, height);
 
         int rawX = proj[0];
         int rawY = proj[1];
@@ -227,9 +234,9 @@ public class GenshinHudOverlay {
     }
 
     private static void renderMiniRadar(PoseStack poseStack, Minecraft mc, Player player, int width, int height, Font font) {
-        int radius = 28;
-        int radarX = width - 38;
-        int radarY = 38;
+        int radius = 26;
+        int radarX = width - 34;
+        int radarY = 34;
 
         drawVoxelPanel(poseStack, radarX - radius, radarY - radius, radius * 2, radius * 2,
                 0xBA091018, 0xFF2E5C88, 0xFF38BDF8);
@@ -251,8 +258,8 @@ public class GenshinHudOverlay {
                     if (!bs.isAir() && bs.getMaterial().isSolid()) {
                         double lr = ox * rightX + oz * rightZ;
                         double lf = ox * fwdX + oz * fwdZ;
-                        int px = radarX + (int) (lr * 2.1);
-                        int py = radarY - (int) (lf * 2.1);
+                        int px = radarX + (int) (lr * 2.0);
+                        int py = radarY - (int) (lf * 2.0);
                         if (Math.abs(px - radarX) < radius - 3 && Math.abs(py - radarY) < radius - 3) {
                             GuiComponent.fill(poseStack, px, py, px + 2, py + 2, 0x664A709A);
                         }
@@ -266,8 +273,8 @@ public class GenshinHudOverlay {
                 double dz = m.getZ() - player.getZ();
                 double lr = dx * rightX + dz * rightZ;
                 double lf = dx * fwdX + dz * fwdZ;
-                int ex = Mth.clamp(radarX + (int) (lr * 1.5), radarX - radius + 3, radarX + radius - 4);
-                int ey = Mth.clamp(radarY - (int) (lf * 1.5), radarY - radius + 3, radarY + radius - 4);
+                int ex = Mth.clamp(radarX + (int) (lr * 1.4), radarX - radius + 3, radarX + radius - 4);
+                int ey = Mth.clamp(radarY - (int) (lf * 1.4), radarY - radius + 3, radarY + radius - 4);
                 GuiComponent.fill(poseStack, ex - 1, ey - 1, ex + 2, ey + 2, 0xFFFF3B3B);
             }
             for (FactionNpcEntity npc : mc.level.getEntitiesOfClass(FactionNpcEntity.class, scanBox)) {
@@ -275,8 +282,8 @@ public class GenshinHudOverlay {
                 double dz = npc.getZ() - player.getZ();
                 double lr = dx * rightX + dz * rightZ;
                 double lf = dx * fwdX + dz * fwdZ;
-                int ex = Mth.clamp(radarX + (int) (lr * 1.5), radarX - radius + 3, radarX + radius - 4);
-                int ey = Mth.clamp(radarY - (int) (lf * 1.5), radarY - radius + 3, radarY + radius - 4);
+                int ex = Mth.clamp(radarX + (int) (lr * 1.4), radarX - radius + 3, radarX + radius - 4);
+                int ey = Mth.clamp(radarY - (int) (lf * 1.4), radarY - radius + 3, radarY + radius - 4);
                 GuiComponent.fill(poseStack, ex - 1, ey - 1, ex + 2, ey + 2, 0xFF40FFCC);
             }
         }
@@ -295,7 +302,7 @@ public class GenshinHudOverlay {
             double lf = dx * fwdX + dz * fwdZ;
             double len = Math.sqrt(lr * lr + lf * lf);
             double maxDist = radius - 6;
-            double scale = len > 14.0 ? (maxDist / Math.max(0.01, len)) : 1.5;
+            double scale = len > 14.0 ? (maxDist / Math.max(0.01, len)) : 1.4;
             int tx = Mth.clamp(radarX + (int) (lr * scale), radarX - radius + 4, radarX + radius - 4);
             int ty = Mth.clamp(radarY - (int) (lf * scale), radarY - radius + 4, radarY + radius - 4);
             font.draw(poseStack, new TextComponent("◆"), tx - 3, ty - 4, 0xFFFBBF24);
@@ -312,52 +319,60 @@ public class GenshinHudOverlay {
 
         double dist = target != null ? Math.sqrt(player.distanceToSqr(target.getX() + 0.5, target.getY() + 0.5, target.getZ() + 0.5)) : 0;
         String distStr = dist > 3.2 ? String.format(" [%.0fm]", dist) : " [到达]";
-        String fullObj = objective + hint;
+        String fullObj = objective + hint + distStr;
 
-        int startX = 12;
-        int startY = 12;
-        int textW = Math.max(font.width(title), font.width(fullObj) + font.width(distStr));
-        int bgW = Math.max(textW + 24, 210);
-        int bgH = 34;
+        int startX = 10;
+        int startY = 8;
+        int maxAllowedW = Math.max(160, width - 90);
+        List<FormattedCharSequence> lines = font.split(new TextComponent(fullObj), maxAllowedW - 18);
+        int bgW = Math.min(maxAllowedW, Math.max(font.width(title) + 28, Math.min(font.width(fullObj) + 22, maxAllowedW)));
+        int bgH = 20 + Math.min(lines.size(), 2) * 11;
 
         drawVoxelPanel(poseStack, startX, startY, bgW, bgH, 0xB80D141F, 0xFF284664, 0xFFFBBF24);
         GuiComponent.fill(poseStack, startX, startY, startX + 3, startY + bgH, 0xFFFBBF24);
 
         font.draw(poseStack, new TextComponent("◈ " + title), startX + 8, startY + 5, 0xFFFBBF24);
-        font.draw(poseStack, new TextComponent(fullObj), startX + 10, startY + 18, 0xFFE6EEF5);
-        font.draw(poseStack, new TextComponent(distStr), startX + 12 + font.width(fullObj), startY + 18, 0xFF38BDF8);
+        int oy = startY + 17;
+        for (int i = 0; i < Math.min(lines.size(), 2); i++) {
+            font.draw(poseStack, lines.get(i), startX + 10, oy, 0xFFE6EEF5);
+            oy += 11;
+        }
 
-        String keys = "[B]背包  [C]角色  [E]副本  [G]抽卡  [F]交互";
-        int kw = font.width(keys) + 12;
-        drawVoxelPanel(poseStack, startX, startY + bgH + 4, kw, 14, 0x90091018, 0xFF20344A, 0xFF38BDF8);
-        font.draw(poseStack, new TextComponent(keys), startX + 6, startY + bgH + 7, 0xFF9EC5E8);
+        String keys = "[B]背包 [C]角色 [E]副本 [G]抽卡 [F]交互";
+        int kw = Math.min(maxAllowedW, font.width(keys) + 12);
+        drawVoxelPanel(poseStack, startX, startY + bgH + 3, kw, 14, 0x90091018, 0xFF20344A, 0xFF38BDF8);
+        font.draw(poseStack, new TextComponent(keys), startX + 6, startY + bgH + 6, 0xFF9EC5E8);
     }
 
     private static void renderPartySidebar(PoseStack poseStack, Player player, int width, int height, Font font) {
         player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
-            int startX = width - 138;
-            int startY = height / 2 - 72;
+            int cardW = 114;
+            int cardH = 28;
+            int startX = width - cardW - 8;
+            int startY = Math.max(66, height / 2 - 58);
 
             for (int i = 0; i < 4; i++) {
                 CharacterData character = team.getCharacter(i);
                 boolean unlocked = character.isUnlocked();
                 boolean isActive = (i == team.getActiveSlotIndex());
-                int itemY = startY + i * 38;
+                int itemY = startY + i * (cardH + 3);
+                if (itemY + cardH > height - 28) break;
 
                 int elemCol = unlocked ? CharacterData.getElementColor(character.getElement()) : 0xFF243548;
                 int bgCol = isActive ? 0xC81C2E42 : (unlocked ? 0x90101824 : 0x600B0F16);
                 int borderCol = isActive ? 0xFFFBBF24 : elemCol;
 
-                drawVoxelPanel(poseStack, startX, itemY, 128, 33, bgCol, borderCol, borderCol);
+                drawVoxelPanel(poseStack, startX, itemY, cardW, cardH, bgCol, borderCol, borderCol);
 
                 ResourceLocation portrait = unlocked ? TurnBasedBattleScreen.getPortraitForChar(character.getCharId()) : TEX_PORTRAIT_LOCKED;
-                drawTexture(poseStack, portrait, startX + 4, itemY + 4, 24, 24, 32, 32);
+                drawPortrait(poseStack, portrait, startX + 3, itemY + 3, 22, 22);
 
-                GuiComponent.fill(poseStack, startX + 2, itemY + 2, startX + 11, itemY + 11, 0xD0000000);
-                font.draw(poseStack, new TextComponent(String.valueOf(i + 1)), startX + 4, itemY + 3, isActive ? 0xFFFBBF24 : 0xFF94A3B8);
+                GuiComponent.fill(poseStack, startX + 1, itemY + 1, startX + 9, itemY + 10, 0xD0000000);
+                font.draw(poseStack, new TextComponent(String.valueOf(i + 1)), startX + 3, itemY + 2, isActive ? 0xFFFBBF24 : 0xFF94A3B8);
 
-                String name = unlocked ? character.getName() : "编队空位";
-                font.draw(poseStack, new TextComponent(name), startX + 32, itemY + 5,
+                String rawName = unlocked ? character.getName() : "编队空位";
+                String name = rawName.contains("·") ? rawName.substring(rawName.indexOf('·') + 1) : rawName;
+                font.draw(poseStack, new TextComponent(name), startX + 28, itemY + 4,
                         unlocked ? (isActive ? 0xFFFBBF24 : 0xFFEEEEEE) : 0xFF708090);
 
                 if (unlocked) {
@@ -365,17 +380,17 @@ public class GenshinHudOverlay {
                     int curHp = Math.max(0, (int) character.getCurrentHp());
                     float hpPct = Mth.clamp((float) curHp / maxHp, 0.0f, 1.0f);
 
-                    int barX = startX + 32;
-                    int barY = itemY + 18;
-                    int barW = 70;
+                    int barX = startX + 28;
+                    int barY = itemY + 15;
+                    int barW = 64;
                     GuiComponent.fill(poseStack, barX, barY, barX + barW, barY + 6, 0xB016202B);
                     int hpCol = hpPct > 0.35f ? 0xFF4ADE80 : 0xFFF87171;
                     GuiComponent.fill(poseStack, barX, barY, barX + (int) (barW * hpPct), barY + 6, hpCol);
 
                     String elemShort = character.getElementLabel();
-                    font.draw(poseStack, new TextComponent(elemShort), startX + 108, itemY + 16, elemCol);
+                    font.draw(poseStack, new TextComponent(elemShort), startX + cardW - 16, itemY + 13, elemCol);
                 } else {
-                    font.draw(poseStack, new TextComponent("主线/抽卡解锁"), startX + 32, itemY + 18, 0xFF556677);
+                    font.draw(poseStack, new TextComponent("主线/抽卡解锁"), startX + 28, itemY + 15, 0xFF556677);
                 }
             }
         });
@@ -384,10 +399,10 @@ public class GenshinHudOverlay {
     private static void renderBottomCenterPlayerStatus(PoseStack poseStack, Player player, int width, int height, Font font) {
         player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             CharacterData active = team.getCharacter(team.getActiveSlotIndex());
-            int barW = 248;
-            int barH = 26;
+            int barW = Math.min(230, width - 16);
+            int barH = 24;
             int x = (width - barW) / 2;
-            int y = height - 34;
+            int y = height - 29;
 
             drawVoxelPanel(poseStack, x, y, barW, barH, 0xCC0D1622, 0xFF2E5072, 0xFF38BDF8);
 
@@ -398,16 +413,16 @@ public class GenshinHudOverlay {
             String lvName = "Lv." + active.getLevel() + " " + active.getName() + " [" + active.getElementLabel() + "]";
             font.draw(poseStack, new TextComponent(lvName), x + 6, y + 3, 0xFFFBBF24);
 
-            String worldBadge = String.format("世界Lv.%d | 体力%d", team.getWorldLevel(), team.getStamina());
-            font.draw(poseStack, new TextComponent(worldBadge), x + barW - font.width(worldBadge) - 6, y + 3, 0xFF7DD3FC);
+            String worldBadge = String.format("世Lv.%d|体%d", team.getWorldLevel(), team.getStamina());
+            font.draw(poseStack, new TextComponent(worldBadge), x + barW - font.width(worldBadge) - 5, y + 3, 0xFF7DD3FC);
 
             int hpBarX = x + 6;
-            int hpBarY = y + 14;
+            int hpBarY = y + 13;
             int hpBarW = barW - 12;
-            GuiComponent.fill(poseStack, hpBarX, hpBarY, hpBarX + hpBarW, hpBarY + 8, 0xCC121A24);
+            GuiComponent.fill(poseStack, hpBarX, hpBarY, hpBarX + hpBarW, hpBarY + 7, 0xCC121A24);
             int hpCol = hpPct > 0.35f ? 0xFF22C55E : 0xFFEF4444;
             int fillW = (int) (hpBarW * hpPct);
-            GuiComponent.fill(poseStack, hpBarX, hpBarY, hpBarX + fillW, hpBarY + 8, hpCol);
+            GuiComponent.fill(poseStack, hpBarX, hpBarY, hpBarX + fillW, hpBarY + 7, hpCol);
 
             String hpStr = curHp + " / " + maxHp;
             font.drawShadow(poseStack, new TextComponent(hpStr), x + (barW - font.width(hpStr)) / 2.0f, hpBarY, 0xFFFFFFFF);
@@ -415,12 +430,13 @@ public class GenshinHudOverlay {
     }
 
     private static void renderOverworldEncounterTip(PoseStack poseStack, int width, int height, Font font) {
+        if (width < 460) return; // Avoid crowding bottom bar at compact 427x240 scale
         String tip = "左键攻击怪物：先手进战";
-        int tw = font.width(tip) + 14;
-        int x = width - tw - 12;
-        int y = height - 28;
-        drawVoxelPanel(poseStack, x, y, tw, 18, 0xB80A121C, 0xFF284664, 0xFFFBBF24);
-        font.draw(poseStack, new TextComponent(tip), x + 7, y + 5, 0xFFE2E8F0);
+        int tw = font.width(tip) + 12;
+        int x = width - tw - 8;
+        int y = height - 24;
+        drawVoxelPanel(poseStack, x, y, tw, 16, 0xB80A121C, 0xFF284664, 0xFFFBBF24);
+        font.draw(poseStack, new TextComponent(tip), x + 6, y + 4, 0xFFE2E8F0);
     }
 
     private static void renderInteractionPrompt(PoseStack poseStack, Minecraft mc, Player player, int width, int height, Font font) {
@@ -430,21 +446,10 @@ public class GenshinHudOverlay {
         if (mc.hitResult instanceof EntityHitResult entityHit && player.getEyePosition().distanceTo(entityHit.getLocation()) <= 4.8) {
             promptLabel = "交谈 · " + entityHit.getEntity().getName().getString();
         } else if (mc.hitResult instanceof BlockHitResult blockHit && player.getEyePosition().distanceTo(blockHit.getLocation()) <= 4.8) {
-            BlockState state = mc.level.getBlockState(blockHit.getBlockPos());
-            if (state.is(ModBlocks.TELEPORT_WAYPOINT.get())) {
-                promptLabel = player.getX() > 90 ? "冰原锚点 · 恢复 / 返舰" : "传送锚点 · 恢复状态";
-            } else if (state.is(ModBlocks.ENGINEERING_TERMINAL.get())) {
-                promptLabel = "模拟训练终端 · 刷取材料副本";
-            } else if (state.is(ModBlocks.AUXILIARY_ENERGY_CORE.get())) {
-                promptLabel = "备用发电机组 · 合闸启动";
-            } else if (state.is(ModBlocks.ORBITAL_DROP_POD.get())) {
-                promptLabel = "轨道逃生舱 · 脱离飞船";
-            } else if (state.is(ModBlocks.PRECURSOR_ALTAR.get())) {
-                promptLabel = "深空通讯塔控制台 · 迎战挖掘机";
-            } else if (state.is(Blocks.CHEST)) {
-                promptLabel = "应急物资箱 · 打开拾取";
-            }
-        } else {
+            promptLabel = describeInteractiveBlock(mc.level.getBlockState(blockHit.getBlockPos()), blockHit.getBlockPos(), player);
+        }
+
+        if (promptLabel == null) {
             List<FactionNpcEntity> nearby = mc.level.getEntitiesOfClass(FactionNpcEntity.class,
                     new AABB(player.blockPosition()).inflate(3.2));
             if (!nearby.isEmpty()) {
@@ -452,17 +457,51 @@ public class GenshinHudOverlay {
             }
         }
 
+        if (promptLabel == null) {
+            BlockPos pPos = player.blockPosition();
+            for (int dx = -2; dx <= 2 && promptLabel == null; dx++) {
+                for (int dy = -1; dy <= 2 && promptLabel == null; dy++) {
+                    for (int dz = -2; dz <= 2 && promptLabel == null; dz++) {
+                        BlockPos check = pPos.offset(dx, dy, dz);
+                        promptLabel = describeInteractiveBlock(mc.level.getBlockState(check), check, player);
+                    }
+                }
+            }
+        }
+
         if (promptLabel != null) {
-            int promptX = width / 2 + 24;
+            int promptX = Math.min(width - 170, width / 2 + 18);
             int promptY = height / 2 - 11;
-            int boxW = font.width(promptLabel) + 38;
-            int boxH = 22;
+            int boxW = font.width(promptLabel) + 34;
+            int boxH = 20;
 
             drawVoxelPanel(poseStack, promptX, promptY, boxW, boxH, 0xD80D1520, 0xFF4A90E2, 0xFF38BDF8);
-            GuiComponent.fill(poseStack, promptX + 5, promptY + 4, promptX + 18, promptY + 18, 0xB0000000);
-            font.draw(poseStack, new TextComponent("F"), promptX + 9, promptY + 7, 0xFF38BDF8);
-            font.draw(poseStack, new TextComponent(promptLabel), promptX + 24, promptY + 7, 0xFFFFFFFF);
+            GuiComponent.fill(poseStack, promptX + 4, promptY + 3, promptX + 16, promptY + 17, 0xB0000000);
+            font.draw(poseStack, new TextComponent("F"), promptX + 8, promptY + 6, 0xFF38BDF8);
+            font.draw(poseStack, new TextComponent(promptLabel), promptX + 21, promptY + 6, 0xFFFFFFFF);
         }
+    }
+
+    private static String describeInteractiveBlock(BlockState state, BlockPos pos, Player player) {
+        if (state.is(ModBlocks.SUPPLY_CRATE.get()) || state.is(Blocks.CHEST)) {
+            return "装甲物资箱 · 开启搜寻";
+        }
+        if (state.is(ModBlocks.TELEPORT_WAYPOINT.get())) {
+            return player.getX() > 90 ? "冰原锚点 · 恢复 / 返舰" : "传送锚点 · 恢复 / 传送";
+        }
+        if (state.is(ModBlocks.ENGINEERING_TERMINAL.get())) {
+            return pos.getX() < 20 ? "走廊闸门开关 · 启动开启" : "模拟训练终端 · 刷取材料副本";
+        }
+        if (state.is(ModBlocks.AUXILIARY_ENERGY_CORE.get())) {
+            return pos.getX() > 90 ? "东配电合闸核心 · 通电解锁" : "备用发电机组 · 合闸启动";
+        }
+        if (state.is(ModBlocks.ORBITAL_DROP_POD.get())) {
+            return "轨道逃生舱 · 脱离飞船";
+        }
+        if (state.is(ModBlocks.PRECURSOR_ALTAR.get())) {
+            return "深空通讯塔控制台 · 迎战挖掘机";
+        }
+        return null;
     }
 
     private static void renderRadioDialogue(PoseStack poseStack, int width, int height, Font font) {
@@ -472,13 +511,16 @@ public class GenshinHudOverlay {
         String text = RadioSubtitleManager.getCurrentText();
         int accentCol = RadioSubtitleManager.getSpeakerColor();
 
-        int textWidth = font.width(text);
-        int boxWidth = Math.max(textWidth + 68, 280);
-        int boxHeight = 40;
+        int maxBoxW = Math.min(width - 20, 420);
+        int textMaxW = maxBoxW - 50;
+        List<FormattedCharSequence> lines = font.split(new TextComponent(text), textMaxW);
+        int showLines = Math.min(lines.size(), 3);
+        int boxWidth = Math.max(220, maxBoxW);
+        int boxHeight = 20 + showLines * 11;
         int startX = (width - boxWidth) / 2;
-        int startY = height - 84;
+        int startY = height - 34 - boxHeight;
 
-        drawVoxelPanel(poseStack, startX, startY, boxWidth, boxHeight, 0xD80A121C, accentCol, 0xFFFFFFFF);
+        drawVoxelPanel(poseStack, startX, startY, boxWidth, boxHeight, 0xDE0A121C, accentCol, 0xFFFFFFFF);
 
         String charId = "linye";
         if (speaker.contains("老郑")) charId = "laozheng";
@@ -486,12 +528,16 @@ public class GenshinHudOverlay {
         else if (speaker.contains("苏晴")) charId = "suqing";
         else if (speaker.contains("韩冰")) charId = "hanbing";
 
-        drawTexture(poseStack, TurnBasedBattleScreen.getPortraitForChar(charId), startX + 6, startY + 6, 28, 28, 32, 32);
+        drawPortrait(poseStack, TurnBasedBattleScreen.getPortraitForChar(charId), startX + 6, startY + 6, 26, 26);
 
         String header = "【" + speaker + "】";
         int qCount = RadioSubtitleManager.getQueuedCount();
         if (qCount > 0) header += "  +" + qCount;
-        font.draw(poseStack, new TextComponent(header), startX + 40, startY + 6, accentCol);
-        font.draw(poseStack, new TextComponent(text), startX + 40, startY + 20, 0xFFF4F7FA);
+        font.draw(poseStack, new TextComponent(header), startX + 38, startY + 5, accentCol);
+        int ty = startY + 17;
+        for (int i = 0; i < showLines; i++) {
+            font.draw(poseStack, lines.get(i), startX + 38, ty, 0xFFF4F7FA);
+            ty += 11;
+        }
     }
 }

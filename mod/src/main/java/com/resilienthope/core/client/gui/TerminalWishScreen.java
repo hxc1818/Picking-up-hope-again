@@ -8,7 +8,6 @@ import com.resilienthope.core.network.PacketWishPull;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.TextComponent;
@@ -33,11 +32,6 @@ public class TerminalWishScreen extends Screen {
     private final float[] starX = new float[45];
     private final float[] starY = new float[45];
     private final float[] starSpeed = new float[45];
-
-    private Button singleBtn;
-    private Button tenBtn;
-    private Button skipBtn;
-    private Button nextCardBtn;
 
     public TerminalWishScreen() {
         super(new TextComponent("星海跃迁招募终端 (G)"));
@@ -81,35 +75,35 @@ public class TerminalWishScreen extends Screen {
     private void refreshControls() {
         clearWidgets();
         int cx = this.width / 2;
-        int btnY = this.height - 42;
+        int btnY = this.height - 34;
 
         if (phase == Phase.WARP_STREAM) {
-            this.skipBtn = addRenderableWidget(new Button(this.width - 96, 14, 74, 20,
+            addRenderableWidget(new SciFiButton(this.width - 90, 14, 72, 18,
                     new TextComponent("跳过动画 ▶"), btn -> {
                 this.phase = Phase.SUMMARY;
                 refreshControls();
-            }));
+            }, 0xFFFBBF24));
             return;
         }
 
         if (phase == Phase.REVEAL_ONE) {
-            this.nextCardBtn = addRenderableWidget(new Button(cx - 110, btnY, 105, 22,
-                    new TextComponent("下一张 ▶ (Space)"), btn -> advanceReveal()));
-            this.skipBtn = addRenderableWidget(new Button(cx + 8, btnY, 105, 22,
+            addRenderableWidget(new SciFiButton(cx - 108, btnY, 102, 20,
+                    new TextComponent("下一张 ▶ (Space)"), btn -> advanceReveal(), 0xFF38BDF8));
+            addRenderableWidget(new SciFiButton(cx + 6, btnY, 102, 20,
                     new TextComponent("查看总览"), btn -> {
                 this.phase = Phase.SUMMARY;
                 refreshControls();
-            }));
+            }, 0xFFFBBF24));
             return;
         }
 
-        this.singleBtn = addRenderableWidget(new Button(cx - 144, btnY, 134, 22,
-                new TextComponent("单次跃迁 (1张通行券)"), btn -> PacketHandler.INSTANCE.sendToServer(new PacketWishPull(1))));
+        addRenderableWidget(new SciFiButton(cx - 134, btnY, 128, 20,
+                new TextComponent("单次跃迁 (1张通行券)"), btn -> PacketHandler.INSTANCE.sendToServer(new PacketWishPull(1)), 0xFF38BDF8));
 
-        this.tenBtn = addRenderableWidget(new Button(cx + 10, btnY, 134, 22,
-                new TextComponent("十连跃迁 (10张通行券)"), btn -> PacketHandler.INSTANCE.sendToServer(new PacketWishPull(10))));
+        addRenderableWidget(new SciFiButton(cx + 6, btnY, 128, 20,
+                new TextComponent("十连跃迁 (10张通行券)"), btn -> PacketHandler.INSTANCE.sendToServer(new PacketWishPull(10)), 0xFFFBBF24));
 
-        addRenderableWidget(new Button(this.width - 70, 14, 48, 18, new TextComponent("关闭"), btn -> onClose()));
+        addRenderableWidget(new SciFiButton(this.width - 62, 12, 42, 16, new TextComponent("关闭"), btn -> onClose(), 0xFFEF4444));
     }
 
     private void advanceReveal() {
@@ -171,9 +165,9 @@ public class TerminalWishScreen extends Screen {
         }
 
         renderBackground(ps);
-        GenshinHudOverlay.drawVoxelPanel(ps, 18, 10, this.width - 36, this.height - 20,
+        GenshinHudOverlay.drawVoxelPanel(ps, 12, 8, this.width - 24, this.height - 16,
                 0xEE09101A, 0xFF284868, 0xFFFBBF24);
-        font.drawShadow(ps, getTitle(), 30, 16, 0xFFFBBF24);
+        font.drawShadow(ps, getTitle(), 22, 13, 0xFFFBBF24);
 
         int tickets = getTicketCount();
         final int[] pityLeft = {80};
@@ -181,15 +175,15 @@ public class TerminalWishScreen extends Screen {
             Minecraft.getInstance().player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team ->
                     pityLeft[0] = Math.max(1, 80 - team.getPityCounter()));
         }
-        font.draw(ps, new TextComponent("持有抽卡通行券: " + tickets + " 张   |   距离 5★ 保底: " + pityLeft[0] + " 抽"),
-                30, 32, 0xFF7DD3FC);
-        font.draw(ps, new TextComponent("可抽取角色：5★ 韩冰(火·对单)、5★ 周敏(水·增益)、4★ 老郑(火·拉盾) 及 3~5★ 武器芯片"),
-                30, 44, 0xFF94A3B8);
+        font.draw(ps, new TextComponent("持有抽卡券: " + tickets + " 张   |   距 5★ 保底: " + pityLeft[0] + " 抽"),
+                22, 27, 0xFF7DD3FC);
+        font.draw(ps, new TextComponent("可招募：5★ 韩冰(火·对单)、5★ 周敏(水·增益)、4★ 老郑(火·拉盾)及高星武器芯片"),
+                22, 38, 0xFF94A3B8);
 
-        int areaX = 30;
-        int areaY = 60;
-        int areaW = this.width - 60;
-        int areaH = this.height - 114;
+        int areaX = 22;
+        int areaY = 52;
+        int areaW = this.width - 44;
+        int areaH = this.height - 94;
         GenshinHudOverlay.drawVoxelPanel(ps, areaX, areaY, areaW, areaH, 0x900E1624, 0xFF284868, 0xFF38BDF8);
 
         if (phase == Phase.REVEAL_ONE && revealIdx < latestPulls.size()) {
@@ -198,7 +192,7 @@ public class TerminalWishScreen extends Screen {
             String hint = "点击下方【单次跃迁】或【十连跃迁】招募新队友、武器与高阶芯片！";
             font.draw(ps, new TextComponent(hint), this.width / 2 - font.width(hint) / 2, areaY + areaH / 2 - 4, 0xFFE2E8F0);
         } else {
-            renderSummaryGrid(ps, areaX, areaY, areaW);
+            renderSummaryGrid(ps, areaX, areaY, areaW, areaH);
         }
 
         super.render(ps, mouseX, mouseY, partialTicks);
@@ -211,7 +205,6 @@ public class TerminalWishScreen extends Screen {
         int cy = this.height / 2;
         int streamCol = EquipmentStatsHelper.getRarityColor(maxBatchRarity);
 
-        // Starfield radial rush
         for (int i = 0; i < starX.length; i++) {
             float progress = (t * (1.2f + starSpeed[i] * 10.0f)) % 1.0f;
             int sx = cx + (int) (starX[i] * this.width * 0.65f * progress);
@@ -221,7 +214,6 @@ public class TerminalWishScreen extends Screen {
             GuiComponent.fill(ps, Math.min(sx, tx), Math.min(sy, ty), Math.max(sx, tx) + 2, Math.max(sy, ty) + 2, 0xAA94A3B8);
         }
 
-        // Meteor beam streaking from top-left toward center
         float beamT = Math.min(1.0f, t * 1.45f);
         int bx = (int) (this.width * 0.15f + (cx - this.width * 0.15f) * beamT);
         int by = (int) (this.height * 0.15f + (cy - this.height * 0.15f) * beamT);
@@ -234,7 +226,6 @@ public class TerminalWishScreen extends Screen {
         }
         GuiComponent.fill(ps, bx - 10, by - 10, bx + 10, by + 10, 0xFFFFFFFF);
 
-        // Center burst flash near end
         if (t > 0.72f) {
             float flash = Math.min(1.0f, (t - 0.72f) / 0.28f);
             int radius = (int) (flash * Math.max(this.width, this.height) * 0.45f);
@@ -242,14 +233,14 @@ public class TerminalWishScreen extends Screen {
         }
 
         String txt = maxBatchRarity >= 5 ? "★ 金色流星信号接近中..." : (maxBatchRarity == 4 ? "◆ 紫色跃迁光束..." : "◇ 建立星海连接中...");
-        font.drawShadow(ps, new TextComponent(txt), cx - font.width(txt) / 2.0f, this.height - 56, streamCol);
+        font.drawShadow(ps, new TextComponent(txt), cx - font.width(txt) / 2.0f, this.height - 46, streamCol);
     }
 
     private void renderSingleRevealCard(PoseStack ps, ItemStack stack, int areaX, int areaY, int areaW, int areaH) {
         int rarity = getPullRarity(stack);
         int col = EquipmentStatsHelper.getRarityColor(rarity);
-        int cw = 180;
-        int ch = 136;
+        int cw = Math.min(180, areaW - 20);
+        int ch = Math.min(126, areaH - 12);
         int cx = areaX + (areaW - cw) / 2;
         int cy = areaY + (areaH - ch) / 2;
 
@@ -258,59 +249,61 @@ public class TerminalWishScreen extends Screen {
         CompoundTag tag = stack.getTag();
         if (tag != null && tag.contains("WishCharId")) {
             String charId = tag.getString("WishCharId");
-            GenshinHudOverlay.drawTexture(ps, TurnBasedBattleScreen.getPortraitForChar(charId), cx + cw / 2 - 24, cy + 16, 48, 48, 32, 32);
+            GenshinHudOverlay.drawPortrait(ps, TurnBasedBattleScreen.getPortraitForChar(charId), cx + cw / 2 - 22, cy + 12, 44, 44);
             String sub = tag.getString("WishSubLabel");
-            font.draw(ps, new TextComponent(sub), cx + (cw - font.width(sub)) / 2, cy + 70, 0xFF7DD3FC);
+            font.draw(ps, new TextComponent(sub), cx + (cw - font.width(sub)) / 2, cy + 62, 0xFF7DD3FC);
         } else {
             ps.pushPose();
-            ps.translate(cx + cw / 2.0f - 16, cy + 24, 0);
+            ps.translate(cx + cw / 2.0f - 16, cy + 20, 0);
             ps.scale(2.0f, 2.0f, 1.0f);
             this.itemRenderer.renderGuiItem(stack, 0, 0);
             ps.popPose();
         }
 
         String stars = EquipmentStatsHelper.getStarString(rarity);
-        font.drawShadow(ps, new TextComponent(stars), cx + (cw - font.width(stars)) / 2.0f, cy + 86, col);
+        font.drawShadow(ps, new TextComponent(stars), cx + (cw - font.width(stars)) / 2.0f, cy + 78, col);
 
         String name = stack.getHoverName().getString();
-        font.drawShadow(ps, new TextComponent(name), cx + (cw - font.width(name)) / 2.0f, cy + 102, 0xFFF8FAFC);
+        font.drawShadow(ps, new TextComponent(name), cx + (cw - font.width(name)) / 2.0f, cy + 92, 0xFFF8FAFC);
 
         String counter = (revealIdx + 1) + " / " + latestPulls.size();
-        font.draw(ps, new TextComponent(counter), cx + (cw - font.width(counter)) / 2, cy + 118, 0xFF94A3B8);
+        font.draw(ps, new TextComponent(counter), cx + (cw - font.width(counter)) / 2, cy + ch - 14, 0xFF94A3B8);
     }
 
-    private void renderSummaryGrid(PoseStack ps, int areaX, int areaY, int areaW) {
+    private void renderSummaryGrid(PoseStack ps, int areaX, int areaY, int areaW, int areaH) {
         int cols = Math.min(5, latestPulls.size());
-        int cardW = 74;
-        int cardH = 60;
-        int startX = areaX + (areaW - cols * (cardW + 6)) / 2;
-        int startY = areaY + 14;
+        int cardW = Math.min(76, (areaW - 36) / Math.max(1, cols));
+        int cardH = Math.min(58, (areaH - 22) / 2);
+        int startX = areaX + (areaW - cols * (cardW + 6) + 6) / 2;
+        int startY = areaY + Math.max(8, (areaH - cardH * 2 - 6) / 2);
 
         for (int i = 0; i < latestPulls.size(); i++) {
             ItemStack stack = latestPulls.get(i);
             int r = i / 5;
             int c = i % 5;
             int x = startX + c * (cardW + 6);
-            int y = startY + r * (cardH + 8);
+            int y = startY + r * (cardH + 6);
             int rarity = getPullRarity(stack);
             int col = EquipmentStatsHelper.getRarityColor(rarity);
 
             GenshinHudOverlay.drawVoxelPanel(ps, x, y, cardW, cardH, 0xD0121E2C, col, col);
             CompoundTag tag = stack.getTag();
             if (tag != null && tag.contains("WishCharId")) {
-                GenshinHudOverlay.drawTexture(ps, TurnBasedBattleScreen.getPortraitForChar(tag.getString("WishCharId")),
-                        x + cardW / 2 - 12, y + 6, 24, 24, 32, 32);
+                GenshinHudOverlay.drawPortrait(ps, TurnBasedBattleScreen.getPortraitForChar(tag.getString("WishCharId")),
+                        x + cardW / 2 - 11, y + 4, 22, 22);
             } else {
-                this.itemRenderer.renderGuiItem(stack, x + cardW / 2 - 8, y + 8);
-                this.itemRenderer.renderGuiItemDecorations(this.font, stack, x + cardW / 2 - 8, y + 8);
+                this.itemRenderer.renderGuiItem(stack, x + cardW / 2 - 8, y + 6);
+                this.itemRenderer.renderGuiItemDecorations(this.font, stack, x + cardW / 2 - 8, y + 6);
             }
 
             String stars = EquipmentStatsHelper.getStarString(rarity);
-            font.draw(ps, new TextComponent(stars), x + (cardW - font.width(stars)) / 2, y + 32, col);
+            font.draw(ps, new TextComponent(stars), x + (cardW - font.width(stars)) / 2, y + 29, col);
 
-            String name = stack.getHoverName().getString();
-            if (name.length() > 7) name = name.substring(0, 7) + "..";
-            font.draw(ps, new TextComponent(name), x + (cardW - font.width(name)) / 2, y + 45, 0xFFEEEEEE);
+            String name = stack.getHoverName().getString().replaceAll("【.*?】", "");
+            while (font.width(name) > cardW - 6 && name.length() > 2) {
+                name = name.substring(0, name.length() - 1);
+            }
+            font.draw(ps, new TextComponent(name), x + (cardW - font.width(name)) / 2, y + 41, 0xFFEEEEEE);
         }
     }
 }

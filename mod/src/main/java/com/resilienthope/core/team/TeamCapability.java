@@ -55,6 +55,7 @@ public class TeamCapability {
         void setPityCounter(int pity);
 
         void unlockRosterCharacter(String charId, boolean autoAddToParty);
+        void resetToFreshV2();
 
         CompoundTag serializeNBT();
         void deserializeNBT(CompoundTag tag);
@@ -72,6 +73,10 @@ public class TeamCapability {
         private int pityCounter = 0;
 
         public TeamData() {
+            initFreshRoster();
+        }
+
+        private void initFreshRoster() {
             roster[0] = new CharacterData("linye", "检修员·林野", CharacterData.ELEM_EARTH, CharacterData.ROLE_BALANCED,
                     5, 780f, 92f, 75f, 104, 100f, true, new ItemStack(ModItems.PLASMA_CUTTER.get()));
             roster[1] = new CharacterData("chenfeng", "巡检员·陈风", CharacterData.ELEM_AIR, CharacterData.ROLE_AOE,
@@ -84,6 +89,21 @@ public class TeamCapability {
                     5, 700f, 106f, 62f, 108, 100f, false, new ItemStack(ModItems.CRYO_SAWBLADE.get()));
             roster[5] = new CharacterData("zhoumin", "调度员·周敏", CharacterData.ELEM_WATER, CharacterData.ROLE_BUFFER,
                     5, 760f, 78f, 72f, 116, 100f, false, new ItemStack(ModItems.HYDRO_PULSE_GUN.get()));
+        }
+
+        @Override
+        public void resetToFreshV2() {
+            initFreshRoster();
+            partyIndices[0] = 0;
+            partyIndices[1] = 1;
+            partyIndices[2] = 2;
+            partyIndices[3] = 3;
+            this.activeSlot = 0;
+            this.playerLevel = 1;
+            this.playerExp = 0;
+            this.worldLevel = 0;
+            this.stamina = 180;
+            this.pityCounter = 0;
         }
 
         @Override
@@ -292,12 +312,6 @@ public class TeamCapability {
                 ListTag list = tag.getList("Roster", Tag.TAG_COMPOUND);
                 for (int i = 0; i < Math.min(ROSTER_SIZE, list.size()); i++) {
                     roster[i].deserializeNBT(list.getCompound(i));
-                }
-            } else if (tag.contains("Slots", Tag.TAG_LIST)) {
-                // Migrate legacy save cleanly
-                ListTag list = tag.getList("Slots", Tag.TAG_COMPOUND);
-                if (!list.isEmpty()) {
-                    roster[0].deserializeNBT(list.getCompound(0));
                 }
             }
             roster[0].setName("检修员·林野");

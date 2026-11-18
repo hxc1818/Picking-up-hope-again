@@ -3,46 +3,46 @@ import shutil
 import nbtlib
 
 src_world = r'E:\整合\项目\Picking up hope again\Minecraft\versions\1.18.2-Forge_40.3.0\saves\新的世界 (1)'
-targets = [
+primary_targets = [
     r'E:\整合\项目\Picking up hope again\Minecraft\versions\1.18.2-Forge_40.3.0\saves\Picking_Up_Hope_World',
-    r'E:\整合\项目\Picking up hope again\Minecraft\saves\Picking_Up_Hope_World'
+    r'E:\整合\项目\Picking up hope again\Minecraft\saves\Picking_Up_Hope_World',
+]
+secondary_saves = [
+    r'E:\整合\项目\Picking up hope again\Minecraft\versions\1.18.2-Forge_40.3.0\saves\新的世界',
+    r'E:\整合\项目\Picking up hope again\Minecraft\versions\1.18.2-Forge_40.3.0\saves\新的世界 (1)',
 ]
 
-for target in targets:
-    if os.path.exists(target):
-        shutil.rmtree(target)
-    os.makedirs(target, exist_ok=True)
+# Read source level.dat and template dirs into memory first before touching disk
+src_level_path = os.path.join(src_world, 'level.dat')
+template_level_bytes = open(src_level_path, 'rb').read()
+template_dirs = {}
+for d in ['serverconfig', 'datapacks', 'data']:
+    src_d = os.path.join(src_world, d)
+    if os.path.exists(src_d):
+        tmp_copy = os.path.join(os.path.dirname(src_world), f'__tmp_{d}')
+        if os.path.exists(tmp_copy):
+            shutil.rmtree(tmp_copy)
+        shutil.copytree(src_d, tmp_copy)
+        template_dirs[d] = tmp_copy
 
-    # Copy serverconfig, datapacks, data from source
-    for d in ['serverconfig', 'datapacks', 'data']:
-        src_d = os.path.join(src_world, d)
-        if os.path.exists(src_d):
-            shutil.copytree(src_d, os.path.join(target, d), dirs_exist_ok=True)
 
-    # Load source level.dat
-    src_level_path = os.path.join(src_world, 'level.dat')
-    level = nbtlib.load(src_level_path)
-    data = level['Data']
-
-    # 1. Custom Display Name and Game Rules
-    data['LevelName'] = nbtlib.String('《重拾希望》星舰灰盒先行版 (Picking Up Hope)')
-    data['GameType'] = nbtlib.Int(2)  # Strict Adventure mode (Prevents breaking blocks)
-    data['allowCommands'] = nbtlib.Byte(1)  # Cheats allowed
+def sanitize_level(level_obj, display_name):
+    data = level_obj['Data']
+    data['LevelName'] = nbtlib.String(display_name)
+    data['GameType'] = nbtlib.Int(2)  # Adventure mode
+    data['allowCommands'] = nbtlib.Byte(1)
     data['Difficulty'] = nbtlib.Byte(1)
 
-    # 2. Spawn and Space Environment
     data['SpawnX'] = nbtlib.Int(6)
-    data['SpawnY'] = nbtlib.Int(62)
+    data['SpawnY'] = nbtlib.Int(61)
     data['SpawnZ'] = nbtlib.Int(10)
-    data['SpawnAngle'] = nbtlib.Float(90.0)
+    data['SpawnAngle'] = nbtlib.Float(270.0)
 
-    # Midnight space setting
     data['DayTime'] = nbtlib.Long(18000)
     data['Time'] = nbtlib.Long(18000)
     data['raining'] = nbtlib.Byte(0)
     data['thundering'] = nbtlib.Byte(0)
 
-    # Lock weather and day/night cycle
     gamerules = data.get('GameRules', nbtlib.Compound({}))
     gamerules['doDaylightCycle'] = nbtlib.String('false')
     gamerules['doWeatherCycle'] = nbtlib.String('false')
@@ -50,29 +50,36 @@ for target in targets:
     gamerules['doMobSpawning'] = nbtlib.String('false')
     data['GameRules'] = gamerules
 
-    # 3. Clean playerdata in level.dat so player spawns at starship center
     if 'Player' in data:
         p = data['Player']
-        p['Pos'] = nbtlib.List[nbtlib.Double]([6.5, 62.0, 10.5])
-        p['Rotation'] = nbtlib.List[nbtlib.Float]([90.0, 0.0])
+        p['playerGameType'] = nbtlib.Int(2)
+        p['previousPlayerGameType'] = nbtlib.Int(2)
+        p['Pos'] = nbtlib.List[nbtlib.Double]([6.5, 61.0, 10.5])
+        p['Rotation'] = nbtlib.List[nbtlib.Float]([270.0, 0.0])
         p['Motion'] = nbtlib.List[nbtlib.Double]([0.0, 0.0, 0.0])
         p['OnGround'] = nbtlib.Byte(1)
         p['Air'] = nbtlib.Short(300)
         p['Fire'] = nbtlib.Short(-20)
         p['FallDistance'] = nbtlib.Float(0.0)
         p['HurtTime'] = nbtlib.Short(0)
-        # Clear inventory completely so no dirt exists
+        p['Health'] = nbtlib.Float(20.0)
+        p['XpLevel'] = nbtlib.Int(0)
+        p['XpP'] = nbtlib.Float(0.0)
+        p['XpTotal'] = nbtlib.Int(0)
         p['Inventory'] = nbtlib.List[nbtlib.Compound]([])
-        # Clear spawn tag so prologue sequence triggers freshly
-        if 'Tags' in p:
-            tags = [t for t in p['Tags'] if str(t) != 'picking_hope_spawned']
-            p['Tags'] = nbtlib.List[nbtlib.String](tags)
+        for stale_key in ('ForgeCaps', 'ForgeData', 'Tags', 'EnderItems'):
+            if stale_key in p:
+                del p[stale_key]
+        p['abilities'] = nbtlib.Compound({
+            'flying': nbtlib.Byte(0),
+            'flySpeed': nbtlib.Float(0.05),
+            'instabuild': nbtlib.Byte(0),
+            'invulnerable': nbtlib.Byte(0),
+            'mayBuild': nbtlib.Byte(0),
+            'mayfly': nbtlib.Byte(0),
+            'walkSpeed': nbtlib.Float(0.1),
+        })
 
-    playerdata_dir = os.path.join(target, 'playerdata')
-    if os.path.exists(playerdata_dir):
-        shutil.rmtree(playerdata_dir)
-
-    # 4. Pure Space Void World Generator
     wgs = data.get('WorldGenSettings', nbtlib.Compound({}))
     dims = wgs.get('dimensions', nbtlib.Compound({}))
     overworld = dims.get('minecraft:overworld', nbtlib.Compound({}))
@@ -84,11 +91,35 @@ for target in targets:
                 nbtlib.Compound({'block': nbtlib.String('minecraft:air'), 'height': nbtlib.Int(1)})
             ]),
             'structures': nbtlib.Compound({'structures': nbtlib.Compound({})}),
-            'features': nbtlib.Byte(0)
+            'features': nbtlib.Byte(0),
         })
     })
+    dims['minecraft:overworld'] = overworld
+    wgs['dimensions'] = dims
+    data['WorldGenSettings'] = wgs
 
-    # Save custom level.dat
-    dest_level = os.path.join(target, 'level.dat')
-    level.save(dest_level, gzipped=True)
-    print(f"Custom map generated at: {target}")
+
+def rebuild_save_dir(target_dir, display_name):
+    if os.path.exists(target_dir):
+        shutil.rmtree(target_dir)
+    os.makedirs(target_dir, exist_ok=True)
+    for d, tmp_copy in template_dirs.items():
+        shutil.copytree(tmp_copy, os.path.join(target_dir, d), dirs_exist_ok=True)
+    dest_level = os.path.join(target_dir, 'level.dat')
+    with open(dest_level, 'wb') as f:
+        f.write(template_level_bytes)
+    lvl = nbtlib.load(dest_level)
+    sanitize_level(lvl, display_name)
+    lvl.save(dest_level, gzipped=True)
+    print(f"Reset clean v2.0 save: {target_dir} -> '{display_name}'")
+
+
+for t in primary_targets:
+    rebuild_save_dir(t, '《重拾希望》v2.0 回合制剧情版 (Picking Up Hope)')
+
+for idx, t in enumerate(secondary_saves):
+    rebuild_save_dir(t, f'《重拾希望》v2.0 备用重置存档 #{idx + 1}')
+
+for tmp_copy in template_dirs.values():
+    if os.path.exists(tmp_copy):
+        shutil.rmtree(tmp_copy)

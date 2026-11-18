@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "picking_hope_core:block/conduit_pillar"
+    }
+  }
+}
