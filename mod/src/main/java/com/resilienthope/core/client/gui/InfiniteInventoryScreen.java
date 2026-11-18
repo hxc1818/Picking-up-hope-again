@@ -5,6 +5,7 @@ import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketEquipItem;
 import com.resilienthope.core.network.PacketHandler;
+import com.resilienthope.core.network.PacketProgressionAction;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
@@ -13,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -23,9 +25,9 @@ public class InfiniteInventoryScreen extends Screen {
 
     public enum Category {
         WEAPONS("武器库"),
-        CHIPS("科技芯片"),
-        MATERIALS("养成材料"),
-        VALUABLES("贵重任务物");
+        CHIPS("芯片装备"),
+        MATERIALS("1-6级材料"),
+        VALUABLES("货币与消耗品");
 
         private final String displayName;
         Category(String name) { this.displayName = name; }
@@ -33,8 +35,8 @@ public class InfiniteInventoryScreen extends Screen {
     }
 
     private static class InvEntry {
-        final int invIndex; // -1 if currently equipped chip in CharacterData
-        final int equippedChipSlot; // -1 if in player inventory
+        final int invIndex;
+        final int equippedChipSlot;
         final ItemStack stack;
         final boolean isEquipped;
 
@@ -52,15 +54,15 @@ public class InfiniteInventoryScreen extends Screen {
     private int scrollRow = 0;
     private int autoRefreshTicks = 0;
 
-    private Button equipBtn;
-    private Button enhanceBtn;
+    private Button primaryActionBtn;
+    private Button secondaryActionBtn;
 
     public InfiniteInventoryScreen() {
-        this(Category.WEAPONS);
+        this(Category.CHIPS);
     }
 
     public InfiniteInventoryScreen(Category initialCategory) {
-        super(new TextComponent("星舰战备仓储终端 · 体素背包 (B)"));
+        super(new TextComponent("背包 · 装备溶解与材料合成 (B)"));
         this.currentCategory = initialCategory;
     }
 
@@ -69,9 +71,9 @@ public class InfiniteInventoryScreen extends Screen {
         super.init();
         refreshItems();
 
-        int tabStartX = 28;
-        int tabY = 26;
-        int tabWidth = 72;
+        int tabStartX = 24;
+        int tabY = 28;
+        int tabWidth = 82;
 
         Category[] categories = Category.values();
         for (int i = 0; i < categories.length; i++) {
@@ -88,36 +90,46 @@ public class InfiniteInventoryScreen extends Screen {
         }
 
         int rightX = this.width / 2 + 24;
-        int bottomY = this.height - 48;
+        int bottomY = this.height - 46;
 
-        this.equipBtn = addRenderableWidget(new Button(rightX, bottomY - 24, 96, 20, new TextComponent("装备到主角"), btn -> {
+        this.primaryActionBtn = addRenderableWidget(new Button(rightX, bottomY - 24, 100, 20, new TextComponent("装备"), btn -> {
             if (selectedIdx >= 0 && selectedIdx < entries.size()) {
                 InvEntry e = entries.get(selectedIdx);
-                if (!e.isEquipped && e.invIndex >= 0) {
-                    PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_EQUIP_FROM_INV, e.invIndex, e.stack));
-                    autoRefreshTicks = 5;
+                if (EquipmentStatsHelper.isWeapon(e.stack) || EquipmentStatsHelper.isChip(e.stack)) {
+                    if (!e.isEquipped && e.invIndex >= 0) {
+                        PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_EQUIP_FROM_INV, e.invIndex, e.stack));
+                        autoRefreshTicks = 4;
+                    }
+                } else if (ModItems.getNextTierMaterial(e.stack.getItem()) != null && e.invIndex >= 0) {
+                    PacketHandler.INSTANCE.sendToServer(new PacketProgressionAction(PacketProgressionAction.ACT_CRAFT_MAT_UP, e.invIndex, 0, ""));
+                    autoRefreshTicks = 4;
                 }
             }
         }));
 
-        this.enhanceBtn = addRenderableWidget(new Button(rightX + 102, bottomY - 24, 96, 20, new TextComponent("强化升级 (+1)"), btn -> {
+        this.secondaryActionBtn = addRenderableWidget(new Button(rightX + 104, bottomY - 24, 108, 20, new TextComponent("溶解 / 强化"), btn -> {
             if (selectedIdx >= 0 && selectedIdx < entries.size()) {
                 InvEntry e = entries.get(selectedIdx);
-                if (e.isEquipped && e.equippedChipSlot >= 0) {
-                    PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_EQUIPPED, e.equippedChipSlot, ItemStack.EMPTY));
-                } else if (e.isEquipped && EquipmentStatsHelper.isWeapon(e.stack)) {
-                    PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_EQUIPPED, -1, ItemStack.EMPTY));
-                } else if (e.invIndex >= 0) {
-                    PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_INV, e.invIndex, e.stack));
+                if (!e.isEquipped && EquipmentStatsHelper.isChip(e.stack) && e.invIndex >= 0) {
+                    PacketHandler.INSTANCE.sendToServer(new PacketProgressionAction(PacketProgressionAction.ACT_DISSOLVE_CHIP, e.invIndex, 0, ""));
+                    autoRefreshTicks = 4;
+                } else if (EquipmentStatsHelper.isWeapon(e.stack) || EquipmentStatsHelper.isChip(e.stack)) {
+                    if (e.isEquipped && e.equippedChipSlot >= 0) {
+                        PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_EQUIPPED, e.equippedChipSlot, ItemStack.EMPTY));
+                    } else if (e.isEquipped && EquipmentStatsHelper.isWeapon(e.stack)) {
+                        PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_EQUIPPED, -1, ItemStack.EMPTY));
+                    } else if (e.invIndex >= 0) {
+                        PacketHandler.INSTANCE.sendToServer(new PacketEquipItem(PacketEquipItem.ACTION_ENHANCE_INV, e.invIndex, e.stack));
+                    }
+                    autoRefreshTicks = 4;
                 }
-                autoRefreshTicks = 5;
             }
         }));
 
-        addRenderableWidget(new Button(rightX, bottomY, 96, 20, new TextComponent("主角终端 (C)"), btn ->
+        addRenderableWidget(new Button(rightX, bottomY, 100, 20, new TextComponent("角色与装备 (C)"), btn ->
                 Minecraft.getInstance().setScreen(new CharacterProfileScreen())));
 
-        addRenderableWidget(new Button(rightX + 102, bottomY, 96, 20, new TextComponent("终端祈愿 (G)"), btn ->
+        addRenderableWidget(new Button(rightX + 104, bottomY, 108, 20, new TextComponent("抽卡界面 (G)"), btn ->
                 Minecraft.getInstance().setScreen(new TerminalWishScreen())));
 
         addRenderableWidget(new Button(this.width - 68, 12, 46, 18, new TextComponent("关闭"), btn -> onClose()));
@@ -137,21 +149,62 @@ public class InfiniteInventoryScreen extends Screen {
         }
     }
 
+    private int countSameItem(Item item) {
+        Player p = Minecraft.getInstance().player;
+        if (p == null) return 0;
+        int total = 0;
+        for (int i = 0; i < p.getInventory().getContainerSize(); i++) {
+            ItemStack s = p.getInventory().getItem(i);
+            if (s.is(item)) total += s.getCount();
+        }
+        return total;
+    }
+
     private void updateActionButtons() {
         boolean hasItem = selectedIdx >= 0 && selectedIdx < entries.size();
-        boolean isEquipable = false;
-        boolean canEquip = false;
-        if (hasItem) {
-            InvEntry e = entries.get(selectedIdx);
-            isEquipable = EquipmentStatsHelper.isWeapon(e.stack) || EquipmentStatsHelper.isChip(e.stack);
-            canEquip = isEquipable && !e.isEquipped;
+        if (!hasItem) {
+            if (primaryActionBtn != null) primaryActionBtn.active = false;
+            if (secondaryActionBtn != null) secondaryActionBtn.active = false;
+            return;
         }
-        if (equipBtn != null) {
-            equipBtn.active = canEquip;
-            equipBtn.setMessage(new TextComponent(hasItem && entries.get(selectedIdx).isEquipped ? "已穿戴中" : "装备到主角"));
-        }
-        if (enhanceBtn != null) {
-            enhanceBtn.active = isEquipable;
+        InvEntry e = entries.get(selectedIdx);
+        ItemStack stack = e.stack;
+
+        if (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack)) {
+            if (primaryActionBtn != null) {
+                primaryActionBtn.active = !e.isEquipped;
+                primaryActionBtn.setMessage(new TextComponent(e.isEquipped ? "已穿戴中" : "装备到当前角色"));
+            }
+            if (secondaryActionBtn != null) {
+                if (!e.isEquipped && EquipmentStatsHelper.isChip(stack)) {
+                    int yield = EquipmentStatsHelper.getDissolveEssenceYield(stack);
+                    secondaryActionBtn.active = true;
+                    secondaryActionBtn.setMessage(new TextComponent("溶解换粉尘 (+" + yield + ")"));
+                } else {
+                    boolean canUp = EquipmentStatsHelper.getEnhanceLevel(stack) < EquipmentStatsHelper.getMaxEnhanceLevel(stack);
+                    secondaryActionBtn.active = canUp;
+                    secondaryActionBtn.setMessage(new TextComponent(canUp ? "强化升级 (+1)" : "已满级"));
+                }
+            }
+        } else if (ModItems.getNextTierMaterial(stack.getItem()) != null) {
+            int count = countSameItem(stack.getItem());
+            if (primaryActionBtn != null) {
+                primaryActionBtn.active = count >= 3;
+                primaryActionBtn.setMessage(new TextComponent("3合1合成高阶"));
+            }
+            if (secondaryActionBtn != null) {
+                secondaryActionBtn.active = false;
+                secondaryActionBtn.setMessage(new TextComponent("-"));
+            }
+        } else {
+            if (primaryActionBtn != null) {
+                primaryActionBtn.active = false;
+                primaryActionBtn.setMessage(new TextComponent("-"));
+            }
+            if (secondaryActionBtn != null) {
+                secondaryActionBtn.active = false;
+                secondaryActionBtn.setMessage(new TextComponent("-"));
+            }
         }
     }
 
@@ -160,7 +213,6 @@ public class InfiniteInventoryScreen extends Screen {
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
 
-        // First include currently equipped items in the matching category so player can view/enhance them
         player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             CharacterData active = team.getCharacter(team.getActiveSlotIndex());
             if (currentCategory == Category.WEAPONS && !active.getEquippedWeapon().isEmpty()) {
@@ -182,7 +234,7 @@ public class InfiniteInventoryScreen extends Screen {
 
             if (currentCategory == Category.WEAPONS) {
                 if (i == 0 && !entries.isEmpty() && entries.get(0).isEquipped && stack.getItem() == entries.get(0).stack.getItem()) {
-                    continue; // Already listed as equipped weapon at slot 0
+                    continue;
                 }
                 if (EquipmentStatsHelper.isWeapon(stack)) {
                     entries.add(new InvEntry(i, -1, stack.copy(), false));
@@ -192,11 +244,14 @@ public class InfiniteInventoryScreen extends Screen {
                     entries.add(new InvEntry(i, -1, stack.copy(), false));
                 }
             } else if (currentCategory == Category.MATERIALS) {
-                if (stack.is(ModItems.ALLOY_PLATE.get()) || stack.is(Items.IRON_INGOT) || stack.is(Items.REDSTONE)) {
+                if (ModItems.getMaterialLine(stack.getItem()) != null || stack.is(ModItems.ALLOY_PLATE.get())) {
                     entries.add(new InvEntry(i, -1, stack.copy(), false));
                 }
             } else if (currentCategory == Category.VALUABLES) {
-                if (stack.is(ModItems.QUANTUM_CORE.get()) || stack.is(ModItems.PRECURSOR_SPARK.get())) {
+                if (stack.is(ModItems.CREDIT_COIN.get()) || stack.is(ModItems.EXP_BOTTLE.get())
+                        || stack.is(ModItems.EQUIP_ESSENCE.get()) || stack.is(ModItems.STAR_TICKET.get())
+                        || stack.is(ModItems.QUANTUM_CORE.get()) || stack.is(ModItems.PRECURSOR_SPARK.get())
+                        || stack.is(Items.EXPERIENCE_BOTTLE)) {
                     entries.add(new InvEntry(i, -1, stack.copy(), false));
                 }
             }
@@ -213,7 +268,6 @@ public class InfiniteInventoryScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        int gridLeft = 28;
         int gridWidth = this.width / 2 - 20;
         int cols = getGridCols(gridWidth);
         int totalRows = (int) Math.ceil(entries.size() / (double) cols);
@@ -224,10 +278,10 @@ public class InfiniteInventoryScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        int gridLeft = 28;
-        int gridTop = 54;
-        int gridRight = this.width / 2 + 10;
-        int gridBottom = this.height - 24;
+        int gridLeft = 24;
+        int gridTop = 56;
+        int gridRight = this.width / 2 + 12;
+        int gridBottom = this.height - 22;
         int cols = getGridCols(gridRight - gridLeft);
 
         if (mouseX >= gridLeft && mouseX <= gridRight && mouseY >= gridTop && mouseY <= gridBottom) {
@@ -245,36 +299,24 @@ public class InfiniteInventoryScreen extends Screen {
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
-    private int countEnhanceMaterials(Player player) {
-        if (player == null) return 0;
-        int count = 0;
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack s = player.getInventory().getItem(i);
-            if (s.is(ModItems.ALLOY_PLATE.get())) count += s.getCount();
-        }
-        return count;
-    }
-
     @Override
-    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(poseStack);
+    public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
+        renderBackground(ps);
 
-        // Main Frame
-        GenshinHudOverlay.drawVoxelPanel(poseStack, 16, 12, this.width - 32, this.height - 24,
-                0xEE0B131E, 0xFF284868, 0xFF00E5FF);
-        font.drawShadow(poseStack, getTitle(), 28, 16, 0xFF66FFFF);
+        GenshinHudOverlay.drawVoxelPanel(ps, 14, 10, this.width - 28, this.height - 20,
+                0xEE0B131E, 0xFF284868, 0xFF38BDF8);
+        font.drawShadow(ps, getTitle(), 24, 15, 0xFF38BDF8);
 
-        // Left Grid Backdrop
-        int gridLeft = 28;
-        int gridTop = 54;
-        int gridRight = this.width / 2 + 10;
-        int gridBottom = this.height - 24;
-        GenshinHudOverlay.drawVoxelPanel(poseStack, gridLeft, gridTop, gridRight - gridLeft, gridBottom - gridTop,
-                0xA00D1724, 0xFF1F3850, 0xFF4FC3F7);
+        int gridLeft = 24;
+        int gridTop = 56;
+        int gridRight = this.width / 2 + 12;
+        int gridBottom = this.height - 22;
+        GenshinHudOverlay.drawVoxelPanel(ps, gridLeft, gridTop, gridRight - gridLeft, gridBottom - gridTop,
+                0xA00D1724, 0xFF1F3850, 0xFF38BDF8);
 
         int cols = getGridCols(gridRight - gridLeft);
         if (entries.isEmpty()) {
-            font.draw(poseStack, new TextComponent("当前分类暂无物品（探索或击败敌方即可获取）"), gridLeft + 16, gridTop + 20, 0xFF8899AA);
+            font.draw(ps, new TextComponent("当前分类暂无物品（探索箱子或通关模拟副本获取）"), gridLeft + 14, gridTop + 18, 0xFF94A3B8);
         } else {
             int startIdx = scrollRow * cols;
             for (int i = startIdx; i < entries.size(); i++) {
@@ -289,109 +331,110 @@ public class InfiniteInventoryScreen extends Screen {
                 ItemStack stack = entry.stack;
                 boolean isSel = (i == selectedIdx);
                 int rarity = (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack))
-                        ? EquipmentStatsHelper.getRarity(stack) : 3;
+                        ? EquipmentStatsHelper.getRarity(stack)
+                        : Math.max(2, Math.min(5, ModItems.getMaterialTier(stack.getItem())));
                 int rarityCol = EquipmentStatsHelper.getRarityColor(rarity);
 
-                GenshinHudOverlay.drawVoxelPanel(poseStack, cx, cy, 40, 42,
-                        isSel ? 0xD8213A54 : 0xB014202E,
-                        isSel ? 0xFFFFFFFF : rarityCol,
-                        rarityCol);
+                GenshinHudOverlay.drawVoxelPanel(ps, cx, cy, 40, 42,
+                        isSel ? 0xD8213A54 : 0xB014202E, isSel ? 0xFFFFFFFF : rarityCol, rarityCol);
 
-                // Item 16x16 Voxel Icon
                 this.itemRenderer.renderGuiItem(stack, cx + 12, cy + 7);
                 this.itemRenderer.renderGuiItemDecorations(this.font, stack, cx + 12, cy + 7);
 
-                // Bottom label (+Lv or xCount)
-                String badge;
-                int badgeCol;
-                if (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack)) {
-                    badge = "+" + EquipmentStatsHelper.getEnhanceLevel(stack);
-                    badgeCol = 0xFFFFE082;
-                } else {
-                    badge = "x" + stack.getCount();
-                    badgeCol = 0xFFCCEEFF;
-                }
-                int bw = font.width(badge);
-                font.draw(poseStack, new TextComponent(badge), cx + 20 - bw / 2, cy + 30, badgeCol);
+                String badge = (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack))
+                        ? ("+" + EquipmentStatsHelper.getEnhanceLevel(stack))
+                        : ("x" + stack.getCount());
+                int badgeCol = (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack)) ? 0xFFFBBF24 : 0xFFE2E8F0;
+                font.draw(ps, new TextComponent(badge), cx + 20 - font.width(badge) / 2, cy + 30, badgeCol);
 
-                // Equipped badge
                 if (entry.isEquipped) {
-                    fill(poseStack, cx + 2, cy + 2, cx + 11, cy + 11, 0xE000A86B);
-                    font.draw(poseStack, new TextComponent("E"), cx + 4, cy + 3, 0xFFFFFFFF);
+                    fill(ps, cx + 2, cy + 2, cx + 12, cy + 11, 0xE016A34A);
+                    font.draw(ps, new TextComponent("装"), cx + 3, cy + 3, 0xFFFFFFFF);
                 }
             }
         }
 
-        // Right Inspector Panel
-        int rightX = this.width / 2 + 20;
-        int rightTop = 54;
+        int rightX = this.width / 2 + 24;
+        int rightTop = 56;
         int rightBottom = this.height - 76;
         int rightW = this.width - rightX - 24;
-        GenshinHudOverlay.drawVoxelPanel(poseStack, rightX, rightTop, rightW, rightBottom - rightTop,
-                0xB0101A26, 0xFF305880, 0xFF4FC3F7);
+        GenshinHudOverlay.drawVoxelPanel(ps, rightX, rightTop, rightW, rightBottom - rightTop,
+                0xB0101A26, 0xFF305880, 0xFF38BDF8);
 
-        Player player = Minecraft.getInstance().player;
-        int alloyCount = countEnhanceMaterials(player);
-        font.draw(poseStack, new TextComponent("持有重工强化合金: " + alloyCount), rightX + 8, this.height - 90, 0xFFFFD54F);
+        int dustCount = countSameItem(ModItems.EQUIP_ESSENCE.get());
+        font.draw(ps, new TextComponent("持有强化粉尘: " + dustCount + " 份 (溶解闲置芯片获得)"),
+                rightX + 4, this.height - 88, 0xFFC084FC);
 
         if (selectedIdx >= 0 && selectedIdx < entries.size()) {
             InvEntry selEntry = entries.get(selectedIdx);
             ItemStack sel = selEntry.stack;
 
-            // Large icon preview frame
-            GenshinHudOverlay.drawVoxelPanel(poseStack, rightX + 10, rightTop + 10, 32, 32, 0xC00A1018, 0xFF4FC3F7, 0xFFFFCC00);
-            poseStack.pushPose();
-            poseStack.translate(rightX + 14, rightTop + 14, 0);
-            poseStack.scale(1.5f, 1.5f, 1.0f);
+            GenshinHudOverlay.drawVoxelPanel(ps, rightX + 10, rightTop + 10, 32, 32, 0xC00A1018, 0xFF38BDF8, 0xFFFBBF24);
+            ps.pushPose();
+            ps.translate(rightX + 14, rightTop + 14, 0);
+            ps.scale(1.5f, 1.5f, 1.0f);
             this.itemRenderer.renderGuiItem(sel, 0, 0);
-            poseStack.popPose();
+            ps.popPose();
 
-            font.drawShadow(poseStack, new TextComponent(sel.getHoverName().getString()), rightX + 48, rightTop + 12, 0xFF66FFFF);
+            font.drawShadow(ps, new TextComponent(sel.getHoverName().getString()), rightX + 48, rightTop + 12, 0xFFF8FAFC);
 
             int y = rightTop + 48;
             if (EquipmentStatsHelper.isWeapon(sel) || EquipmentStatsHelper.isChip(sel)) {
                 int rarity = EquipmentStatsHelper.getRarity(sel);
                 int lv = EquipmentStatsHelper.getEnhanceLevel(sel);
-                String typeLabel = EquipmentStatsHelper.isWeapon(sel)
-                        ? "类型：双手重剑专武"
-                        : "部位：" + EquipmentStatsHelper.getChipSlotTitle(EquipmentStatsHelper.getChipSlot(sel));
-                font.draw(poseStack, new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "   强化等级 +" + lv + " / 20"),
+                int maxLv = EquipmentStatsHelper.getMaxEnhanceLevel(sel);
+                font.draw(ps, new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "   等级 +" + lv + " / " + maxLv),
                         rightX + 48, rightTop + 26, EquipmentStatsHelper.getRarityColor(rarity));
-                font.draw(poseStack, new TextComponent(typeLabel), rightX + 12, y, 0xFFDCE6F2);
-                y += 16;
 
-                fill(poseStack, rightX + 10, y - 2, rightX + rightW - 10, y + 16, 0x80182C3E);
-                font.draw(poseStack, new TextComponent("主词条：" + EquipmentStatsHelper.formatMainStatLabel(sel)),
-                        rightX + 14, y + 3, 0xFF4ADE80);
-                y += 22;
+                String typeLabel = EquipmentStatsHelper.isWeapon(sel)
+                        ? ("适配属性：" + EquipmentStatsHelper.getWeaponElementLabel(sel))
+                        : ("部位：" + EquipmentStatsHelper.getChipSlotTitle(EquipmentStatsHelper.getChipSlot(sel)) + " (" + rarity + "级装备)");
+                font.draw(ps, new TextComponent(typeLabel), rightX + 12, y, 0xFF7DD3FC);
+                y += 15;
 
-                font.draw(poseStack, new TextComponent("【副词条属性】"), rightX + 12, y, 0xFF9EC5E8);
-                y += 13;
+                fill(ps, rightX + 10, y - 2, rightX + rightW - 10, y + 15, 0x80182C3E);
+                font.draw(ps, new TextComponent("主词条：" + EquipmentStatsHelper.formatMainStatLabel(sel)),
+                        rightX + 14, y + 2, 0xFF4ADE80);
+                y += 20;
+
+                font.draw(ps, new TextComponent("【副词条（每升3级解锁/强化）】"), rightX + 12, y, 0xFF94A3B8);
+                y += 12;
                 for (String sub : EquipmentStatsHelper.getSubStatLines(sel)) {
-                    font.draw(poseStack, new TextComponent("  • " + sub), rightX + 12, y, 0xFFFFE082);
-                    y += 12;
+                    font.draw(ps, new TextComponent("  • " + sub), rightX + 12, y, 0xFFFBBF24);
+                    y += 11;
                 }
                 if (EquipmentStatsHelper.isWeapon(sel)) {
                     y += 4;
-                    for (FormattedCharSequence line : font.split(new TextComponent("特效：" + EquipmentStatsHelper.getWeaponPassiveDesc(sel)), rightW - 24)) {
-                        font.draw(poseStack, line, rightX + 12, y, 0xFF7DD3FC);
+                    for (FormattedCharSequence line : font.split(new TextComponent(EquipmentStatsHelper.getWeaponPassiveDesc(sel)), rightW - 24)) {
+                        font.draw(ps, line, rightX + 12, y, 0xFF7DD3FC);
                         y += 11;
                     }
+                } else if (!selEntry.isEquipped) {
+                    y += 4;
+                    font.draw(ps, new TextComponent("提示：溶解该装备可获得 " + EquipmentStatsHelper.getDissolveEssenceYield(sel) + " 份强化粉尘。"),
+                            rightX + 12, y, 0xFFC084FC);
                 }
             } else {
-                font.draw(poseStack, new TextComponent("持有数量：" + sel.getCount()), rightX + 48, rightTop + 26, 0xFFFFE082);
-                String desc = sel.is(ModItems.QUANTUM_CORE.get())
-                        ? "用途：在【终端数据复现 (G)】界面消耗算力芯片，抽取 4★/5★ 专武与全套科技芯片。"
-                        : (sel.is(ModItems.PRECURSOR_SPARK.get())
-                        ? "用途：极寒异星先驱机甲核心产出的高能火种，决定重拾希望号的终极航向。"
-                        : "用途：用于武器与 5 部位科技芯片的强化升级（每次强化消耗 1 枚重工强化合金）。");
+                font.draw(ps, new TextComponent("持有数量：" + sel.getCount()), rightX + 48, rightTop + 26, 0xFFFBBF24);
+                String desc = "用途说明：";
+                if (ModItems.getNextTierMaterial(sel.getItem()) != null) {
+                    desc = "同系列高阶合成：消耗 3 个此材料可直接合成 1 个高一阶材料。";
+                } else if (sel.is(ModItems.EXP_BOTTLE.get()) || sel.is(Items.EXPERIENCE_BOTTLE)) {
+                    desc = "用于 [C] 角色面板手动提升角色等级（战斗不会直接增加角色经验）。";
+                } else if (sel.is(ModItems.EQUIP_ESSENCE.get())) {
+                    desc = "装备强化粉尘：极为珍贵，主要通过溶解其他多余芯片获得，用于强化装备等级。";
+                } else if (sel.is(ModItems.STAR_TICKET.get()) || sel.is(ModItems.QUANTUM_CORE.get())) {
+                    desc = "用于在 [G] 抽卡界面招募新同伴或获取高星武器！";
+                } else if (sel.is(ModItems.CREDIT_COIN.get())) {
+                    desc = "星舰通用货币，用于突破与日常开支。";
+                }
                 for (FormattedCharSequence line : font.split(new TextComponent(desc), rightW - 24)) {
-                    font.draw(poseStack, line, rightX + 12, y, 0xFFDCE6F2);
-                    y += 11;
+                    font.draw(ps, line, rightX + 12, y, 0xFFE2E8F0);
+                    y += 12;
                 }
             }
         }
 
-        super.render(poseStack, mouseX, mouseY, partialTicks);
+        super.render(ps, mouseX, mouseY, partialTicks);
     }
 }

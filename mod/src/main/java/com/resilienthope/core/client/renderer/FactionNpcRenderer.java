@@ -14,7 +14,7 @@ public class FactionNpcRenderer extends MobRenderer<FactionNpcEntity, HumanoidMo
 
     private static final ResourceLocation TEX_ZHENG =
             new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_zheng.png");
-    private static final ResourceLocation TEX_HAN =
+    private static final ResourceLocation TEX_CHEN =
             new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_han.png");
     private static final ResourceLocation TEX_SU =
             new ResourceLocation(PickingHopeCore.MOD_ID, "textures/entity/npc_su.png");
@@ -26,7 +26,7 @@ public class FactionNpcRenderer extends MobRenderer<FactionNpcEntity, HumanoidMo
     @Override
     public ResourceLocation getTextureLocation(FactionNpcEntity entity) {
         return switch (entity.getNpcId()) {
-            case "han" -> TEX_HAN;
+            case "chen", "han" -> TEX_CHEN;
             case "su" -> TEX_SU;
             default -> TEX_ZHENG;
         };

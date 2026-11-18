@@ -22,15 +22,12 @@ public class RadioSubtitleManager {
 
     public static void postRadioMessage(String speaker, String text, int durationTicks) {
         if (text == null || text.isEmpty()) return;
-        Entry entry = new Entry(speaker != null ? speaker : "星舰通讯", text, durationTicks);
+        Entry entry = new Entry(speaker != null ? speaker : "无线电通讯", text, durationTicks);
         if (current == null) {
             current = entry;
             elapsedTicks = 0;
-        } else {
-            // Avoid duplicate flooding
-            if (!entry.text.equals(current.text)) {
-                queue.offer(entry);
-            }
+        } else if (!entry.text.equals(current.text)) {
+            queue.offer(entry);
         }
     }
 
@@ -72,12 +69,12 @@ public class RadioSubtitleManager {
     }
 
     public static int getSpeakerColor() {
-        if (current == null) return 0xFF4FC3F7;
+        if (current == null) return 0xFF38BDF8;
         String sp = current.speaker;
-        if (sp.contains("郑铁山") || sp.contains("机械工会")) return 0xFFFFB74D;
-        if (sp.contains("韩振岳") || sp.contains("舰桥")) return 0xFF64B5F6;
-        if (sp.contains("苏挽星") || sp.contains("科学")) return 0xFF4DD0E1;
-        if (sp.contains("先驱") || sp.contains("警报") || sp.contains("警告")) return 0xFFFF5252;
-        return 0xFF4FC3F7;
+        if (sp.contains("老郑")) return 0xFFFBBF24;
+        if (sp.contains("陈风")) return 0xFF4ADE80;
+        if (sp.contains("苏晴")) return 0xFF38BDF8;
+        if (sp.contains("警报") || sp.contains("紧急")) return 0xFFF87171;
+        return 0xFF38BDF8;
     }
 }

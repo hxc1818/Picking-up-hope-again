@@ -20,7 +20,7 @@ public class LootPopupScreen extends Screen {
     private final List<ItemStack> lootItems = new ArrayList<>();
 
     public LootPopupScreen(BlockPos chestPos, Container container) {
-        super(new TextComponent("星舰物资仓储箱"));
+        super(new TextComponent("应急物资箱"));
         this.chestPos = chestPos;
         for (int i = 0; i < container.getContainerSize(); i++) {
             ItemStack stack = container.getItem(i);
@@ -59,30 +59,30 @@ public class LootPopupScreen extends Screen {
         renderBackground(poseStack);
 
         int boxW = 240;
-        int boxH = 172;
+        int boxH = 180;
         int boxX = (this.width - boxW) / 2;
         int boxY = (this.height - boxH) / 2;
 
-        GenshinHudOverlay.drawVoxelPanel(poseStack, boxX, boxY, boxW, boxH, 0xEE0D1520, 0xFF4A90E2, 0xFFFFD54F);
-        font.drawShadow(poseStack, new TextComponent("【星舰战利品物资箱】"), boxX + 14, boxY + 12, 0xFF55FFFF);
+        GenshinHudOverlay.drawVoxelPanel(poseStack, boxX, boxY, boxW, boxH, 0xEE0D1520, 0xFF4A90E2, 0xFFFBBF24);
+        font.drawShadow(poseStack, new TextComponent("【应急物资箱】"), boxX + 14, boxY + 12, 0xFF38BDF8);
 
         if (lootItems.isEmpty()) {
             font.draw(poseStack, new TextComponent("（箱内物资已清空）"), boxX + 16, boxY + 54, 0xFFAAAAAA);
         } else {
             int itemY = boxY + 34;
-            for (int i = 0; i < Math.min(lootItems.size(), 4); i++) {
+            for (int i = 0; i < Math.min(lootItems.size(), 5); i++) {
                 ItemStack stack = lootItems.get(i);
                 int col = (EquipmentStatsHelper.isWeapon(stack) || EquipmentStatsHelper.isChip(stack))
                         ? EquipmentStatsHelper.getRarityColor(EquipmentStatsHelper.getRarity(stack)) : 0xFF3880FF;
-                GenshinHudOverlay.drawVoxelPanel(poseStack, boxX + 14, itemY, boxW - 28, 22, 0x90121E2C, col, col);
+                GenshinHudOverlay.drawVoxelPanel(poseStack, boxX + 14, itemY, boxW - 28, 20, 0x90121E2C, col, col);
 
-                this.itemRenderer.renderGuiItem(stack, boxX + 18, itemY + 3);
-                this.itemRenderer.renderGuiItemDecorations(this.font, stack, boxX + 18, itemY + 3);
+                this.itemRenderer.renderGuiItem(stack, boxX + 18, itemY + 2);
+                this.itemRenderer.renderGuiItemDecorations(this.font, stack, boxX + 18, itemY + 2);
 
                 String countStr = stack.getCount() > 1 ? " x" + stack.getCount() : "";
-                font.draw(poseStack, new TextComponent(stack.getHoverName().getString() + countStr), boxX + 42, itemY + 7, 0xFFEEEEEE);
+                font.draw(poseStack, new TextComponent(stack.getHoverName().getString() + countStr), boxX + 42, itemY + 6, 0xFFEEEEEE);
 
-                itemY += 25;
+                itemY += 22;
             }
         }
 

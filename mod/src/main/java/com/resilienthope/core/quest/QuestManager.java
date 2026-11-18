@@ -4,54 +4,42 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 
 public class QuestManager {
-    private static String questTitle = "【序章·冻眠苏醒】";
-    private static String objectiveText = "开启休眠舱冷冻物资箱，获取初始芯片";
+    private static String questTitle = "【休眠区断电】";
+    private static String objectiveText = "按 [F] 开启身旁的应急物资箱";
     private static BlockPos targetPos = new BlockPos(6, 62, 10);
     private static int questStage = 0;
-    private static int dronesKilled = 0;
-    private static int requiredDrones = 2;
-    private static int subFlags = 0; // bitmask: 1=chestLooted, 2=waypointActivated, 4=coreRepaired, 8=alienWaypoint, 16=bossSpawned
+    private static int killsCount = 0;
+    private static int requiredKills = 1;
+    private static int subFlags = 0;
     private static String endingFaction = "";
 
     public static final int FLAG_CHEST_LOOTED = 1;
     public static final int FLAG_WAYPOINT_ACTIVATED = 2;
-    public static final int FLAG_CORE_REPAIRED = 4;
-    public static final int FLAG_ALIEN_WAYPOINT = 8;
-    public static final int FLAG_BOSS_SPAWNED = 16;
+    private static final int FLAG_ELEVATOR_OPEN = 4;
+    public static final int FLAG_CORE_REPAIRED = 8;
+    public static final int FLAG_ICE_WAYPOINT = 16;
+    public static final int FLAG_CHAR_LEVELED = 32;
+    public static final int FLAG_CHIP_ENHANCED = 64;
+    public static final int FLAG_MINE_OPEN = 128;
 
     public static String getQuestTitle() { return questTitle; }
     public static String getObjectiveText() { return objectiveText; }
     public static BlockPos getTargetPos() { return targetPos; }
     public static int getQuestStage() { return questStage; }
-    public static int getDronesKilled() { return dronesKilled; }
-    public static int getRequiredDrones() { return requiredDrones; }
+    public static int getDronesKilled() { return killsCount; }
+    public static int getRequiredDrones() { return requiredKills; }
     public static int getSubFlags() { return subFlags; }
     public static String getEndingFaction() { return endingFaction; }
 
-    public static boolean hasFlag(int flag) {
-        return (subFlags & flag) != 0;
-    }
-
-    public static void setFlag(int flag) {
-        subFlags |= flag;
-    }
-
-    public static void setRequiredDrones(int req) {
-        requiredDrones = Math.max(1, req);
-    }
-
-    public static void incrementDroneKill() {
-        dronesKilled++;
-    }
-
+    public static boolean hasFlag(int flag) { return (subFlags & flag) != 0; }
+    public static void setFlag(int flag) { subFlags |= flag; }
+    public static void setRequiredDrones(int req) { requiredKills = Math.max(1, req); }
+    public static void incrementDroneKill() { killsCount++; }
     public static void resetDroneKills(int required) {
-        dronesKilled = 0;
-        requiredDrones = required;
+        killsCount = 0;
+        requiredKills = Math.max(1, required);
     }
-
-    public static void setEndingFaction(String faction) {
-        endingFaction = faction != null ? faction : "";
-    }
+    public static void setEndingFaction(String faction) { endingFaction = faction != null ? faction : ""; }
 
     public static void advanceQuest(int stage, String title, String objective, BlockPos target) {
         questStage = stage;
@@ -65,27 +53,23 @@ public class QuestManager {
         objectiveText = objective;
         targetPos = target;
         questStage = stage;
-        dronesKilled = kills;
-        requiredDrones = Math.max(1, required);
+        killsCount = kills;
+        requiredKills = Math.max(1, required);
         subFlags = flags;
         endingFaction = ending != null ? ending : "";
     }
 
     public static void resetAll() {
         questStage = 0;
-        questTitle = "【序章·冻眠苏醒】";
-        objectiveText = "开启休眠舱冷冻物资箱，获取初始芯片";
+        questTitle = "【休眠区断电】";
+        objectiveText = "按 [F] 开启身旁的应急物资箱";
         targetPos = new BlockPos(6, 62, 10);
-        dronesKilled = 0;
-        requiredDrones = 2;
+        killsCount = 0;
+        requiredKills = 1;
         subFlags = 0;
         endingFaction = "";
     }
 
-    /**
-     * Smart Breadcrumb Guide: routes player cleanly through airlocks, elevator shafts,
-     * and the orbital drop pod instead of pointing directly through floors or into the void.
-     */
     public static BlockPos getEffectiveBreadcrumbPos(Player player) {
         if (player == null || targetPos == null) return targetPos;
 
@@ -93,33 +77,33 @@ public class QuestManager {
         double py = player.getY();
 
         if (px < 85.0) {
-            // Player is aboard the Starship
+            // Aboard the Starship
             if (targetPos.getX() >= 90) {
-                // Target is on the Alien Permafrost Mine
-                if (py >= 50.0) {
-                    return new BlockPos(34, 61, 14); // Go to elevator shaft first
-                } else {
-                    return new BlockPos(22, 36, 10); // Then go to Orbital Drop Pod
-                }
+                if (py >= 50.0) return new BlockPos(35, 61, 15); // Upper -> Lower elevator
+                return new BlockPos(22, 36, 10); // Lower -> Escape Pod
             }
             if (targetPos.getY() < 45 && py >= 50.0) {
-                // Target is on Lower Deck while player is on Upper Deck
-                return new BlockPos(34, 61, 14);
+                return new BlockPos(35, 61, 15);
             }
             if (targetPos.getY() >= 55 && py < 50.0) {
-                // Target is on Upper Deck while player is on Lower Deck
-                return new BlockPos(33, 36, 14);
+                return new BlockPos(35, 36, 15);
             }
             if (px < 12.0 && targetPos.getX() > 14) {
-                return new BlockPos(12, 62, 10); // Awakening Bay airlock
+                return new BlockPos(12, 62, 10);
             }
             if (px < 24.0 && py >= 50.0 && targetPos.getX() > 26) {
-                return new BlockPos(24, 62, 10); // Corridor -> Fusion Hub airlock
+                return new BlockPos(24, 62, 10);
             }
         } else {
-            // Player is on the Alien Permafrost Mine
+            // On Ice Planet (Outpost + Mine)
             if (targetPos.getX() < 85) {
-                return new BlockPos(112, 61, 28); // Return via Alien Waypoint
+                return new BlockPos(114, 61, 28); // Ice Waypoint back to ship
+            }
+            if (targetPos.getY() < 45 && py >= 50.0) {
+                return new BlockPos(146, 61, 28); // Mine elevator down
+            }
+            if (targetPos.getY() >= 55 && py < 50.0) {
+                return new BlockPos(146, 36, 28); // Mine elevator up
             }
         }
         return targetPos;
@@ -129,11 +113,13 @@ public class QuestManager {
         if (player == null || targetPos == null) return "";
         BlockPos eff = getEffectiveBreadcrumbPos(player);
         if (!eff.equals(targetPos)) {
-            if (eff.getX() == 34 && eff.getY() == 61) return " · 经升降梯前往下层";
-            if (eff.getX() == 33 && eff.getY() == 36) return " · 乘梯返回上层大厅";
-            if (eff.getX() == 22 && eff.getY() == 36) return " · 前往轨道空投舱";
-            if (eff.getX() == 112 && eff.getZ() == 28) return " · 经异星锚点返舰";
-            if (eff.getX() == 12 || eff.getX() == 24) return " · 穿过气闸通道";
+            if (eff.getX() == 35 && eff.getY() == 61) return " · 经升降梯前往下层";
+            if (eff.getX() == 35 && eff.getY() == 36) return " · 乘梯返回上层";
+            if (eff.getX() == 22 && eff.getY() == 36) return " · 前往轨道逃生舱";
+            if (eff.getX() == 114 && eff.getZ() == 28) return " · 经冰原锚点返舰";
+            if (eff.getX() == 146 && eff.getY() == 61) return " · 乘矿坑货运梯下行";
+            if (eff.getX() == 146 && eff.getY() == 36) return " · 乘货运梯返回地面科考站";
+            if (eff.getX() == 12 || eff.getX() == 24) return " · 穿过通道";
         }
         return "";
     }

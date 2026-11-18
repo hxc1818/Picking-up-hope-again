@@ -2,6 +2,7 @@ package com.resilienthope.core.network;
 
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
+import com.resilienthope.core.quest.StoryDirector;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.network.FriendlyByteBuf;
@@ -96,8 +97,8 @@ public class PacketEquipItem {
             active.setEquippedWeapon(newWeapon);
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ARMOR_EQUIP_NETHERITE, SoundSource.PLAYERS, 1.0f, 1.25f);
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("战术装备库",
-                    "已为【" + active.getName() + "】装配专武：" + newWeapon.getHoverName().getString(), 70));
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备管理",
+                    "已为【" + active.getName() + "】装配武器：" + newWeapon.getHoverName().getString(), 70));
         } else if (EquipmentStatsHelper.isChip(target)) {
             int chipSlot = EquipmentStatsHelper.getChipSlot(target);
             ItemStack oldChip = active.getEquippedChip(chipSlot);
@@ -118,8 +119,8 @@ public class PacketEquipItem {
 
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.9f, 1.4f);
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("芯片插槽同步",
-                    "已装配至 " + EquipmentStatsHelper.getChipSlotTitle(chipSlot) + "：" + newChip.getHoverName().getString(), 75));
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备管理",
+                    "已装入 " + EquipmentStatsHelper.getChipSlotTitle(chipSlot) + "：" + newChip.getHoverName().getString(), 75));
         }
     }
 
@@ -165,30 +166,47 @@ public class PacketEquipItem {
 
     private static boolean tryEnhanceStack(ServerPlayer player, ItemStack stack) {
         if (!EquipmentStatsHelper.isWeapon(stack) && !EquipmentStatsHelper.isChip(stack)) return false;
-        if (EquipmentStatsHelper.getEnhanceLevel(stack) >= 20) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台",
-                    "该装备已达到最高强化等级 (+20)！", 70));
+        int curLv = EquipmentStatsHelper.getEnhanceLevel(stack);
+        int maxLv = EquipmentStatsHelper.getMaxEnhanceLevel(stack);
+        if (curLv >= maxLv) {
+            String hint = EquipmentStatsHelper.isWeapon(stack)
+                    ? "该武器已达当前突破上限 Lv." + maxLv + "，请先消耗武器突破构件进行突破！"
+                    : "该 " + EquipmentStatsHelper.getRarity(stack) + " 级装备已强化至满级 (+" + maxLv + ")！";
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台", hint, 85));
             return false;
         }
-        if (!consumeEnhanceMaterial(player)) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台",
-                    "材料不足！强化需要 1 块【重工强化合金】（或 2 块铁锭），可通过宝箱与击败敌人获取。", 100));
-            return false;
+
+        if (EquipmentStatsHelper.isChip(stack)) {
+            int cost = EquipmentStatsHelper.getEnhanceDustCost(stack);
+            if (!consumeItem(player, ModItems.EQUIP_ESSENCE.get(), cost)) {
+                PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台",
+                        "装备强化粉尘不足（需要 " + cost + " 份）！请在背包 [B] 溶解其他多余装备来换取强化粉尘。", 105));
+                return false;
+            }
+        } else {
+            boolean paid = consumeItem(player, ModItems.WEAPON_MAT_1.get(), 1)
+                    || consumeItem(player, ModItems.EXP_BOTTLE.get(), 1)
+                    || consumeItem(player, Items.EXPERIENCE_BOTTLE, 1);
+            if (!paid) {
+                PacketHandler.sendToPlayer(player, new PacketRadioDialogue("武器强化台",
+                        "强化武器需要 1 个【1级武器构件】或【经验瓶】！", 95));
+                return false;
+            }
         }
+
         boolean ok = EquipmentStatsHelper.enhanceByOne(stack, player.getRandom());
         if (ok) {
             int newLv = EquipmentStatsHelper.getEnhanceLevel(stack);
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.75f, 1.35f);
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化成功",
-                    stack.getHoverName().getString() + " 强化至 +" + newLv + "（" + EquipmentStatsHelper.formatMainStatLabel(stack) + "）", 80));
+            String extra = (EquipmentStatsHelper.isChip(stack) && newLv % 3 == 0) ? " · 已触发每3级副词条成长！" : "";
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("强化成功",
+                    stack.getHoverName().getString() + " 升至 +" + newLv + "/" + maxLv + extra, 85));
+            if (EquipmentStatsHelper.isChip(stack)) {
+                StoryDirector.onChipEnhanced(player, newLv);
+            }
         }
         return ok;
-    }
-
-    private static boolean consumeEnhanceMaterial(ServerPlayer player) {
-        if (consumeItem(player, ModItems.ALLOY_PLATE.get(), 1)) return true;
-        return consumeItem(player, Items.IRON_INGOT, 2);
     }
 
     public static boolean consumeItem(ServerPlayer player, Item item, int count) {

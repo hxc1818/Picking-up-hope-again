@@ -26,9 +26,10 @@ public class TechChipItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         int lv = EquipmentStatsHelper.getEnhanceLevel(stack);
+        int maxLv = EquipmentStatsHelper.getMaxEnhanceLevel(stack);
         int rarity = EquipmentStatsHelper.getRarity(stack);
-        tooltip.add(new TextComponent(EquipmentStatsHelper.getChipSlotTitle(chipSlot)).withStyle(ChatFormatting.AQUA));
-        tooltip.add(new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "  +" + lv).withStyle(ChatFormatting.GOLD));
+        tooltip.add(new TextComponent(EquipmentStatsHelper.getChipSlotTitle(chipSlot) + " (" + rarity + "级装备)").withStyle(ChatFormatting.AQUA));
+        tooltip.add(new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "  +" + lv + "/" + maxLv + " (每升3级解锁/强化副词条)").withStyle(ChatFormatting.GOLD));
         tooltip.add(new TextComponent("主词条: " + EquipmentStatsHelper.formatMainStatLabel(stack)).withStyle(ChatFormatting.GREEN));
         for (String sub : EquipmentStatsHelper.getSubStatLines(stack)) {
             tooltip.add(new TextComponent("  • " + sub).withStyle(ChatFormatting.GRAY));

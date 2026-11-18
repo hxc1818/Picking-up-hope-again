@@ -61,9 +61,10 @@ public class FactionNpcEntity extends PathfinderMob {
     private void updateDisplayName() {
         String id = getNpcId();
         String label = switch (id) {
-            case "han" -> "§9[舰桥防卫总长] §f韩振岳";
-            case "su" -> "§b[深空科学院首席] §f苏挽星";
-            default -> "§6[机械工会总工] §f郑铁山";
+            case "chen" -> "§a[巡检员] §f陈风";
+            case "su" -> "§b[医疗员] §f苏晴";
+            case "han" -> "§c[狙击手] §f韩冰";
+            default -> "§6[技术员] §f老郑";
         };
         this.setCustomName(new TextComponent(label));
         this.setCustomNameVisible(true);
@@ -78,20 +79,9 @@ public class FactionNpcEntity extends PathfinderMob {
         return InteractionResult.sidedSuccess(this.level.isClientSide());
     }
 
-    @Override
-    public boolean hurt(DamageSource source, float amount) {
-        return false;
-    }
-
-    @Override
-    public boolean isPushable() {
-        return false;
-    }
-
-    @Override
-    public boolean removeWhenFarAway(double distance) {
-        return false;
-    }
+    @Override public boolean hurt(DamageSource source, float amount) { return false; }
+    @Override public boolean isPushable() { return false; }
+    @Override public boolean removeWhenFarAway(double distance) { return false; }
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {

@@ -2,11 +2,12 @@ package com.resilienthope.core.client;
 
 import com.resilienthope.core.client.gui.CharacterProfileScreen;
 import com.resilienthope.core.client.gui.InfiniteInventoryScreen;
+import com.resilienthope.core.client.gui.SimulationDomainScreen;
 import com.resilienthope.core.client.gui.TerminalWishScreen;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.network.PacketHandler;
-import com.resilienthope.core.network.PacketSkillCast;
 import com.resilienthope.core.network.PacketSwitchCharacter;
+import com.resilienthope.core.quest.QuestManager;
 import com.resilienthope.core.subtitle.RadioSubtitleManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.KeyMapping;
@@ -38,8 +39,6 @@ public class KeyInit {
     public static KeyMapping KEY_PROFILE_C;
     public static KeyMapping KEY_WISH_G;
 
-    private static long skillCooldownUntil = 0;
-
     public static void registerKeybinds() {
         KEY_CHAR_1 = new KeyMapping("key.picking_hope.char_1", GLFW.GLFW_KEY_1, CATEGORY);
         KEY_CHAR_2 = new KeyMapping("key.picking_hope.char_2", GLFW.GLFW_KEY_2, CATEGORY);
@@ -65,8 +64,7 @@ public class KeyInit {
     }
 
     public static float getSkillCooldownSeconds() {
-        long remaining = skillCooldownUntil - System.currentTimeMillis();
-        return remaining > 0 ? remaining / 1000.0f : 0.0f;
+        return 0.0f;
     }
 
     @SubscribeEvent
@@ -83,7 +81,7 @@ public class KeyInit {
             mc.setScreen(new InfiniteInventoryScreen());
         }
 
-        if (KEY_PROFILE_C.consumeClick()) {
+        if (KEY_PROFILE_C.consumeClick() || KEY_BURST_Q.consumeClick()) {
             mc.setScreen(new CharacterProfileScreen());
         }
 
@@ -91,17 +89,17 @@ public class KeyInit {
             mc.setScreen(new TerminalWishScreen());
         }
 
+        if (KEY_SKILL_E.consumeClick()) {
+            if (QuestManager.getQuestStage() < 10) {
+                RadioSubtitleManager.postRadioMessage("模拟终端", "模拟训练副本将在第 10 阶段抵达地面科考站后解锁！", 90);
+            } else {
+                mc.setScreen(new SimulationDomainScreen());
+            }
+        }
+
         if (KEY_INTERACT_F.consumeClick()) {
             while (mc.options.keySwapOffhand.consumeClick()) {}
             triggerInteraction(mc);
-        }
-
-        if (KEY_SKILL_E.consumeClick()) {
-            triggerTacticalSkill(mc);
-        }
-
-        if (KEY_BURST_Q.consumeClick()) {
-            triggerUltimateBurst(mc);
         }
     }
 
@@ -112,29 +110,15 @@ public class KeyInit {
         mc.player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             if (!team.getCharacter(slot).isUnlocked()) {
                 mc.player.playSound(SoundEvents.DISPENSER_FAIL, 0.6f, 1.2f);
-                RadioSubtitleManager.postRadioMessage("小队编成系统",
-                        "该协战角色席位尚未解锁，当前由【零号特工·破晓】单兵执行核心任务。", 60);
+                RadioSubtitleManager.postRadioMessage("编队系统", "该位置队友尚未解锁。", 60);
                 return;
             }
             if (team.getActiveSlotIndex() == slot) return;
             team.switchSlot(mc.player, slot);
             PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(slot));
-            mc.player.playSound(SoundEvents.BEACON_POWER_SELECT, 1.0f, 1.4f);
-            RadioSubtitleManager.postRadioMessage("零号特工·破晓", "等离子核心同步就绪！", 60);
+            mc.player.playSound(SoundEvents.BEACON_POWER_SELECT, 0.8f, 1.4f);
+            RadioSubtitleManager.postRadioMessage(team.getCharacter(slot).getName(), "切换带队！随时准备迎敌。", 60);
         });
-    }
-
-    private static void triggerTacticalSkill(Minecraft mc) {
-        if (System.currentTimeMillis() < skillCooldownUntil) {
-            mc.player.playSound(SoundEvents.DISPENSER_FAIL, 0.8f, 1.5f);
-            return;
-        }
-        skillCooldownUntil = System.currentTimeMillis() + 6000;
-        PacketHandler.INSTANCE.sendToServer(new PacketSkillCast(0));
-    }
-
-    private static void triggerUltimateBurst(Minecraft mc) {
-        PacketHandler.INSTANCE.sendToServer(new PacketSkillCast(1));
     }
 
     private static void triggerInteraction(Minecraft mc) {
@@ -152,7 +136,6 @@ public class KeyInit {
                 return;
             }
         }
-        // Fallback: interact with nearest Faction NPC within 3.2 blocks
         List<FactionNpcEntity> npcs = mc.level.getEntitiesOfClass(FactionNpcEntity.class,
                 new AABB(mc.player.blockPosition()).inflate(3.2));
         npcs.stream()

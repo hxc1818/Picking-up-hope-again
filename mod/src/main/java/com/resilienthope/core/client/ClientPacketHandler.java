@@ -2,6 +2,8 @@ package com.resilienthope.core.client;
 
 import com.resilienthope.core.client.gui.NpcDialogueScreen;
 import com.resilienthope.core.client.gui.TerminalWishScreen;
+import com.resilienthope.core.client.gui.TurnBasedBattleScreen;
+import com.resilienthope.core.combat.BattleState;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
@@ -28,6 +30,22 @@ public class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         if (mc.screen instanceof TerminalWishScreen wishScreen) {
             wishScreen.setPullResults(pulls);
+        }
+    }
+
+    public static void handleBattleSync(CompoundTag stateNbt) {
+        Minecraft mc = Minecraft.getInstance();
+        BattleState state = BattleState.fromNbt(stateNbt);
+        if (!state.active) {
+            if (mc.screen instanceof TurnBasedBattleScreen) {
+                mc.setScreen(null);
+            }
+            return;
+        }
+        if (mc.screen instanceof TurnBasedBattleScreen screen) {
+            screen.updateState(state);
+        } else {
+            mc.setScreen(new TurnBasedBattleScreen(state));
         }
     }
 }

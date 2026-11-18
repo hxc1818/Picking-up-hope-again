@@ -20,8 +20,10 @@ public class TechWeaponItem extends SwordItem {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         int lv = EquipmentStatsHelper.getEnhanceLevel(stack);
+        int maxLv = EquipmentStatsHelper.getMaxEnhanceLevel(stack);
         int rarity = EquipmentStatsHelper.getRarity(stack);
-        tooltip.add(new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "  +" + lv).withStyle(ChatFormatting.GOLD));
+        tooltip.add(new TextComponent(EquipmentStatsHelper.getStarString(rarity) + "  Lv." + lv + "/" + maxLv
+                + "  [适配属性：" + EquipmentStatsHelper.getWeaponElementLabel(stack) + "]").withStyle(ChatFormatting.GOLD));
         tooltip.add(new TextComponent(EquipmentStatsHelper.formatMainStatLabel(stack)).withStyle(ChatFormatting.AQUA));
         for (String sub : EquipmentStatsHelper.getSubStatLines(stack)) {
             tooltip.add(new TextComponent("  • " + sub).withStyle(ChatFormatting.GRAY));
