@@ -59,6 +59,10 @@ public final class BattleSceneClientController {
     private static final Set<Integer> FIRED_MARKERS = new HashSet<>();
 
     private static final int[][] HURT_TICKS = new int[2][8];
+    private static final boolean[] VISUAL_ENEMY_ALIVE = new boolean[8];
+    private static final int[] ENEMY_DYING_TICKS = new int[8];
+    private static int finishRevealDelayTicks = 0;
+    private static boolean resultModalReady = false;
     private static int globalTick = 0;
     private static BattleCombatPreview.PreviewResult lastPreview = new BattleCombatPreview.PreviewResult();
 
@@ -89,18 +93,49 @@ public final class BattleSceneClientController {
             return;
         }
         currentState = state;
+        boolean hasEvents = state.events != null && !state.events.isEmpty();
         if (!active) {
             active = true;
             ANIM_QUEUE.clear();
             currentEvent = null;
             currentClip = null;
             hitStopRemaining = 0;
+            finishRevealDelayTicks = 0;
+            resultModalReady = false;
             BattleVfxManager.clear();
             for (int[] row : HURT_TICKS) Arrays.fill(row, 0);
+            Arrays.fill(VISUAL_ENEMY_ALIVE, false);
+            Arrays.fill(ENEMY_DYING_TICKS, 0);
+            for (int i = 0; i < Math.min(8, state.enemies.size()); i++) {
+                VISUAL_ENEMY_ALIVE[i] = state.enemies.get(i).isAlive();
+            }
             BattleCameraController.activate(mc);
+        } else {
+            for (int i = 0; i < 8; i++) {
+                if (i >= state.enemies.size()) {
+                    VISUAL_ENEMY_ALIVE[i] = false;
+                    ENEMY_DYING_TICKS[i] = 0;
+                } else {
+                    boolean aliveNow = state.enemies.get(i).isAlive();
+                    if (aliveNow) {
+                        VISUAL_ENEMY_ALIVE[i] = true;
+                        ENEMY_DYING_TICKS[i] = 0;
+                    } else if (!hasEvents && ENEMY_DYING_TICKS[i] == 0) {
+                        VISUAL_ENEMY_ALIVE[i] = false;
+                    }
+                }
+            }
         }
-        if (state.events != null && !state.events.isEmpty()) {
+        if (hasEvents) {
             ANIM_QUEUE.addAll(state.events);
+        }
+        if (state.finished) {
+            if (!resultModalReady) {
+                finishRevealDelayTicks = (hasEvents || isAnimating() || anyEnemyDying()) ? 14 : 6;
+            }
+        } else {
+            resultModalReady = false;
+            finishRevealDelayTicks = 0;
         }
         recomputePreview();
         updateActorGlowColors(mc);
@@ -114,6 +149,10 @@ public final class BattleSceneClientController {
         currentEvent = null;
         currentClip = null;
         hitStopRemaining = 0;
+        finishRevealDelayTicks = 0;
+        resultModalReady = false;
+        Arrays.fill(VISUAL_ENEMY_ALIVE, false);
+        Arrays.fill(ENEMY_DYING_TICKS, 0);
         pendingUltSlot = -1;
         BattleVfxManager.clear();
         BattleCameraController.deactivate(Minecraft.getInstance());
@@ -121,6 +160,27 @@ public final class BattleSceneClientController {
 
     public static boolean isAnimating() {
         return currentEvent != null || !ANIM_QUEUE.isEmpty();
+    }
+
+    public static boolean shouldShowResultModal() {
+        return currentState != null && currentState.finished && resultModalReady;
+    }
+
+    public static boolean isEnemyVisuallyAlive(int slot) {
+        if (slot < 0 || slot >= VISUAL_ENEMY_ALIVE.length) return false;
+        return VISUAL_ENEMY_ALIVE[slot] || ENEMY_DYING_TICKS[slot] > 0;
+    }
+
+    public static float getEnemyDeathFade(int slot, float partialTicks) {
+        if (slot < 0 || slot >= ENEMY_DYING_TICKS.length || ENEMY_DYING_TICKS[slot] <= 0) return 1.0F;
+        return Mth.clamp((ENEMY_DYING_TICKS[slot] - partialTicks) / 10.0F, 0.05F, 1.0F);
+    }
+
+    private static boolean anyEnemyDying() {
+        for (int t : ENEMY_DYING_TICKS) {
+            if (t > 0) return true;
+        }
+        return false;
     }
 
     public static BattleState.AnimEvent getCurrentEvent() {
@@ -145,6 +205,19 @@ public final class BattleSceneClientController {
         prevAnimTick = 0f;
         hitStopRemaining = 0;
         FIRED_MARKERS.clear();
+        Arrays.fill(ENEMY_DYING_TICKS, 0);
+        if (currentState != null) {
+            for (int i = 0; i < 8; i++) {
+                VISUAL_ENEMY_ALIVE[i] = i < currentState.enemies.size() && currentState.enemies.get(i).isAlive();
+            }
+            if (currentState.finished && !resultModalReady) {
+                finishRevealDelayTicks = 0;
+                resultModalReady = true;
+                if (activeScreen != null) {
+                    activeScreen.onResultModalRevealed();
+                }
+            }
+        }
     }
 
     public static void stopCurrentAnimation() {
@@ -194,6 +267,14 @@ public final class BattleSceneClientController {
                 if (HURT_TICKS[s][i] > 0) HURT_TICKS[s][i]--;
             }
         }
+        for (int i = 0; i < ENEMY_DYING_TICKS.length; i++) {
+            if (ENEMY_DYING_TICKS[i] > 0) {
+                ENEMY_DYING_TICKS[i]--;
+                if (ENEMY_DYING_TICKS[i] == 0) {
+                    VISUAL_ENEMY_ALIVE[i] = false;
+                }
+            }
+        }
 
         // Advance or pop queued choreography events
         if (currentEvent == null && !ANIM_QUEUE.isEmpty()) {
@@ -216,6 +297,29 @@ public final class BattleSceneClientController {
                     FIRED_MARKERS.clear();
                     if (!ANIM_QUEUE.isEmpty()) {
                         popNextAnimation(mc);
+                    }
+                }
+            }
+        }
+
+        // Catch any enemies defeated by DoT / phase transition once combat queue drains
+        if (!isAnimating() && currentState != null) {
+            for (int i = 0; i < Math.min(8, currentState.enemies.size()); i++) {
+                if (VISUAL_ENEMY_ALIVE[i] && !currentState.enemies.get(i).isAlive() && ENEMY_DYING_TICKS[i] == 0) {
+                    ENEMY_DYING_TICKS[i] = 8;
+                }
+            }
+        }
+
+        if (currentState != null && currentState.finished && !resultModalReady) {
+            if (!isAnimating() && !anyEnemyDying()) {
+                if (finishRevealDelayTicks > 0) {
+                    finishRevealDelayTicks--;
+                }
+                if (finishRevealDelayTicks <= 0) {
+                    resultModalReady = true;
+                    if (activeScreen != null) {
+                        activeScreen.onResultModalRevealed();
                     }
                 }
             }
@@ -383,21 +487,52 @@ public final class BattleSceneClientController {
         return out;
     }
 
+    private static boolean hasUpcomingAllyHit(int enemyIdx) {
+        for (BattleState.AnimEvent q : ANIM_QUEUE) {
+            if (q.actorSide == 0 && !"BREAK".equals(q.animType)
+                    && !"HEAL".equals(q.animType) && !"SHIELD".equals(q.animType) && !"BUFF".equals(q.animType)) {
+                if (q.targetIdx < 0 || q.targetIdx == enemyIdx || parseSecondaryIndices(q.secondaryTargets).contains(enemyIdx)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static void triggerDeathCheckForSlot(int enemySlot) {
+        if (currentState == null || enemySlot < 0 || enemySlot >= currentState.enemies.size() || enemySlot >= ENEMY_DYING_TICKS.length) {
+            return;
+        }
+        if (VISUAL_ENEMY_ALIVE[enemySlot] && !currentState.enemies.get(enemySlot).isAlive()
+                && ENEMY_DYING_TICKS[enemySlot] == 0 && !hasUpcomingAllyHit(enemySlot)) {
+            ENEMY_DYING_TICKS[enemySlot] = 10;
+            Minecraft mc = Minecraft.getInstance();
+            Vec3 pos = BattleArenaLayout.enemyHomePos(enemySlot, currentState.enemies.size()).add(0, 1.0, 0);
+            if (mc.level != null) {
+                BattleVfxManager.spawnParticles(mc.level, pos, "explosion", 10, 0.55f);
+            }
+            BattleVfxManager.playSound(mc, "shield_break", 0.85f, 1.15f);
+        }
+    }
+
     private static void triggerHurtReactions(BattleState.AnimEvent ev) {
         if (currentState == null) return;
         if ("HEAL".equals(ev.animType) || "SHIELD".equals(ev.animType) || "BUFF".equals(ev.animType)) return;
         int vSide = ev.actorSide == 0 ? 1 : 0;
         if (ev.targetIdx >= 0 && ev.targetIdx < HURT_TICKS[vSide].length) {
             HURT_TICKS[vSide][ev.targetIdx] = 9;
+            if (vSide == 1) triggerDeathCheckForSlot(ev.targetIdx);
             for (int sec : parseSecondaryIndices(ev.secondaryTargets)) {
                 if (sec >= 0 && sec < HURT_TICKS[vSide].length) {
                     HURT_TICKS[vSide][sec] = 9;
+                    if (vSide == 1) triggerDeathCheckForSlot(sec);
                 }
             }
         } else {
             int max = vSide == 1 ? currentState.enemies.size() : currentState.allies.size();
             for (int i = 0; i < Math.min(max, HURT_TICKS[vSide].length); i++) {
                 HURT_TICKS[vSide][i] = 9;
+                if (vSide == 1) triggerDeathCheckForSlot(i);
             }
         }
     }

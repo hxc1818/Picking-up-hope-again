@@ -13,7 +13,10 @@ import com.resilienthope.core.quest.QuestManager;
 import com.resilienthope.core.quest.StoryDirector;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
+import com.resilienthope.core.world.ModDimensions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -21,6 +24,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -37,12 +41,20 @@ public class TurnBasedCombatManager {
 
     private static class BattleSession {
         BattleState state;
+        ResourceKey<Level> returnDimension;
         Vec3 returnPos;
         float returnYaw;
         float returnPitch;
         UUID overworldEnemyUuid;
         boolean rewardsClaimed = false;
         final List<UUID> spawnedActorUuids = new ArrayList<>();
+    }
+
+    private static ServerLevel resolveArenaLevel(ServerLevel fallback) {
+        if (fallback == null) return null;
+        MinecraftServer server = fallback.getServer();
+        ServerLevel arena = server != null ? server.getLevel(ModDimensions.BATTLE_ARENA) : null;
+        return arena != null ? arena : fallback;
     }
 
     private static final Map<UUID, BattleSession> ACTIVE_SESSIONS = new HashMap<>();
@@ -81,14 +93,14 @@ public class TurnBasedCombatManager {
             if ("world_trial".equals(domainType)) {
                 if (!team.canBreakthroughWorldLevel()) {
                     allowed[0] = false;
-                    PacketHandler.sendToPlayer(player, new PacketRadioDialogue("模拟终端",
-                            "尚未达到当前世界等级上限（需玩家主等级 Lv." + team.getPlayerLevelCapForWorldLevel() + "），无法开启突破试炼。", 100));
+                    PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("模拟终端",
+                            "尚未达到当前世界等级上限（需玩家主等级 Lv." + team.getPlayerLevelCapForWorldLevel() + "），无法开启突破试炼。"));
                 }
             } else {
                 if (team.getStamina() < 20) {
                     allowed[0] = false;
-                    PacketHandler.sendToPlayer(player, new PacketRadioDialogue("模拟终端",
-                            "当前体力不足 20 点！请等待自然恢复或继续推进主线。", 90));
+                    PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("模拟终端",
+                            "当前体力不足 20 点！请等待自然恢复或继续推进主线。"));
                 } else {
                     team.setStamina(team.getStamina() - 20);
                     PacketSyncTeamData.syncToPlayer(player);
@@ -127,19 +139,21 @@ public class TurnBasedCombatManager {
         return "mine_driller";
     }
 
-    private static void startBattleInternal(ServerPlayer player, ServerLevel level, String encounterType,
+    private static void startBattleInternal(ServerPlayer player, ServerLevel originLevel, String encounterType,
                                             UUID enemyUuid, boolean ambush, boolean iceTheme, boolean canFlee) {
         BattleSession session = new BattleSession();
+        session.returnDimension = originLevel.dimension();
         session.returnPos = player.position();
         session.returnYaw = player.getYRot();
         session.returnPitch = player.getXRot();
         session.overworldEnemyUuid = enemyUuid;
 
+        ServerLevel arenaLevel = resolveArenaLevel(originLevel);
         ArenaTheme theme = ArenaTheme.resolveFor(encounterType, iceTheme);
-        BattleArenaBuilder.ensureArena(level, theme);
-        player.teleportTo(level, BattleArenaLayout.PLAYER_WAIT_X, BattleArenaLayout.UNIT_Y,
+        BattleArenaBuilder.ensureArena(arenaLevel, theme);
+        player.teleportTo(arenaLevel, BattleArenaLayout.PLAYER_WAIT_X, BattleArenaLayout.UNIT_Y,
                 BattleArenaLayout.PLAYER_WAIT_Z, BattleArenaLayout.ALLY_YAW, 0.0f);
-        level.playSound(null, BattleArenaLayout.PLAYER_WAIT_X, BattleArenaLayout.UNIT_Y, BattleArenaLayout.PLAYER_WAIT_Z,
+        arenaLevel.playSound(null, BattleArenaLayout.PLAYER_WAIT_X, BattleArenaLayout.UNIT_Y, BattleArenaLayout.PLAYER_WAIT_Z,
                 SoundEvents.ENDERMAN_TELEPORT, SoundSource.PLAYERS, 0.8f, 1.3f);
 
         BattleState state = new BattleState();
@@ -185,12 +199,12 @@ public class TurnBasedCombatManager {
 
         session.state = state;
         ACTIVE_SESSIONS.put(player.getUUID(), session);
-        spawnBattleActors(level, session);
+        spawnBattleActors(arenaLevel, session);
 
         advanceTimelineUntilPlayerTurn(player, session);
         refreshAllEnemyIntents(state);
         refreshTutorialPrompt(state);
-        syncBattleActors(level, session);
+        syncBattleActors(arenaLevel, session);
         PacketHandler.sendToPlayer(player, new PacketBattleSync(state.toNbt()));
     }
 
@@ -1654,26 +1668,33 @@ public class TurnBasedCombatManager {
 
     private static void exitBattleArena(ServerPlayer player, BattleSession session) {
         ACTIVE_SESSIONS.remove(player.getUUID());
-        ServerLevel level = player.getLevel();
-        cleanupBattleActors(level, session);
+        ServerLevel arenaLevel = resolveArenaLevel(player.getLevel());
+        cleanupBattleActors(arenaLevel, session);
+
+        ServerLevel returnLevel = player.getServer() != null && session.returnDimension != null
+                ? player.getServer().getLevel(session.returnDimension)
+                : player.getLevel();
+        if (returnLevel == null) {
+            returnLevel = player.getLevel();
+        }
         BattleState st = session.state;
 
         if (st.victory && session.overworldEnemyUuid != null) {
-            Entity overworldTarget = level.getEntity(session.overworldEnemyUuid);
+            Entity overworldTarget = returnLevel.getEntity(session.overworldEnemyUuid);
             if (overworldTarget != null) {
                 overworldTarget.discard();
             }
         }
 
         if (!st.victory && st.finished) {
-            if (player.getX() > 90 || session.returnPos.x > 90) {
-                player.teleportTo(level, 110.5, 61.0, 28.5, 270.0f, 0.0f);
+            if (session.returnPos.x > 90 && !ModDimensions.STARSHIP.equals(returnLevel.dimension())) {
+                player.teleportTo(returnLevel, 110.5, 61.0, 28.5, 270.0f, 0.0f);
             } else {
-                player.teleportTo(level, session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
+                player.teleportTo(returnLevel, session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
             }
             player.setHealth(Math.max(4.0f, player.getMaxHealth() * 0.5f));
         } else {
-            player.teleportTo(level, session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
+            player.teleportTo(returnLevel, session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
         }
 
         BattleState closed = new BattleState();
@@ -1690,8 +1711,13 @@ public class TurnBasedCombatManager {
         if (player != null) {
             BattleSession session = ACTIVE_SESSIONS.remove(player.getUUID());
             if (session != null) {
-                cleanupBattleActors(player.getLevel(), session);
-                player.teleportTo(player.getLevel(), session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
+                ServerLevel arenaLevel = resolveArenaLevel(player.getLevel());
+                cleanupBattleActors(arenaLevel, session);
+                ServerLevel returnLevel = player.getServer() != null && session.returnDimension != null
+                        ? player.getServer().getLevel(session.returnDimension)
+                        : player.getLevel();
+                if (returnLevel == null) returnLevel = player.getLevel();
+                player.teleportTo(returnLevel, session.returnPos.x, session.returnPos.y, session.returnPos.z, session.returnYaw, session.returnPitch);
             }
         }
     }

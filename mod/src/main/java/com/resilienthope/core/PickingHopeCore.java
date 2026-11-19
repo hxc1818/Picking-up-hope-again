@@ -15,6 +15,8 @@ import com.resilienthope.core.init.ModEntities;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.team.TeamCapability;
+import com.resilienthope.core.world.HopeMapCommand;
+import com.resilienthope.core.world.MapZoningBuilder;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.api.distmarker.Dist;
@@ -56,6 +58,8 @@ public class PickingHopeCore {
 
         MinecraftForge.EVENT_BUS.register(TeamCapability.class);
         MinecraftForge.EVENT_BUS.register(com.resilienthope.core.event.StarshipSpawnHandler.class);
+        MinecraftForge.EVENT_BUS.register(HopeMapCommand.class);
+        MinecraftForge.EVENT_BUS.register(MapZoningBuilder.class);
     }
 
     private void setupCommon(final FMLCommonSetupEvent event) {
@@ -76,7 +80,16 @@ public class PickingHopeCore {
         event.enqueueWork(() -> {
             AccountSessionManager.initOnStartup();
             KeyInit.registerKeybinds();
+
+            // Translucent glass, ice & hardlight blocks
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.VIEWPORT_GLASS.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.STARSHIP_VIEWPORT_PANE.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.GLACIER_ICE_BLOCK.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RUIN_HARDLIGHT_BRIDGE.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RUIN_HARDLIGHT_BARRIER.get(), RenderType.translucent());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_ICE_CRYSTAL.get(), RenderType.translucent());
+
+            // Cutout interactive machines, doors, hatches, trusses & 3D voxel props
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.CRYO_SLEEP_POD.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.HOLOTABLE_PROP.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.TELEPORT_WAYPOINT.get(), RenderType.cutout());
@@ -86,6 +99,32 @@ public class PickingHopeCore {
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.AUXILIARY_ENERGY_CORE.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.ORBITAL_DROP_POD.get(), RenderType.cutout());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.PRECURSOR_ALTAR.get(), RenderType.cutout());
+
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.STARSHIP_GRATE_FLOOR.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.STARSHIP_RAILING.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.STARSHIP_AIRLOCK_DOOR.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.STARSHIP_VENT_HATCH.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.CYAN_LIGHT_STRIP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.AMBER_LIGHT_STRIP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.MINE_STEEL_TRUSS.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RUIN_ANCIENT_STELE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.RUIN_FLOATING_PRISM.get(), RenderType.cutout());
+
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_MONITOR_DESK.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_WALL_SCREEN.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_SERVER_RACK.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_CABLE_PIPE.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_VENT_DUCT.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_MEDICAL_BED.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_MED_CABINET.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_STORAGE_RACK.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_LAB_DESK.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_CREW_CHAIR.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_CARGO_BARREL.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_FLOOR_LAMP.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_BREAKER_BOX.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_BLACKBOX_RECORDER.get(), RenderType.cutout());
+            ItemBlockRenderTypes.setRenderLayer(ModBlocks.PROP_RUIN_RELAY.get(), RenderType.cutout());
         });
         LOGGER.info("Picking Hope Core: Client HUD & Keybinds initialized.");
     }

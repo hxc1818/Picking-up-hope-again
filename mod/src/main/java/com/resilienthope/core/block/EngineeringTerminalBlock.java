@@ -56,8 +56,8 @@ public class EngineeringTerminalBlock extends Block {
             }
         } else if (player instanceof ServerPlayer serverPlayer) {
             if (QuestManager.getQuestStage() < 15) {
-                PacketHandler.sendToPlayer(serverPlayer, new PacketRadioDialogue("管理终端",
-                        "模拟训练副本模块将在抵达地面科考站（第 15 阶段）会见老郑后开放使用。", 110));
+                PacketHandler.sendToPlayer(serverPlayer, PacketRadioDialogue.toast("管理终端",
+                        "模拟训练副本模块将在抵达地面科考站（第 15 阶段）会见老郑后开放使用。"));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

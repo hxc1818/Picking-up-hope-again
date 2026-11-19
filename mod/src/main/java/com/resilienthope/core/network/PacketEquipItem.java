@@ -97,8 +97,8 @@ public class PacketEquipItem {
             active.setEquippedWeapon(newWeapon);
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ARMOR_EQUIP_NETHERITE, SoundSource.PLAYERS, 1.0f, 1.25f);
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备管理",
-                    "已为【" + active.getName() + "】装配武器：" + newWeapon.getHoverName().getString(), 70));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("装备管理",
+                    "已为【" + active.getName() + "】装配武器：" + newWeapon.getHoverName().getString()));
         } else if (EquipmentStatsHelper.isChip(target)) {
             int chipSlot = EquipmentStatsHelper.getChipSlot(target);
             ItemStack oldChip = active.getEquippedChip(chipSlot);
@@ -119,8 +119,8 @@ public class PacketEquipItem {
 
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.9f, 1.4f);
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备管理",
-                    "已装入 " + EquipmentStatsHelper.getChipSlotTitle(chipSlot) + "：" + newChip.getHoverName().getString(), 75));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("装备管理",
+                    "已装入 " + EquipmentStatsHelper.getChipSlotTitle(chipSlot) + "：" + newChip.getHoverName().getString()));
         }
     }
 
@@ -172,15 +172,15 @@ public class PacketEquipItem {
             String hint = EquipmentStatsHelper.isWeapon(stack)
                     ? "该武器已达当前突破上限 Lv." + maxLv + "，请先消耗武器突破构件进行突破！"
                     : "该 " + EquipmentStatsHelper.getRarity(stack) + " 级装备已强化至满级 (+" + maxLv + ")！";
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台", hint, 85));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("装备强化台", hint));
             return false;
         }
 
         if (EquipmentStatsHelper.isChip(stack)) {
             int cost = EquipmentStatsHelper.getEnhanceDustCost(stack);
             if (!consumeItem(player, ModItems.EQUIP_ESSENCE.get(), cost)) {
-                PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备强化台",
-                        "装备强化粉尘不足（需要 " + cost + " 份）！请在背包 [B] 溶解其他多余装备来换取强化粉尘。", 105));
+                PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("装备强化台",
+                        "装备强化粉尘不足（需要 " + cost + " 份）！请在背包 [B] 溶解其他多余装备来换取强化粉尘。"));
                 return false;
             }
         } else {
@@ -188,8 +188,8 @@ public class PacketEquipItem {
                     || consumeItem(player, ModItems.EXP_BOTTLE.get(), 1)
                     || consumeItem(player, Items.EXPERIENCE_BOTTLE, 1);
             if (!paid) {
-                PacketHandler.sendToPlayer(player, new PacketRadioDialogue("武器强化台",
-                        "强化武器需要 1 个【1级武器构件】或【经验瓶】！", 95));
+                PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("武器强化台",
+                        "强化武器需要 1 个【1级武器构件】或【经验瓶】！"));
                 return false;
             }
         }
@@ -200,8 +200,8 @@ public class PacketEquipItem {
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.75f, 1.35f);
             String extra = (EquipmentStatsHelper.isChip(stack) && newLv % 3 == 0) ? " · 已触发每3级副词条成长！" : "";
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("强化成功",
-                    stack.getHoverName().getString() + " 升至 +" + newLv + "/" + maxLv + extra, 85));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("强化成功",
+                    stack.getHoverName().getString() + " 升至 +" + newLv + "/" + maxLv + extra));
             if (EquipmentStatsHelper.isChip(stack)) {
                 StoryDirector.onChipEnhanced(player, newLv);
             }

@@ -7,7 +7,7 @@ import com.resilienthope.core.network.PacketEquipItem;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketProgressionAction;
 import com.resilienthope.core.network.PacketSwitchCharacter;
-import com.resilienthope.core.subtitle.RadioSubtitleManager;
+import com.resilienthope.core.subtitle.SystemToastManager;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,7 +62,7 @@ public class CharacterProfileScreen extends Screen {
                 player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
                     CharacterData c = team.getCharacter(slot);
                     if (!c.isUnlocked()) {
-                        RadioSubtitleManager.postRadioMessage("编队系统", "该位置队友尚未解锁（推进剧情或抽卡可招募）。", 70);
+                        SystemToastManager.show("编队系统", "该位置队友尚未解锁（推进剧情或抽卡可招募）。");
                     } else {
                         team.switchSlot(player, slot);
                         PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(slot));
@@ -129,6 +130,19 @@ public class CharacterProfileScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_ENTER) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         int rx = rightX();
         int rw = rightW();
@@ -143,7 +157,9 @@ public class CharacterProfileScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        boolean handled = super.mouseClicked(mouseX, mouseY, button);
+        this.setFocused(null);
+        return handled;
     }
 
     private int countItem(Player player, Item item) {
@@ -345,5 +361,6 @@ public class CharacterProfileScreen extends Screen {
         });
 
         super.render(ps, mouseX, mouseY, partialTicks);
+        SystemToastManager.render(ps, this.font, this.width, this.height);
     }
 }

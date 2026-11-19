@@ -1,0 +1,44 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "picking_hope_core:block/ruin_hardlight_barrier_post"
+      }
+    },
+    {
+      "when": {
+        "north": "true"
+      },
+      "apply": {
+        "model": "picking_hope_core:block/ruin_hardlight_barrier_side"
+      }
+    },
+    {
+      "when": {
+        "east": "true"
+      },
+      "apply": {
+        "model": "picking_hope_core:block/ruin_hardlight_barrier_side",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "south": "true"
+      },
+      "apply": {
+        "model": "picking_hope_core:block/ruin_hardlight_barrier_side",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "west": "true"
+      },
+      "apply": {
+        "model": "picking_hope_core:block/ruin_hardlight_barrier_side",
+        "y": 270
+      }
+    }
+  ]
+}

@@ -97,17 +97,22 @@ public class HopeTitleScreen extends Screen {
             buildAuthFormWidgets();
         }
 
-        // Bottom footer: Options & Quit
+        // Bottom footer: Builder Workshop, Options & Quit
         int footY = this.height - 24;
         int footW = 84;
-        addRenderableWidget(new SciFiButton(this.width / 2 - footW - 4, footY, footW, 18,
+        int gap = 6;
+        int startFootX = (this.width - (footW * 3 + gap * 2)) / 2;
+        addRenderableWidget(new SciFiButton(startFootX, footY, footW, 18,
+                new TextComponent("地图造景工坊"),
+                btn -> launchBuilderWorkshop(), 0xFF4ADE80));
+        addRenderableWidget(new SciFiButton(startFootX + footW + gap, footY, footW, 18,
                 new TextComponent("游戏设置"),
                 btn -> {
                     if (this.minecraft != null) {
                         this.minecraft.setScreen(new OptionsScreen(this, this.minecraft.options));
                     }
                 }, 0xFF64748B));
-        addRenderableWidget(new SciFiButton(this.width / 2 + 4, footY, footW, 18,
+        addRenderableWidget(new SciFiButton(startFootX + (footW + gap) * 2, footY, footW, 18,
                 new TextComponent("退出游戏"),
                 btn -> {
                     if (this.minecraft != null) {
@@ -373,6 +378,22 @@ public class HopeTitleScreen extends Screen {
             PickingHopeCore.LOGGER.error("Failed to import legacy world", e);
             statusMessage = "导入失败：" + e.getMessage();
             statusColor = 0xFFF87171;
+        }
+    }
+
+    private void launchBuilderWorkshop() {
+        if (this.minecraft == null || busy) return;
+        busy = true;
+        statusMessage = "正在进入【地图造景工坊】创造存档...";
+        statusColor = 0xFF4ADE80;
+        try {
+            SingleplayerWorldLauncher.ensureAndLaunchBuilderWorld(this.minecraft);
+        } catch (Exception e) {
+            PickingHopeCore.LOGGER.error("Failed to launch builder workshop", e);
+            busy = false;
+            statusMessage = "打开造景工坊失败：" + e.getMessage();
+            statusColor = 0xFFF87171;
+            init();
         }
     }
 

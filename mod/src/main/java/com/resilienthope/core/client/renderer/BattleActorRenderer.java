@@ -299,7 +299,8 @@ public class BattleActorRenderer extends EntityRenderer<BattleActorEntity> {
     @Override
     public void render(BattleActorEntity entity, float entityYaw, float partialTicks, PoseStack poseStack,
                        MultiBufferSource buffer, int packedLight) {
-        if (entity.getSide() == 1 && !entity.isAliveActor()) {
+        if (entity.getSide() == 1 && !entity.isAliveActor()
+                && !BattleSceneClientController.isEnemyVisuallyAlive(entity.getSlotIndex())) {
             return;
         }
         ensureModelsBuilt();
@@ -311,11 +312,16 @@ public class BattleActorRenderer extends EntityRenderer<BattleActorEntity> {
 
         float baseYaw = entity.getSide() == 0 ? BattleArenaLayout.ALLY_YAW : BattleArenaLayout.ENEMY_YAW;
         float finalYaw = baseYaw + pose.yawOffset;
-        float scale = entity.getActorScale();
+        float deathFade = entity.getSide() == 1
+                ? BattleSceneClientController.getEnemyDeathFade(entity.getSlotIndex(), partialTicks)
+                : 1.0F;
+        float scale = entity.getActorScale() * (deathFade < 1.0F ? (0.35F + 0.65F * deathFade) : 1.0F);
         int light = pose.acting ? LightTexture.FULL_BRIGHT : Math.max(packedLight, LightTexture.pack(13, 13));
 
         float cr = 1.0F, cg = 1.0F, cb = 1.0F;
-        if (pose.hurtFlash) {
+        if (deathFade < 1.0F) {
+            cr = 1.0F; cg = 0.42F * deathFade; cb = 0.25F * deathFade;
+        } else if (pose.hurtFlash) {
             cr = 1.0F; cg = 0.35F; cb = 0.35F;
         } else if (entity.isBrokenState()) {
             cr = 0.65F; cg = 0.72F; cb = 0.92F;
@@ -325,10 +331,17 @@ public class BattleActorRenderer extends EntityRenderer<BattleActorEntity> {
 
         poseStack.pushPose();
         poseStack.translate(pose.offsetX, pose.offsetY, pose.offsetZ);
+        if (deathFade < 1.0F) {
+            float collapse = 1.0F - deathFade;
+            poseStack.translate(collapse * 0.45D, -collapse * 0.35D, 0.0D);
+        }
         if (entity.getSide() == 0 && !entity.isAliveActor()) {
             poseStack.translate(0.0D, 0.25D, 0.0D);
         }
         poseStack.mulPose(Vector3f.YP.rotationDegrees(180.0F - finalYaw));
+        if (deathFade < 1.0F) {
+            poseStack.mulPose(Vector3f.XP.rotationDegrees(-42.0F * (1.0F - deathFade)));
+        }
         poseStack.scale(-scale, -scale, scale);
         poseStack.translate(0.0D, -1.501D, 0.0D);
 

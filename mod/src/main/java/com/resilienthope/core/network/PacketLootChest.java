@@ -52,8 +52,8 @@ public class PacketLootChest {
                 }
                 if (count > 0) {
                     player.getLevel().playSound(null, msg.chestPos, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 1.0f, 1.2f);
-                    PacketHandler.sendToPlayer(player, new PacketRadioDialogue("物资箱拾取",
-                            "物资已存入背包！按 [B] 查看装备与材料，按 [C] 为角色装配芯片或使用经验瓶。", 120));
+                    PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("物资箱拾取",
+                            "物资已存入背包！按 [B] 查看装备与材料，按 [C] 为角色装配芯片或使用经验瓶。"));
                     if (QuestManager.getQuestStage() == 0) {
                         StoryDirector.onSupplyCrateOpened(player, msg.chestPos);
                     }

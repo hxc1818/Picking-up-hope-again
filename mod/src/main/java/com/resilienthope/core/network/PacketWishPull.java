@@ -42,8 +42,8 @@ public class PacketWishPull {
                     || PacketEquipItem.consumeItem(player, ModItems.QUANTUM_CORE.get(), msg.count * 10);
 
             if (!paid) {
-                PacketHandler.sendToPlayer(player, new PacketRadioDialogue("抽卡系统",
-                        "抽卡通行券不足！单抽需 1 张通行券，十连需 10 张（完成主线或探索可得）。", 100));
+                PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("抽卡系统",
+                        "抽卡通行券不足！单抽需 1 张通行券，十连需 10 张（完成主线或探索可得）。"));
                 return;
             }
 

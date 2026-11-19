@@ -1,0 +1,58 @@
+{
+  "variants": {
+    "facing=north,half=bottom,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_bottom"
+    },
+    "facing=north,half=top,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_top"
+    },
+    "facing=north,half=bottom,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open"
+    },
+    "facing=north,half=top,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open"
+    },
+    "facing=east,half=bottom,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_bottom"
+    },
+    "facing=east,half=top,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_top"
+    },
+    "facing=east,half=bottom,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 90
+    },
+    "facing=east,half=top,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 90
+    },
+    "facing=south,half=bottom,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_bottom"
+    },
+    "facing=south,half=top,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_top"
+    },
+    "facing=south,half=bottom,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 180
+    },
+    "facing=south,half=top,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 180
+    },
+    "facing=west,half=bottom,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_bottom"
+    },
+    "facing=west,half=top,open=false": {
+      "model": "picking_hope_core:block/starship_vent_hatch_top"
+    },
+    "facing=west,half=bottom,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 270
+    },
+    "facing=west,half=top,open=true": {
+      "model": "picking_hope_core:block/starship_vent_hatch_open",
+      "y": 270
+    }
+  }
+}

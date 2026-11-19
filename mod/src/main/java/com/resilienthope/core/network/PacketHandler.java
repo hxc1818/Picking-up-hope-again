@@ -126,5 +126,11 @@ public class PacketHandler {
                 .decoder(PacketCloudSyncAck::decode)
                 .consumer(PacketCloudSyncAck::handle)
                 .add();
+
+        INSTANCE.messageBuilder(PacketBuilderTeleport.class, packetId++)
+                .encoder(PacketBuilderTeleport::encode)
+                .decoder(PacketBuilderTeleport::decode)
+                .consumer(PacketBuilderTeleport::handle)
+                .add();
     }
 }

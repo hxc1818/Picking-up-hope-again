@@ -16,7 +16,13 @@ import com.resilienthope.core.quest.QuestManager;
 import com.resilienthope.core.quest.StoryDirector;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
+import com.resilienthope.core.world.HopeMapCommand;
+import com.resilienthope.core.world.MapZoneRegistry;
+import com.resilienthope.core.world.MapZoningBuilder;
+import com.resilienthope.core.world.ModDimensions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -38,12 +44,27 @@ import java.util.List;
 public class StarshipSpawnHandler {
     private static final String SPAWN_TAG = "picking_hope_v2_clean_init_v4";
     private static final String V2_WORLD_TAG = "picking_hope_v2_custom_world_v4";
+    private static final String BUILDER_INIT_TAG = "picking_hope_builder_inited_v1";
+
+    private static boolean isBuilderSession(ServerPlayer player, ServerLevel level) {
+        if (player == null) return false;
+        if (player.getTags().contains(HopeMapCommand.BUILDER_TAG)) return true;
+        if (level != null && level.getServer() != null) {
+            String lvlName = level.getServer().getWorldData().getLevelName();
+            if (lvlName != null && lvlName.contains("地图造景工坊")) return true;
+        }
+        return false;
+    }
 
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (!(event.getPlayer() instanceof ServerPlayer player)) return;
 
         ServerLevel level = player.getLevel();
+        if (isBuilderSession(player, level)) {
+            handleBuilderLogin(player, level);
+            return;
+        }
         BlockPos origin = new BlockPos(0, 60, 0);
         boolean freshReset = !player.getTags().contains(SPAWN_TAG);
         CloudSaveSnapshot pendingCloud = AccountSessionManager.consumePendingRestore();
@@ -152,9 +173,41 @@ public class StarshipSpawnHandler {
             PacketHandler.sendToPlayer(player, new PacketRadioDialogue("船舱应急广播",
                     "警告：重拾希望号遭遇不明撞击，B区供电中断。林野，先按 [F] 开启身旁的【装甲物资箱】检查装备！", 200));
         } else if (restoredFromCloud) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("云存档同步",
-                    "已加载账号进度（主线阶段 " + stage + "），欢迎回到舰区！", 90));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("云存档同步",
+                    "已加载账号进度（主线阶段 " + stage + "），欢迎回到舰区！"));
         }
+    }
+
+    private static void handleBuilderLogin(ServerPlayer player, ServerLevel currentLevel) {
+        player.addTag(HopeMapCommand.BUILDER_TAG);
+        player.setGameMode(GameType.CREATIVE);
+        if (player.getAbilities().getFlyingSpeed() <= 0.055F) {
+            player.getAbilities().setFlyingSpeed(0.10F);
+        }
+        player.getAbilities().flying = true;
+        player.onUpdateAbilities();
+
+        MinecraftServer server = currentLevel.getServer();
+        ServerLevel starship = server != null ? server.getLevel(ModDimensions.STARSHIP) : null;
+        ServerLevel planet = server != null ? server.getLevel(ModDimensions.PLANET_CRYO) : null;
+        if (starship != null) MapZoningBuilder.setGuidesEnabled(starship, true);
+        if (planet != null) MapZoningBuilder.setGuidesEnabled(planet, true);
+
+        if (!player.getTags().contains(BUILDER_INIT_TAG)) {
+            player.addTag(BUILDER_INIT_TAG);
+            ServerLevel dest = starship != null ? starship : currentLevel;
+            MapZoneRegistry.ZoneDef s1 = MapZoneRegistry.findById("s1");
+            if (s1 != null) {
+                MapZoningBuilder.ensureZoneLandingPad(dest, s1);
+                player.teleportTo(dest, s1.centerX + 2.5D, s1.centerY + 1.0D, s1.centerZ + 2.5D, 270.0F, 0.0F);
+            }
+            MapZoningBuilder.stampLoadedChunksAround(player, 4);
+        }
+
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("造景工坊",
+                "已启用创造造景模式！按 [M] 看双维度蓝图与点击传送"));
+        player.sendMessage(new TextComponent("§a[造景工坊] §f已开启双维度（星舰5区 + 1万×1万第一颗星球8区）动态区域划线。"), player.getUUID());
+        player.sendMessage(new TextComponent("§7常用操作：按 §e[M]§7 缩放全图与点击直达 | §e[E]§7 打开4大主题方块库 | §e/hope map planet§7 切星球 | §e/hope speed 1~10§7 调飞行速度 | §e/hope nv§7 开关夜视"), player.getUUID());
     }
 
     private static void clearOldWorldEntities(ServerLevel level) {
@@ -174,14 +227,19 @@ public class StarshipSpawnHandler {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
             TurnBasedCombatManager.clearSessionOnLogout(player);
-            AccountSessionManager.flushSyncBlocking(player, "logout", 2500);
+            if (!isBuilderSession(player, player.getLevel())) {
+                AccountSessionManager.flushSyncBlocking(player, "logout", 2500);
+            }
         }
     }
 
     @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && !event.player.level.isClientSide() && event.player instanceof ServerPlayer player) {
-            if (!player.isCreative() && !player.isSpectator() && player.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
+            if (player.isCreative() || isBuilderSession(player, player.getLevel())) {
+                return;
+            }
+            if (!player.isSpectator() && player.gameMode.getGameModeForPlayer() != GameType.ADVENTURE) {
                 player.setGameMode(GameType.ADVENTURE);
             }
 
@@ -221,9 +279,10 @@ public class StarshipSpawnHandler {
     public static void onLivingHurt(LivingHurtEvent event) {
         if (event.getEntity().level.isClientSide()) return;
 
-        // Player left-clicks Monster -> Ambush Turn-Based Battle!
+        // Player left-clicks Monster -> Ambush Turn-Based Battle! (Skip in creative builder mode)
         if (event.getSource().getDirectEntity() instanceof ServerPlayer player
                 && event.getEntity() instanceof Monster target) {
+            if (player.isCreative()) return;
             event.setCanceled(true);
             if (!TurnBasedCombatManager.isInBattle(player)) {
                 TurnBasedCombatManager.startOverworldBattle(player, target, true);
@@ -234,6 +293,7 @@ public class StarshipSpawnHandler {
         // Monster hits Player -> Surprised Turn-Based Battle!
         if (event.getSource().getEntity() instanceof Monster attacker
                 && event.getEntity() instanceof ServerPlayer player) {
+            if (player.isCreative()) return;
             event.setCanceled(true);
             if (!TurnBasedCombatManager.isInBattle(player)) {
                 TurnBasedCombatManager.startOverworldBattle(player, attacker, false);

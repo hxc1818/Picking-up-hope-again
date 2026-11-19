@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "picking_hope_core:block/starship_dark_rib_top",
+    "side": "picking_hope_core:block/starship_dark_rib"
+  }
+}

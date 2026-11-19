@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column_horizontal",
+  "textures": {
+    "end": "picking_hope_core:block/ruin_pillar_top",
+    "side": "picking_hope_core:block/ruin_pillar"
+  }
+}

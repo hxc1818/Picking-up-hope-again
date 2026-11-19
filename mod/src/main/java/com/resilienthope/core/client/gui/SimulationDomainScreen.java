@@ -3,6 +3,7 @@ package com.resilienthope.core.client.gui;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketProgressionAction;
+import com.resilienthope.core.subtitle.SystemToastManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -70,6 +71,11 @@ public class SimulationDomainScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
     public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
         renderBackground(ps);
 
@@ -122,5 +128,6 @@ public class SimulationDomainScreen extends Screen {
         }
 
         super.render(ps, mouseX, mouseY, partialTicks);
+        SystemToastManager.render(ps, this.font, this.width, this.height);
     }
 }

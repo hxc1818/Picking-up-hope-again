@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/snow_packed_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/glacier_snow"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/snow_packed_slab_top"
+    }
+  }
+}

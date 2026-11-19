@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/ruin_platinum_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/ruin_platinum_trim"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/ruin_platinum_slab_top"
+    }
+  }
+}

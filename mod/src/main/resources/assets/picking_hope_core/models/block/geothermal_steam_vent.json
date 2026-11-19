@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "picking_hope_core:block/geothermal_steam_vent_top",
+    "bottom": "picking_hope_core:block/geothermal_steam_vent_side",
+    "side": "picking_hope_core:block/geothermal_steam_vent_side"
+  }
+}

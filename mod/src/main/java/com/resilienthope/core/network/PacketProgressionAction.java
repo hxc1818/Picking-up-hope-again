@@ -84,21 +84,23 @@ public class PacketProgressionAction {
         CharacterData active = team.getCharacter(team.getActiveSlotIndex());
         int cap = active.getMaxLevelForAscension();
         if (active.getLevel() >= cap) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("角色养成",
-                    active.getName() + " 已达当前突破上限 Lv." + cap + "！请先进行角色突破（或提升世界等级）。", 100));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("角色养成",
+                    active.getName() + " 已达当前突破上限 Lv." + cap + "！请先进行角色突破（或提升世界等级）。"));
             return;
         }
         boolean consumed = PacketEquipItem.consumeItem(player, ModItems.EXP_BOTTLE.get(), 1)
                 || PacketEquipItem.consumeItem(player, Items.EXPERIENCE_BOTTLE, 1);
         if (!consumed) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("角色养成",
-                    "角色经验瓶不足！可前往模拟训练副本或探索物资箱获取。", 90));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("角色养成",
+                    "角色经验瓶不足！可前往模拟训练副本或探索物资箱获取。"));
             return;
         }
         active.setLevel(active.getLevel() + 1);
         active.setCurrentHp(active.getTotalMaxHp());
         team.syncHealthToPlayer(player);
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.9f, 1.4f);
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("升级成功",
+                active.getName() + " 升至 Lv." + active.getLevel() + "/" + cap));
         StoryDirector.onCharacterUpgraded(player, active.getLevel());
     }
 
@@ -107,22 +109,22 @@ public class PacketProgressionAction {
         int asc = active.getAscension();
         if (asc >= 6) return;
         if (asc >= team.getMaxAscensionAllowed()) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("突破限制",
-                    "受当前世界等级 Lv." + team.getWorldLevel() + " 限制，需先提升主等级并完成【世界等级突破】才可继续突破角色！", 110));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("突破限制",
+                    "受当前世界等级 Lv." + team.getWorldLevel() + " 限制，需先完成【世界等级突破】才可继续突破角色！"));
             return;
         }
         int tier = Math.min(6, asc + 1);
         int reqMat = 2 + asc;
         Item mat = ModItems.getCharMat(tier);
         if (!PacketEquipItem.consumeItem(player, mat, reqMat)) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("材料不足",
-                    "角色突破需要 " + reqMat + " 个【" + tier + "级人物零件】，可在背包合成或刷取副本获得。", 100));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("材料不足",
+                    "角色突破需要 " + reqMat + " 个【" + tier + "级人物零件】，可在背包合成或刷取副本获得。"));
             return;
         }
         active.setAscension(asc + 1);
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 1.0f, 1.2f);
-        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("突破成功",
-                active.getName() + " 已突破！等级上限提升至 Lv." + active.getMaxLevelForAscension(), 90));
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("突破成功",
+                active.getName() + " 已突破！等级上限提升至 Lv." + active.getMaxLevelForAscension()));
     }
 
     private static void handleUpgradeTalent(ServerPlayer player, TeamCapability.ITeamData team) {
@@ -133,14 +135,14 @@ public class PacketProgressionAction {
         int reqCount = 1 + (tLv % 2);
         Item mat = ModItems.getTalentMat(tier);
         if (!PacketEquipItem.consumeItem(player, mat, reqCount)) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("天赋升级",
-                    "升级天赋需要 " + reqCount + " 本【" + tier + "级天赋手册】，人物/武器/天赋材料彼此独立！", 100));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("天赋升级",
+                    "升级天赋需要 " + reqCount + " 本【" + tier + "级天赋手册】，人物/武器/天赋材料彼此独立！"));
             return;
         }
         active.setTalentLevel(tLv + 1);
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.ENCHANTMENT_TABLE_USE, SoundSource.PLAYERS, 0.9f, 1.3f);
-        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("天赋升级",
-                active.getName() + " 技能天赋已升至 Lv." + active.getTalentLevel() + "！", 80));
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("天赋升级",
+                active.getName() + " 技能天赋已升至 Lv." + active.getTalentLevel() + "！"));
     }
 
     private static void handleAscendWeapon(ServerPlayer player, TeamCapability.ITeamData team) {
@@ -150,16 +152,16 @@ public class PacketProgressionAction {
         int asc = EquipmentStatsHelper.getAscension(weapon);
         if (asc >= 6) return;
         if (asc >= team.getMaxAscensionAllowed()) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("武器突破限制",
-                    "需先完成【世界等级突破】才可继续提升武器阶数！", 95));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("武器突破限制",
+                    "需先完成【世界等级突破】才可继续提升武器阶数！"));
             return;
         }
         int tier = Math.min(6, asc + 1);
         int reqCount = 2 + asc;
         Item mat = ModItems.getWeaponMat(tier);
         if (!PacketEquipItem.consumeItem(player, mat, reqCount)) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("材料不足",
-                    "武器突破需要 " + reqCount + " 个【" + tier + "级武器构件】！", 95));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("材料不足",
+                    "武器突破需要 " + reqCount + " 个【" + tier + "级武器构件】！"));
             return;
         }
         EquipmentStatsHelper.setAscension(weapon, asc + 1);
@@ -167,8 +169,8 @@ public class PacketProgressionAction {
         player.getInventory().setItem(0, weapon.copy());
         player.setItemInHand(InteractionHand.MAIN_HAND, weapon.copy());
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 0.9f, 1.3f);
-        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("武器突破成功",
-                weapon.getHoverName().getString() + " 等级上限开放至 Lv." + EquipmentStatsHelper.getMaxEnhanceLevel(weapon), 90));
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("武器突破成功",
+                weapon.getHoverName().getString() + " 等级上限开放至 Lv." + EquipmentStatsHelper.getMaxEnhanceLevel(weapon)));
     }
 
     private static void handleDissolveChip(ServerPlayer player, int invIdx) {
@@ -183,8 +185,8 @@ public class PacketProgressionAction {
             player.drop(dust, false);
         }
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.GRINDSTONE_USE, SoundSource.PLAYERS, 0.9f, 1.2f);
-        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("装备溶解",
-                "已溶解多余装备，提炼出【装备强化粉尘】 x" + yield + "！", 80));
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("装备溶解",
+                "已溶解多余装备，提炼出【装备强化粉尘】 x" + yield + "！"));
     }
 
     private static void handleCraftMatUp(ServerPlayer player, int invIdx) {
@@ -194,8 +196,8 @@ public class PacketProgressionAction {
         Item next = ModItems.getNextTierMaterial(stack.getItem());
         if (next == null) return;
         if (!PacketEquipItem.consumeItem(player, stack.getItem(), 3)) {
-            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("材料合成",
-                    "合成高一级材料需要 3 个同系列低级材料！", 80));
+            PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("材料合成",
+                    "合成高一级材料需要 3 个同系列低级材料！"));
             return;
         }
         ItemStack crafted = new ItemStack(next, 1);
@@ -203,7 +205,7 @@ public class PacketProgressionAction {
             player.drop(crafted, false);
         }
         player.getLevel().playSound(null, player.blockPosition(), SoundEvents.SMITHING_TABLE_USE, SoundSource.PLAYERS, 0.8f, 1.3f);
-        PacketHandler.sendToPlayer(player, new PacketRadioDialogue("材料合成成功",
-                "已合成高阶材料：" + crafted.getHoverName().getString(), 80));
+        PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("材料合成成功",
+                "已合成高阶材料：" + crafted.getHoverName().getString()));
     }
 }

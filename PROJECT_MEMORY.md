@@ -44,7 +44,14 @@
 3. **v3.0 三期全面重构进度（2026-11-19 启动，详见 [06_V3_Overhaul_Blueprint.md](docs/06_V3_Overhaul_Blueprint.md)）**：
    - **第 1 期（模块 C，已完成）**：替换原版开始界面与暂停菜单为定制单人 RPG 登录页，内置 Node.js 测试云存档服（`cloud-server/`，默认 `http://127.0.0.1:3847`，零第三方依赖），实现多账号独立单人存档与轻量 RPG 进度云同步（离线可本地兜底）。
    - **第 2 期（模块 A，已完成）**：废除 `BattleStageRenderer`，改用真实世界 `BattleActorEntity` + `BattleActorRenderer` + 挑高星舰战术机库（`BattleArenaBuilder` + `ArenaTheme`）+ `BattleCameraEntity`/`BattleCameraController`（兼容 `ShoulderSurfing`）+ 多色原生实体发光 + 纯图形头顶弱点/闪烁削韧预览（`BattleCombatPreview`）+ `elem_*.png` 像素徽章（`ElementIconRenderer`）+ 数据驱动 56 份 JSON 关键帧/运镜片段与 `/battle_anim` 热重载调试指令（`BattleAnimationRegistry` / `BattleSceneClientController` / `BattleVfxManager`）。
-   - **第 3 期（模块 B，待开工）**：扩充小巧 3D 体素装饰道具 + 混合原版装饰方块，将星舰上下层、冰原科考站与矿坑挑高扩容重建。
+4. **v4.0 剧情/世界/怪物全面商业化重塑（2026-11-19，按先建图后联调三阶段推进）**：
+   - **第 1 阶段（已完成施工）**：
+     1. **战斗最后一击结算延迟修复**：`BattleSceneClientController` / `BattleActorRenderer` / `TurnBasedBattleScreen` 等待最后一击动作 + 敌方爆裂倾倒消散 + 短暂收尾停顿后再弹出结算窗，按 `[Space]` 在演播期仅跳过演出直达结算。
+     2. **覆盖式系统提示与防刷包治理**：新增 `SystemToastManager`，并将养成/强化/装备/抽卡/编队切换等提示与 `RadioSubtitleManager`（新增 `MAX_QUEUE_SIZE=4` 与队列去重）剥离；同时阻止养成与背包界面的空格连发。
+     3. **双维度 + 万格大陆规划 + 造景无阻模式**：新增 1.18.2 自定义维度 `picking_hope_core:starship`（深空星夜虚空，规划 `1560x820` 5 区巨舰）、`picking_hope_core:planet_cryo`（极寒雪地深岩层，规划 `11700x9700` 超 1 万×1 万 8 区不规则大陆）与 `picking_hope_core:battle_arena`（隔离战斗维度）；启动页新增【地图造景工坊】（创造存档 `puh_map_builder`，保留原版快捷栏、`1~9` 与 `E` 背包）；基于 `SavedData` + `ChunkEvent.Load` 零卡顿按区块动态划定区界与路标；新增 `[M]` 键交互式全图蓝图点击传送界面（`BuilderRegionMapScreen`）及 `/hope` 造景导航指令集（`map`, `tp`, `speed`, `guides`, `list`, `nv`, `time`, `builder`）。
+     4. **4 主题创造标签页与 94 种自定义建筑与小体素道具库**：在 `ModCreativeTabs`、`ModBlocks`、`ModItems` 及 `gen_v4_blocks.py` 中完成 25 星舰 / 24 冰原矿区地热 / 20 外星遗迹方舟 / 25 家具道具的全套模型、纹理、Blockstate 与中英文名。
+   - **第 2 阶段（待开工）**：扩充 3 大生态阵营 15+ 种独立 3D 怪物与多波次战斗舞台 + 商业级多角色分支对话/机关解谜/日志档案/3D 过场引擎。
+   - **第 3 阶段（待玩家造景完交付存档后）**：实景巡查选点部署 NPC、怪物、宝箱与机关解谜并编写主支线完整剧本。
 
 ---
 

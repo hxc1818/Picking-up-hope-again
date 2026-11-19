@@ -35,7 +35,8 @@ public class HopePauseScreen extends Screen {
         super.init();
         clearWidgets();
 
-        int boxH = 156;
+        boolean creative = this.minecraft != null && this.minecraft.player != null && this.minecraft.player.isCreative();
+        int boxH = creative ? 198 : 156;
         int by = (this.height - boxH) / 2;
         int panelW = 196;
         int x = (this.width - panelW) / 2;
@@ -44,22 +45,51 @@ public class HopePauseScreen extends Screen {
         addRenderableWidget(new SciFiButton(x, y, panelW, 20,
                 new TextComponent("继续游戏"), btn -> onClose(), 0xFFFBBF24));
 
-        addRenderableWidget(new SciFiButton(x, y + 24, panelW, 20,
-                new TextComponent("立即同步云存档"), btn -> {
-            statusSnapshotAtClick = AccountSessionManager.getSyncStatusText();
-            tsSnapshotAtClick = AccountSessionManager.getLastSyncAt();
-            pendingNotice = "正在上传进度至云端...";
-            PacketHandler.INSTANCE.sendToServer(new PacketCloudSyncRequest());
-        }, 0xFF38BDF8));
+        int curY = y + 24;
+        if (creative) {
+            addRenderableWidget(new SciFiButton(x, curY, panelW, 19,
+                    new TextComponent("打开双维度蓝图与传送 (M)"), btn -> {
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new BuilderRegionMapScreen());
+                }
+            }, 0xFF4ADE80));
+            curY += 22;
 
-        addRenderableWidget(new SciFiButton(x, y + 48, panelW, 20,
+            int hw = (panelW - 4) / 2;
+            addRenderableWidget(new SciFiButton(x, curY, hw, 18,
+                    new TextComponent("飞船(Starship)"), btn -> {
+                if (this.minecraft != null && this.minecraft.player != null) {
+                    this.minecraft.player.chat("/hope map starship");
+                    onClose();
+                }
+            }, 0xFF38BDF8));
+            addRenderableWidget(new SciFiButton(x + hw + 4, curY, hw, 18,
+                    new TextComponent("星球(Planet)"), btn -> {
+                if (this.minecraft != null && this.minecraft.player != null) {
+                    this.minecraft.player.chat("/hope map planet");
+                    onClose();
+                }
+            }, 0xFFA5F3FC));
+            curY += 22;
+        } else {
+            addRenderableWidget(new SciFiButton(x, curY, panelW, 20,
+                    new TextComponent("立即同步云存档"), btn -> {
+                statusSnapshotAtClick = AccountSessionManager.getSyncStatusText();
+                tsSnapshotAtClick = AccountSessionManager.getLastSyncAt();
+                pendingNotice = "正在上传进度至云端...";
+                PacketHandler.INSTANCE.sendToServer(new PacketCloudSyncRequest());
+            }, 0xFF38BDF8));
+            curY += 24;
+        }
+
+        addRenderableWidget(new SciFiButton(x, curY, panelW, 20,
                 new TextComponent("游戏设置"), btn -> {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(new OptionsScreen(this, this.minecraft.options));
             }
         }, 0xFF64748B));
 
-        addRenderableWidget(new SciFiButton(x, y + 72, panelW, 20,
+        addRenderableWidget(new SciFiButton(x, curY + 24, panelW, 20,
                 new TextComponent("保存并返回登录页"), btn -> saveAndReturnToLogin(), 0xFFEF4444));
     }
 
@@ -81,8 +111,9 @@ public class HopePauseScreen extends Screen {
     public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
         this.renderBackground(ps);
 
+        boolean creative = this.minecraft != null && this.minecraft.player != null && this.minecraft.player.isCreative();
         int boxW = 228;
-        int boxH = 156;
+        int boxH = creative ? 198 : 156;
         int bx = (this.width - boxW) / 2;
         int by = (this.height - boxH) / 2;
 

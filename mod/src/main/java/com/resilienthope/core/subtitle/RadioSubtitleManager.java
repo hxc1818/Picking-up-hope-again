@@ -16,19 +16,32 @@ public class RadioSubtitleManager {
         }
     }
 
+    private static final int MAX_QUEUE_SIZE = 4;
     private static final Queue<Entry> queue = new ArrayDeque<>();
     private static Entry current = null;
     private static int elapsedTicks = 0;
 
     public static void postRadioMessage(String speaker, String text, int durationTicks) {
         if (text == null || text.isEmpty()) return;
-        Entry entry = new Entry(speaker != null ? speaker : "无线电通讯", text, durationTicks);
+        int clampedTicks = Math.max(40, Math.min(160, durationTicks));
+        Entry entry = new Entry(speaker != null ? speaker : "无线电通讯", text, clampedTicks);
         if (current == null) {
             current = entry;
             elapsedTicks = 0;
-        } else if (!entry.text.equals(current.text)) {
-            queue.offer(entry);
+            return;
         }
+        if (entry.text.equals(current.text)) {
+            return;
+        }
+        for (Entry queued : queue) {
+            if (entry.text.equals(queued.text)) {
+                return;
+            }
+        }
+        while (queue.size() >= MAX_QUEUE_SIZE) {
+            queue.poll();
+        }
+        queue.offer(entry);
     }
 
     public static void clientTick() {

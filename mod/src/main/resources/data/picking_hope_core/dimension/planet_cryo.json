@@ -1,0 +1,30 @@
+{
+  "type": "picking_hope_core:planet_cryo",
+  "generator": {
+    "type": "minecraft:flat",
+    "settings": {
+      "biome": "minecraft:snowy_plains",
+      "lakes": false,
+      "features": false,
+      "layers": [
+        {
+          "block": "minecraft:bedrock",
+          "height": 1
+        },
+        {
+          "block": "minecraft:deepslate",
+          "height": 111
+        },
+        {
+          "block": "minecraft:packed_ice",
+          "height": 11
+        },
+        {
+          "block": "minecraft:snow_block",
+          "height": 5
+        }
+      ],
+      "structure_overrides": []
+    }
+  }
+}

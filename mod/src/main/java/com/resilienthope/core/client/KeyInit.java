@@ -1,5 +1,6 @@
 package com.resilienthope.core.client;
 
+import com.resilienthope.core.client.gui.BuilderRegionMapScreen;
 import com.resilienthope.core.client.gui.CharacterProfileScreen;
 import com.resilienthope.core.client.gui.InfiniteInventoryScreen;
 import com.resilienthope.core.client.gui.SimulationDomainScreen;
@@ -9,7 +10,7 @@ import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketSwitchCharacter;
 import com.resilienthope.core.quest.QuestManager;
-import com.resilienthope.core.subtitle.RadioSubtitleManager;
+import com.resilienthope.core.subtitle.SystemToastManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -44,6 +45,7 @@ public class KeyInit {
     public static KeyMapping KEY_INTERACT_F;
     public static KeyMapping KEY_PROFILE_C;
     public static KeyMapping KEY_WISH_G;
+    public static KeyMapping KEY_BUILDER_MAP_M;
 
     public static void registerKeybinds() {
         KEY_CHAR_1 = new KeyMapping("key.picking_hope.char_1", GLFW.GLFW_KEY_1, CATEGORY);
@@ -56,6 +58,7 @@ public class KeyInit {
         KEY_INTERACT_F = new KeyMapping("key.picking_hope.interact_f", GLFW.GLFW_KEY_F, CATEGORY);
         KEY_PROFILE_C = new KeyMapping("key.picking_hope.profile_c", GLFW.GLFW_KEY_C, CATEGORY);
         KEY_WISH_G = new KeyMapping("key.picking_hope.wish_g", GLFW.GLFW_KEY_G, CATEGORY);
+        KEY_BUILDER_MAP_M = new KeyMapping("key.picking_hope.builder_map_m", GLFW.GLFW_KEY_M, CATEGORY);
 
         ClientRegistry.registerKeyBinding(KEY_CHAR_1);
         ClientRegistry.registerKeyBinding(KEY_CHAR_2);
@@ -67,6 +70,7 @@ public class KeyInit {
         ClientRegistry.registerKeyBinding(KEY_INTERACT_F);
         ClientRegistry.registerKeyBinding(KEY_PROFILE_C);
         ClientRegistry.registerKeyBinding(KEY_WISH_G);
+        ClientRegistry.registerKeyBinding(KEY_BUILDER_MAP_M);
     }
 
     public static float getSkillCooldownSeconds() {
@@ -77,6 +81,14 @@ public class KeyInit {
     public static void onKeyInput(InputEvent.KeyInputEvent event) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.screen != null) return;
+
+        if (mc.player.isCreative()) {
+            if (KEY_BUILDER_MAP_M.consumeClick()) {
+                mc.setScreen(new BuilderRegionMapScreen());
+            }
+            return;
+        }
+        while (KEY_BUILDER_MAP_M.consumeClick()) {}
 
         if (KEY_CHAR_1.consumeClick()) triggerSlotSwitch(0);
         if (KEY_CHAR_2.consumeClick()) triggerSlotSwitch(1);
@@ -97,7 +109,7 @@ public class KeyInit {
 
         if (KEY_SKILL_E.consumeClick()) {
             if (QuestManager.getQuestStage() < 15) {
-                RadioSubtitleManager.postRadioMessage("模拟终端", "模拟训练副本将在第 15 阶段抵达地面科考站后开放！", 90);
+                SystemToastManager.show("模拟终端", "模拟训练副本将在第 15 阶段抵达地面科考站后开放！");
             } else {
                 mc.setScreen(new SimulationDomainScreen());
             }
@@ -116,14 +128,14 @@ public class KeyInit {
         mc.player.getCapability(TeamCapability.TEAM_CAPABILITY).ifPresent(team -> {
             if (!team.getCharacter(slot).isUnlocked()) {
                 mc.player.playSound(SoundEvents.DISPENSER_FAIL, 0.6f, 1.2f);
-                RadioSubtitleManager.postRadioMessage("编队系统", "该位置队友尚未解锁。", 60);
+                SystemToastManager.show("编队系统", "该位置队友尚未解锁。");
                 return;
             }
             if (team.getActiveSlotIndex() == slot) return;
             team.switchSlot(mc.player, slot);
             PacketHandler.INSTANCE.sendToServer(new PacketSwitchCharacter(slot));
             mc.player.playSound(SoundEvents.BEACON_POWER_SELECT, 0.8f, 1.4f);
-            RadioSubtitleManager.postRadioMessage(team.getCharacter(slot).getName(), "切换带队！随时准备迎敌。", 60);
+            SystemToastManager.show(team.getCharacter(slot).getName(), "切换带队！随时准备迎敌。");
         });
     }
 

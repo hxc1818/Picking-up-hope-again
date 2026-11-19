@@ -3,6 +3,7 @@ package com.resilienthope.core.client;
 import com.resilienthope.core.PickingHopeCore;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.Tag;
 
@@ -16,12 +17,14 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
- * Client helper that creates isolated per-account singleplayer void worlds
- * from the bundled world_template/level.dat and launches them directly.
+ * Client helper that creates isolated per-account singleplayer worlds and the dedicated Map Builder workshop
+ * from the bundled world_template/level.dat, ensuring 1.18.2 custom dimensions exist in WorldGenSettings.
  */
 public class SingleplayerWorldLauncher {
     private static final String TEMPLATE_RESOURCE = "/assets/picking_hope_core/world_template/level.dat";
     public static final String LEGACY_WORLD_FOLDER = "Picking_Up_Hope_World";
+    public static final String BUILDER_WORLD_FOLDER = "puh_map_builder";
+    public static final String BUILDER_WORLD_TITLE = "重拾希望 · 地图造景工坊";
 
     public static boolean worldExists(Minecraft mc, String folderName) {
         if (mc == null || folderName == null || folderName.isEmpty()) return false;
@@ -38,12 +41,26 @@ public class SingleplayerWorldLauncher {
             throw new IllegalArgumentException("Invalid world folder name");
         }
         if (!worldExists(mc, folderName)) {
-            createWorldFromTemplate(mc, folderName, displayTitle);
+            createWorldFromTemplate(mc, folderName, displayTitle, false);
+        } else {
+            ensureCustomDimensionsInLevelDat(mc.getLevelSource().getBaseDir().resolve(folderName).resolve("level.dat"), false);
         }
         mc.loadLevel(folderName);
     }
 
-    public static void createWorldFromTemplate(Minecraft mc, String folderName, String displayTitle) throws IOException {
+    public static void ensureAndLaunchBuilderWorld(Minecraft mc) throws IOException {
+        if (mc == null) {
+            throw new IllegalArgumentException("Minecraft instance is null");
+        }
+        if (!worldExists(mc, BUILDER_WORLD_FOLDER)) {
+            createWorldFromTemplate(mc, BUILDER_WORLD_FOLDER, BUILDER_WORLD_TITLE, true);
+        } else {
+            ensureCustomDimensionsInLevelDat(mc.getLevelSource().getBaseDir().resolve(BUILDER_WORLD_FOLDER).resolve("level.dat"), true);
+        }
+        mc.loadLevel(BUILDER_WORLD_FOLDER);
+    }
+
+    public static void createWorldFromTemplate(Minecraft mc, String folderName, String displayTitle, boolean builderMode) throws IOException {
         Path worldDir = mc.getLevelSource().getBaseDir().resolve(folderName);
         Path levelDat = worldDir.resolve("level.dat");
 
@@ -59,12 +76,115 @@ public class SingleplayerWorldLauncher {
             CompoundTag data = root.getCompound("Data");
             data.putString("LevelName", displayTitle != null && !displayTitle.isEmpty() ? displayTitle : "重拾希望");
             data.putLong("LastPlayed", System.currentTimeMillis());
+            data.putBoolean("allowCommands", true);
             data.remove("Player");
+            if (builderMode) {
+                data.putInt("GameType", 1); // Creative mode
+                data.putInt("SpawnX", 0);
+                data.putInt("SpawnY", 62);
+                data.putInt("SpawnZ", 0);
+                CompoundTag rules = data.getCompound("GameRules");
+                rules.putString("doDaylightCycle", "false");
+                rules.putString("doWeatherCycle", "false");
+                rules.putString("doMobSpawning", "false");
+                rules.putString("keepInventory", "true");
+                data.put("GameRules", rules);
+            }
+            injectCustomDimensions(data);
         }
 
         Files.createDirectories(worldDir);
         NbtIo.writeCompressed(root, levelDat.toFile());
-        PickingHopeCore.LOGGER.info("Created isolated account world folder: {}", folderName);
+        PickingHopeCore.LOGGER.info("Created isolated world folder: {} (builder={})", folderName, builderMode);
+    }
+
+    public static void ensureCustomDimensionsInLevelDat(Path levelDat, boolean ensureBuilderFlags) {
+        if (levelDat == null || !Files.exists(levelDat)) return;
+        try {
+            CompoundTag root = NbtIo.readCompressed(levelDat.toFile());
+            if (!root.contains("Data", Tag.TAG_COMPOUND)) return;
+            CompoundTag data = root.getCompound("Data");
+            boolean dirty = injectCustomDimensions(data);
+            if (!data.getBoolean("allowCommands")) {
+                data.putBoolean("allowCommands", true);
+                dirty = true;
+            }
+            if (ensureBuilderFlags && data.getInt("GameType") != 1) {
+                data.putInt("GameType", 1);
+                dirty = true;
+            }
+            if (dirty) {
+                NbtIo.writeCompressed(root, levelDat.toFile());
+            }
+        } catch (Exception e) {
+            PickingHopeCore.LOGGER.warn("Failed ensuring custom dimensions in {}: {}", levelDat, e.getMessage());
+        }
+    }
+
+    private static boolean injectCustomDimensions(CompoundTag data) {
+        if (!data.contains("WorldGenSettings", Tag.TAG_COMPOUND)) return false;
+        CompoundTag wgs = data.getCompound("WorldGenSettings");
+        if (!wgs.contains("dimensions", Tag.TAG_COMPOUND)) {
+            wgs.put("dimensions", new CompoundTag());
+        }
+        CompoundTag dims = wgs.getCompound("dimensions");
+        boolean changed = false;
+
+        if (!dims.contains("picking_hope_core:starship", Tag.TAG_COMPOUND)) {
+            dims.put("picking_hope_core:starship", buildFlatDimTag(
+                    "picking_hope_core:starship", "minecraft:the_void",
+                    layer("minecraft:air", 1)
+            ));
+            changed = true;
+        }
+        if (!dims.contains("picking_hope_core:planet_cryo", Tag.TAG_COMPOUND)) {
+            dims.put("picking_hope_core:planet_cryo", buildFlatDimTag(
+                    "picking_hope_core:planet_cryo", "minecraft:snowy_plains",
+                    layer("minecraft:bedrock", 1),
+                    layer("minecraft:deepslate", 111),
+                    layer("minecraft:packed_ice", 11),
+                    layer("minecraft:snow_block", 5)
+            ));
+            changed = true;
+        }
+        if (!dims.contains("picking_hope_core:battle_arena", Tag.TAG_COMPOUND)) {
+            dims.put("picking_hope_core:battle_arena", buildFlatDimTag(
+                    "picking_hope_core:battle_arena", "minecraft:the_void",
+                    layer("minecraft:air", 1)
+            ));
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static CompoundTag layer(String blockId, int height) {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("block", blockId);
+        tag.putInt("height", height);
+        return tag;
+    }
+
+    private static CompoundTag buildFlatDimTag(String dimTypeId, String biomeId, CompoundTag... layers) {
+        CompoundTag dim = new CompoundTag();
+        dim.putString("type", dimTypeId);
+
+        CompoundTag settings = new CompoundTag();
+        settings.putString("biome", biomeId);
+        settings.putBoolean("lakes", false);
+        settings.putBoolean("features", false);
+        ListTag layerList = new ListTag();
+        for (CompoundTag l : layers) {
+            layerList.add(l);
+        }
+        settings.put("layers", layerList);
+        settings.put("structure_overrides", new ListTag());
+
+        CompoundTag generator = new CompoundTag();
+        generator.putString("type", "minecraft:flat");
+        generator.put("settings", settings);
+
+        dim.put("generator", generator);
+        return dim;
     }
 
     public static void importLegacyWorldIntoAccount(Minecraft mc, String targetFolderName, String displayTitle) throws IOException {
@@ -102,6 +222,7 @@ public class SingleplayerWorldLauncher {
                 CompoundTag data = root.getCompound("Data");
                 data.putString("LevelName", displayTitle != null && !displayTitle.isEmpty() ? displayTitle : "重拾希望");
                 data.putLong("LastPlayed", System.currentTimeMillis());
+                injectCustomDimensions(data);
             }
             NbtIo.writeCompressed(root, dstLevel.toFile());
         }

@@ -9,8 +9,11 @@ import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.quest.QuestManager;
 import com.resilienthope.core.subtitle.RadioSubtitleManager;
+import com.resilienthope.core.subtitle.SystemToastManager;
 import com.resilienthope.core.team.CharacterData;
 import com.resilienthope.core.team.TeamCapability;
+import com.resilienthope.core.world.MapZoneRegistry;
+import com.resilienthope.core.world.ModDimensions;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -48,10 +51,11 @@ public class GenshinHudOverlay {
         if (event.phase != TickEvent.Phase.END) return;
 
         RadioSubtitleManager.clientTick();
+        SystemToastManager.clientTick();
         DamagePopupManager.clientTick();
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.level != null && !mc.isPaused()
+        if (mc.player != null && mc.level != null && !mc.isPaused() && !mc.player.isCreative()
                 && !(mc.screen instanceof TurnBasedBattleScreen) && !BattleSceneClientController.isActive()) {
             beaconTickCounter++;
             if (beaconTickCounter % 5 == 0) {
@@ -70,6 +74,10 @@ public class GenshinHudOverlay {
 
     @SubscribeEvent
     public static void onRenderOverlayPre(RenderGameOverlayEvent.PreLayer event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null && mc.player.isCreative()) {
+            return;
+        }
         IIngameOverlay overlay = event.getOverlay();
         if (overlay == ForgeIngameGui.HOTBAR_ELEMENT ||
             overlay == ForgeIngameGui.PLAYER_HEALTH_ELEMENT ||
@@ -96,6 +104,12 @@ public class GenshinHudOverlay {
         int screenHeight = mc.getWindow().getGuiScaledHeight();
         Font font = mc.font;
 
+        if (player.isCreative()) {
+            renderBuilderModeOverlay(poseStack, mc, player, screenWidth, font);
+            SystemToastManager.render(poseStack, font, screenWidth, screenHeight);
+            return;
+        }
+
         renderDamagePopups(poseStack, mc, screenWidth, screenHeight, font);
         renderInWorldQuestMarker(poseStack, mc, player, screenWidth, screenHeight, font);
         renderQuestTracker(poseStack, mc, player, screenWidth, screenHeight, font);
@@ -107,6 +121,24 @@ public class GenshinHudOverlay {
         if (!(mc.screen instanceof NpcDialogueScreen)) {
             renderRadioDialogue(poseStack, screenWidth, screenHeight, font);
         }
+        SystemToastManager.render(poseStack, font, screenWidth, screenHeight);
+    }
+
+    private static void renderBuilderModeOverlay(PoseStack ps, Minecraft mc, Player player, int screenWidth, Font font) {
+        String dimTitle = mc.level != null ? ModDimensions.getDisplayName(mc.level.dimension()) : "未知维度";
+        String dimId = mc.level != null ? ModDimensions.toZoneDimensionId(mc.level.dimension()) : "";
+        int px = player.blockPosition().getX();
+        int py = player.blockPosition().getY();
+        int pz = player.blockPosition().getZ();
+        MapZoneRegistry.ZoneDef zone = !dimId.isEmpty() ? MapZoneRegistry.findZoneAt(dimId, px, pz) : null;
+        String zoneLabel = zone != null ? (zone.code + "·" + zone.name) : "区外通道 / 留白地带";
+
+        String top = String.format("造景模式 | %s | %s | XYZ: %d, %d, %d", dimTitle, zoneLabel, px, py, pz);
+        String hint = "[M]全图蓝图与点击传送  [E]创造方块库(4专页)  /hope map starship|planet  /hope speed 1~10  /hope nv";
+        int bw = Math.min(screenWidth - 16, Math.max(font.width(top), font.width(hint)) + 16);
+        drawVoxelPanel(ps, 8, 6, bw, 28, 0xB809121E, 0xFF4ADE80, 0xFFFBBF24);
+        font.drawShadow(ps, new TextComponent(top), 14, 10, 0xFFFBBF24);
+        font.draw(ps, new TextComponent(hint), 14, 21, 0xFF9EC5E8);
     }
 
     public static void drawVoxelPanel(PoseStack ps, int x, int y, int w, int h, int bgCol, int borderCol, int cornerCol) {

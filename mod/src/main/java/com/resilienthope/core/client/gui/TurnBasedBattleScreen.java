@@ -132,15 +132,25 @@ public class TurnBasedBattleScreen extends Screen {
         return state.allies.get(state.activeAllyIndex);
     }
 
+    private boolean isResultShown() {
+        return state != null && state.finished && BattleSceneClientController.shouldShowResultModal();
+    }
+
+    public void onResultModalRevealed() {
+        refreshButtons();
+    }
+
     private void refreshButtons() {
         clearWidgets();
         if (state == null) return;
 
         if (state.finished) {
-            int cw = 156;
-            addRenderableWidget(new SciFiButton(this.width / 2 - cw / 2, this.height / 2 + 42, cw, 20,
-                    new TextComponent("[Space] 返回大地图"),
-                    btn -> sendAction(TurnBasedCombatManager.ACTION_EXIT_FINISHED, -1), 0xFFFBBF24));
+            if (isResultShown()) {
+                int cw = 156;
+                addRenderableWidget(new SciFiButton(this.width / 2 - cw / 2, this.height / 2 + 42, cw, 20,
+                        new TextComponent("[Space] 返回大地图"),
+                        btn -> sendAction(TurnBasedCombatManager.ACTION_EXIT_FINISHED, -1), 0xFFFBBF24));
+            }
             return;
         }
 
@@ -294,7 +304,11 @@ public class TurnBasedBattleScreen extends Screen {
 
         if (state.finished) {
             if (keyCode == GLFW.GLFW_KEY_SPACE || keyCode == GLFW.GLFW_KEY_ENTER) {
-                sendAction(TurnBasedCombatManager.ACTION_EXIT_FINISHED, -1);
+                if (isResultShown()) {
+                    sendAction(TurnBasedCombatManager.ACTION_EXIT_FINISHED, -1);
+                } else {
+                    BattleSceneClientController.skipAllAnimations();
+                }
             }
             return true;
         }
@@ -446,7 +460,7 @@ public class TurnBasedBattleScreen extends Screen {
         renderAllyCards(ps);
         renderSkillPointPanel(ps);
 
-        if (state.finished) {
+        if (isResultShown()) {
             renderResultModal(ps);
         }
 
@@ -621,7 +635,10 @@ public class TurnBasedBattleScreen extends Screen {
 
         String hint;
         int hintCol;
-        if (BattleSceneClientController.isAnimating()) {
+        if (state.finished && !isResultShown()) {
+            hint = "[Space] 跳过终结演出";
+            hintCol = 0xFFFBBF24;
+        } else if (BattleSceneClientController.isAnimating()) {
             hint = "[Space] 跳过演出";
             hintCol = 0xFFFBBF24;
         } else if (pendingUltSlot >= 0) {

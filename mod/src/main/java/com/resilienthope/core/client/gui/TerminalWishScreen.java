@@ -5,6 +5,7 @@ import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketWishPull;
+import com.resilienthope.core.subtitle.SystemToastManager;
 import com.resilienthope.core.team.TeamCapability;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
@@ -157,6 +158,11 @@ public class TerminalWishScreen extends Screen {
     }
 
     @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
     public void render(PoseStack ps, int mouseX, int mouseY, float partialTicks) {
         if (phase == Phase.WARP_STREAM) {
             renderWarpAnimation(ps, partialTicks);
@@ -196,6 +202,7 @@ public class TerminalWishScreen extends Screen {
         }
 
         super.render(ps, mouseX, mouseY, partialTicks);
+        SystemToastManager.render(ps, this.font, this.width, this.height);
     }
 
     private void renderWarpAnimation(PoseStack ps, float partialTicks) {
