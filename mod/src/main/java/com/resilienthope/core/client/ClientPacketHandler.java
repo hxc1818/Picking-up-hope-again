@@ -1,5 +1,6 @@
 package com.resilienthope.core.client;
 
+import com.resilienthope.core.client.battle.BattleSceneClientController;
 import com.resilienthope.core.client.gui.NpcDialogueScreen;
 import com.resilienthope.core.client.gui.TerminalWishScreen;
 import com.resilienthope.core.client.gui.TurnBasedBattleScreen;
@@ -37,11 +38,13 @@ public class ClientPacketHandler {
         Minecraft mc = Minecraft.getInstance();
         BattleState state = BattleState.fromNbt(stateNbt);
         if (!state.active) {
+            BattleSceneClientController.deactivate();
             if (mc.screen instanceof TurnBasedBattleScreen) {
                 mc.setScreen(null);
             }
             return;
         }
+        BattleSceneClientController.onBattleStateSync(state);
         if (mc.screen instanceof TurnBasedBattleScreen screen) {
             screen.updateState(state);
         } else {

@@ -1,0 +1,448 @@
+{
+  "id": "hound_pounce",
+  "durationTicks": 22,
+  "bones": {
+    "body": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.24,
+        "rot": [
+          -14.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.48,
+        "rot": [
+          22.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "jaw": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.35,
+        "rot": [
+          -32.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.52,
+        "rot": [
+          16.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "leg_fl": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.38,
+        "rot": [
+          -55.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "leg_fr": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.38,
+        "rot": [
+          -55.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "leg_bl": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.38,
+        "rot": [
+          55.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "leg_br": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.38,
+        "rot": [
+          55.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [
+    {
+      "t": 0.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.22,
+      "anchor": "home",
+      "offset": [
+        -0.6,
+        -0.15,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.42,
+      "anchor": "arena_center",
+      "offset": [
+        0.5,
+        1.55,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_out_quad"
+    },
+    {
+      "t": 0.54,
+      "anchor": "target",
+      "offset": [
+        -1.45,
+        0.1,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_cubic"
+    },
+    {
+      "t": 1.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "camera": [
+    {
+      "t": 0.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.48,
+      "posAnchor": "arena_center",
+      "posOffset": [
+        -1.5,
+        3.6,
+        8.2
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "target",
+      "lookOffset": [
+        0.0,
+        1.0,
+        0.0
+      ],
+      "fov": 48.0,
+      "roll": 2.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "events": [
+    {
+      "t": 0.3,
+      "type": "sound",
+      "anchor": "actor",
+      "vfx": "",
+      "particle": "",
+      "sound": "bite",
+      "pitch": 1.1,
+      "volume": 0.85,
+      "count": 12,
+      "spread": 0.5,
+      "scale": 1.0,
+      "shake": 0.0,
+      "hitStop": 0,
+      "suppressDamagePopup": false
+    },
+    {
+      "t": 0.52,
+      "type": "impact",
+      "anchor": "target",
+      "vfx": "claw_slash",
+      "particle": "flame",
+      "sound": "bite",
+      "pitch": 0.85,
+      "volume": 0.85,
+      "count": 14,
+      "spread": 0.5,
+      "scale": 1.25,
+      "shake": 0.35,
+      "hitStop": 2,
+      "suppressDamagePopup": false
+    }
+  ]
+}

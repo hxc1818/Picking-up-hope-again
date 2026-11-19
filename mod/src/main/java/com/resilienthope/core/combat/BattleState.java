@@ -114,7 +114,9 @@ public class BattleState {
         public boolean isBossCore;
         public boolean isBossArm;
         public float actionValue;
-        public String intentText = "⚔ 单体冲击";
+        public String intentText = "单体冲击";
+        public String archetype = "drone";
+        public String nextMoveId = "";
 
         public boolean isAlive() { return hp > 0.0f; }
 
@@ -154,6 +156,8 @@ public class BattleState {
             t.putBoolean("IsBossArm", isBossArm);
             t.putFloat("AV", actionValue);
             t.putString("IntentText", intentText != null ? intentText : "");
+            t.putString("Archetype", archetype != null ? archetype : "");
+            t.putString("NextMoveId", nextMoveId != null ? nextMoveId : "");
             return t;
         }
 
@@ -185,7 +189,9 @@ public class BattleState {
             e.isBossCore = t.getBoolean("IsBossCore");
             e.isBossArm = t.getBoolean("IsBossArm");
             e.actionValue = t.getFloat("AV");
-            e.intentText = t.contains("IntentText") ? t.getString("IntentText") : "⚔ 单体冲击";
+            e.intentText = t.contains("IntentText") ? t.getString("IntentText") : "单体冲击";
+            e.archetype = t.contains("Archetype") ? t.getString("Archetype") : "";
+            e.nextMoveId = t.contains("NextMoveId") ? t.getString("NextMoveId") : "";
             return e;
         }
     }
@@ -202,6 +208,8 @@ public class BattleState {
         public int value = 0;
         public boolean crit = false;
         public String bannerText = "";
+        public String clipId = "";
+        public String secondaryTargets = "";
 
         public CompoundTag toNbt() {
             CompoundTag t = new CompoundTag();
@@ -216,6 +224,8 @@ public class BattleState {
             t.putInt("Value", value);
             t.putBoolean("Crit", crit);
             t.putString("Banner", bannerText != null ? bannerText : "");
+            t.putString("ClipId", clipId != null ? clipId : "");
+            t.putString("SecondaryTargets", secondaryTargets != null ? secondaryTargets : "");
             return t;
         }
 
@@ -232,11 +242,14 @@ public class BattleState {
             ev.value = t.getInt("Value");
             ev.crit = t.getBoolean("Crit");
             ev.bannerText = t.getString("Banner");
+            ev.clipId = t.contains("ClipId") ? t.getString("ClipId") : "";
+            ev.secondaryTargets = t.contains("SecondaryTargets") ? t.getString("SecondaryTargets") : "";
             return ev;
         }
     }
 
     public String encounterType = "corridor_cleaner";
+    public String arenaTheme = ArenaTheme.STARSHIP_HANGAR.id;
     public boolean active = false;
     public boolean finished = false;
     public boolean victory = false;
@@ -271,6 +284,14 @@ public class BattleState {
     public void addEvent(int side, int actorIdx, int targetIdx, String animType,
                          String actorId, String actorName, String skillTitle,
                          String element, int value, boolean crit, String bannerText) {
+        addEvent(side, actorIdx, targetIdx, animType, actorId, actorName, skillTitle,
+                element, value, crit, bannerText, "", "");
+    }
+
+    public void addEvent(int side, int actorIdx, int targetIdx, String animType,
+                         String actorId, String actorName, String skillTitle,
+                         String element, int value, boolean crit, String bannerText,
+                         String clipId, String secondaryTargets) {
         AnimEvent ev = new AnimEvent();
         ev.actorSide = side;
         ev.actorIdx = actorIdx;
@@ -283,12 +304,15 @@ public class BattleState {
         ev.value = value;
         ev.crit = crit;
         ev.bannerText = bannerText;
+        ev.clipId = clipId != null ? clipId : "";
+        ev.secondaryTargets = secondaryTargets != null ? secondaryTargets : "";
         events.add(ev);
     }
 
     public CompoundTag toNbt() {
         CompoundTag root = new CompoundTag();
         root.putString("EncounterType", encounterType);
+        root.putString("ArenaTheme", arenaTheme != null ? arenaTheme : ArenaTheme.STARSHIP_HANGAR.id);
         root.putBoolean("Active", active);
         root.putBoolean("Finished", finished);
         root.putBoolean("Victory", victory);
@@ -332,6 +356,7 @@ public class BattleState {
         BattleState st = new BattleState();
         if (root == null) return st;
         st.encounterType = root.getString("EncounterType");
+        st.arenaTheme = root.contains("ArenaTheme") ? root.getString("ArenaTheme") : ArenaTheme.STARSHIP_HANGAR.id;
         st.active = root.getBoolean("Active");
         st.finished = root.getBoolean("Finished");
         st.victory = root.getBoolean("Victory");

@@ -202,7 +202,8 @@ public class CharacterProfileScreen extends Screen {
             GenshinHudOverlay.drawPortrait(ps, TurnBasedBattleScreen.getPortraitForChar(active.getCharId()), lx + 5, pTop + 5, 28, 28);
 
             font.drawShadow(ps, new TextComponent(active.getName()), lx + 37, pTop + 6, 0xFFF8FAFC);
-            font.draw(ps, new TextComponent(active.getElementLabel() + " · " + active.getRoleLabel()), lx + 37, pTop + 17, elemCol);
+            ElementIconRenderer.draw(ps, active.getElement(), lx + 37, pTop + 16, 10);
+            font.draw(ps, new TextComponent(active.getRoleLabel()), lx + 50, pTop + 17, elemCol);
             font.draw(ps, new TextComponent("Lv." + active.getLevel() + "/" + active.getMaxLevelForAscension() + " 潜" + active.getEidolon()),
                     lx + 37, pTop + 28, 0xFFFBBF24);
 

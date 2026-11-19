@@ -2,6 +2,8 @@ package com.resilienthope.core;
 
 import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.client.KeyInit;
+import com.resilienthope.core.client.battle.BattleAnimCommand;
+import com.resilienthope.core.client.battle.BattleSceneClientController;
 import com.resilienthope.core.client.gui.GenshinHudOverlay;
 import com.resilienthope.core.client.gui.InventoryOverrideHandler;
 import com.resilienthope.core.client.gui.TitleScreenOverrideHandler;
@@ -47,6 +49,8 @@ public class PickingHopeCore {
             MinecraftForge.EVENT_BUS.register(GenshinHudOverlay.class);
             MinecraftForge.EVENT_BUS.register(InventoryOverrideHandler.class);
             MinecraftForge.EVENT_BUS.register(TitleScreenOverrideHandler.class);
+            MinecraftForge.EVENT_BUS.register(BattleSceneClientController.class);
+            MinecraftForge.EVENT_BUS.register(BattleAnimCommand.class);
             MinecraftForge.EVENT_BUS.register(KeyInit.class);
         });
 

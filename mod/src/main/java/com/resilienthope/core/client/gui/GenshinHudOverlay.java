@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.resilienthope.core.PickingHopeCore;
 import com.resilienthope.core.client.DamagePopupManager;
+import com.resilienthope.core.client.battle.BattleSceneClientController;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.quest.QuestManager;
@@ -50,7 +51,8 @@ public class GenshinHudOverlay {
         DamagePopupManager.clientTick();
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null && mc.level != null && !mc.isPaused() && !(mc.screen instanceof TurnBasedBattleScreen)) {
+        if (mc.player != null && mc.level != null && !mc.isPaused()
+                && !(mc.screen instanceof TurnBasedBattleScreen) && !BattleSceneClientController.isActive()) {
             beaconTickCounter++;
             if (beaconTickCounter % 5 == 0) {
                 BlockPos target = QuestManager.getEffectiveBreadcrumbPos(mc.player);
@@ -87,7 +89,7 @@ public class GenshinHudOverlay {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         if (player == null || mc.options.hideGui) return;
-        if (mc.screen instanceof TurnBasedBattleScreen) return;
+        if (mc.screen instanceof TurnBasedBattleScreen || BattleSceneClientController.isActive()) return;
 
         PoseStack poseStack = event.getMatrixStack();
         int screenWidth = mc.getWindow().getGuiScaledWidth();
@@ -387,8 +389,7 @@ public class GenshinHudOverlay {
                     int hpCol = hpPct > 0.35f ? 0xFF4ADE80 : 0xFFF87171;
                     GuiComponent.fill(poseStack, barX, barY, barX + (int) (barW * hpPct), barY + 6, hpCol);
 
-                    String elemShort = character.getElementLabel();
-                    font.draw(poseStack, new TextComponent(elemShort), startX + cardW - 16, itemY + 13, elemCol);
+                    ElementIconRenderer.draw(poseStack, character.getElement(), startX + cardW - 15, itemY + 13, 10);
                 } else {
                     font.draw(poseStack, new TextComponent("主线/抽卡解锁"), startX + 28, itemY + 15, 0xFF556677);
                 }
@@ -410,8 +411,9 @@ public class GenshinHudOverlay {
             int curHp = Math.max(0, (int) active.getCurrentHp());
             float hpPct = Mth.clamp((float) curHp / maxHp, 0.0f, 1.0f);
 
-            String lvName = "Lv." + active.getLevel() + " " + active.getName() + " [" + active.getElementLabel() + "]";
-            font.draw(poseStack, new TextComponent(lvName), x + 6, y + 3, 0xFFFBBF24);
+            ElementIconRenderer.draw(poseStack, active.getElement(), x + 6, y + 2, 10);
+            String lvName = "Lv." + active.getLevel() + " " + active.getName();
+            font.draw(poseStack, new TextComponent(lvName), x + 19, y + 3, 0xFFFBBF24);
 
             String worldBadge = String.format("世Lv.%d|体%d", team.getWorldLevel(), team.getStamina());
             font.draw(poseStack, new TextComponent(worldBadge), x + barW - font.width(worldBadge) - 5, y + 3, 0xFF7DD3FC);

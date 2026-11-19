@@ -1,0 +1,242 @@
+{
+  "id": "boss_arm_r_tremor",
+  "durationTicks": 32,
+  "bones": {
+    "arm_r": [
+      {
+        "t": 0.0,
+        "rot": [
+          -25.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.26,
+        "rot": [
+          -150.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.42,
+        "rot": [
+          10.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.6,
+        "rot": [
+          -150.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.76,
+        "rot": [
+          10.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -25.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [
+    {
+      "t": 0.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.28,
+      "anchor": "home",
+      "offset": [
+        2.8,
+        0.9,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.42,
+      "anchor": "home",
+      "offset": [
+        2.8,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.76,
+      "anchor": "home",
+      "offset": [
+        2.8,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "camera": [
+    {
+      "t": 0.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.5,
+      "posAnchor": "arena_center",
+      "posOffset": [
+        0.2,
+        4.8,
+        9.6
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        -2.0,
+        1.0,
+        0.0
+      ],
+      "fov": 56.0,
+      "roll": 2.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "events": [
+    {
+      "t": 0.42,
+      "type": "vfx",
+      "anchor": "all_allies",
+      "vfx": "shockwave_ring",
+      "particle": "",
+      "sound": "mech_slam",
+      "pitch": 0.75,
+      "volume": 0.85,
+      "count": 12,
+      "spread": 0.5,
+      "scale": 1.25,
+      "shake": 0.35,
+      "hitStop": 0,
+      "suppressDamagePopup": false
+    },
+    {
+      "t": 0.75,
+      "type": "impact",
+      "anchor": "all_allies",
+      "vfx": "shockwave_ring",
+      "particle": "explosion",
+      "sound": "explode",
+      "pitch": 1.0,
+      "volume": 0.85,
+      "count": 14,
+      "spread": 0.5,
+      "scale": 1.55,
+      "shake": 0.62,
+      "hitStop": 3,
+      "suppressDamagePopup": false
+    }
+  ]
+}

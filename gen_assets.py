@@ -789,6 +789,121 @@ def gen_gui_textures():
     save_img(sq, "textures/gui/skill_q_dawn.png")
 
 
+def gen_element_icons():
+    """Generate crisp 16x16 RGBA pixel-art badges for Water, Earth, Air, and Fire."""
+    # 1. elem_water: cyan-blue glossy water droplet
+    w_img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    drop_rows = {
+        2: (7, 8),
+        3: (7, 8),
+        4: (6, 9),
+        5: (5, 10),
+        6: (5, 10),
+        7: (4, 11),
+        8: (3, 12),
+        9: (3, 12),
+        10: (3, 12),
+        11: (4, 11),
+        12: (5, 10),
+        13: (6, 9),
+    }
+    for y, (x0, x1) in drop_rows.items():
+        for x in range(x0, x1 + 1):
+            if x >= 10 or y >= 12:
+                col = (14, 116, 204, 255)   # deeper shadow edge
+            elif x <= 6 and y <= 9:
+                col = (125, 226, 255, 255)  # sky cyan upper body
+            else:
+                col = (40, 174, 248, 255)   # rich hydro blue
+            px(w_img, x, y, col)
+    # Highlight crescent inside left lobe
+    px(w_img, 6, 7, (235, 252, 255, 255))
+    px(w_img, 5, 8, (235, 252, 255, 255))
+    px(w_img, 5, 9, (220, 246, 255, 255))
+    px(w_img, 6, 10, (186, 238, 255, 255))
+    outline_silhouette(w_img, (8, 24, 48, 255))
+    save_img(w_img, "textures/gui/elem_water.png")
+
+    # 2. elem_earth: faceted amber-gold crystal / rock diamond
+    e_img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for y in range(2, 14):
+        dy = abs(y - 7.5)
+        half_w = max(0.5, 5.2 - dy * 0.88)
+        for x in range(2, 14):
+            if abs(x - 7.5) <= half_w:
+                if x < 7.5 and y < 7.5:
+                    col = (252, 211, 77, 255)   # bright top-left facet
+                elif x >= 7.5 and y < 7.5:
+                    col = (245, 158, 11, 255)   # warm gold top-right
+                elif x < 7.5 and y >= 7.5:
+                    col = (217, 119, 6, 255)    # amber lower-left
+                else:
+                    col = (146, 64, 14, 255)    # deep bronze lower-right
+                px(e_img, x, y, col)
+    # Inner bevel core & specular ridge
+    rect(e_img, 6, 6, 9, 9, (254, 240, 138, 255))
+    px(e_img, 8, 8, (245, 158, 11, 255))
+    px(e_img, 9, 8, (217, 119, 6, 255))
+    px(e_img, 8, 9, (180, 83, 9, 255))
+    outline_silhouette(e_img, (42, 22, 6, 255))
+    save_img(e_img, "textures/gui/elem_earth.png")
+
+    # 3. elem_air: emerald-mint sweeping wind swirl
+    a_img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    bright = (167, 243, 208, 255)
+    mid = (52, 211, 153, 255)
+    deep = (16, 163, 112, 255)
+    # Top sweeping gust ending in spiral curl
+    add_line(a_img, 2, 5, 10, 5, bright, width=1)
+    add_line(a_img, 3, 6, 11, 6, mid, width=1)
+    px(a_img, 11, 4, bright); px(a_img, 12, 4, mid)
+    px(a_img, 12, 5, deep); px(a_img, 11, 3, mid)
+    # Middle sweeping gust
+    add_line(a_img, 2, 8, 12, 8, bright, width=1)
+    add_line(a_img, 4, 9, 13, 9, mid, width=1)
+    px(a_img, 13, 7, bright); px(a_img, 13, 8, deep)
+    # Bottom reverse curl
+    add_line(a_img, 3, 11, 9, 11, mid, width=1)
+    add_line(a_img, 4, 12, 9, 12, deep, width=1)
+    px(a_img, 10, 12, mid); px(a_img, 10, 13, deep); px(a_img, 8, 13, mid)
+    outline_silhouette(a_img, (6, 40, 32, 255))
+    save_img(a_img, "textures/gui/elem_air.png")
+
+    # 4. elem_fire: crimson-orange stylized flame with gold inner core
+    f_img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    flame_rows = {
+        2: (8, 8),
+        3: (7, 9),
+        4: (6, 9),
+        5: (5, 10),
+        6: (4, 11),
+        7: (4, 11),
+        8: (3, 12),
+        9: (3, 12),
+        10: (3, 12),
+        11: (4, 11),
+        12: (4, 11),
+        13: (5, 10),
+    }
+    for y, (x0, x1) in flame_rows.items():
+        for x in range(x0, x1 + 1):
+            px(f_img, x, y, (239, 68, 38, 255))
+    # Upper-right secondary tongue & notch
+    px(f_img, 11, 5, (239, 68, 38, 255))
+    px(f_img, 12, 6, (239, 68, 38, 255))
+    px(f_img, 4, 5, (0, 0, 0, 0))
+    # Mid orange body
+    for y in range(6, 13):
+        for x in range(5, 11):
+            if 6 <= x <= 9 or y >= 8:
+                px(f_img, x, y, (249, 115, 22, 255))
+    # Bright amber/gold inner core
+    rect(f_img, 6, 8, 9, 12, (253, 224, 71, 255))
+    rect(f_img, 7, 7, 8, 11, (254, 249, 195, 255))
+    outline_silhouette(f_img, (48, 12, 8, 255))
+    save_img(f_img, "textures/gui/elem_fire.png")
+
+
 # ============================================================
 # 5. ENTITY TEXTURES (64x64)
 # ============================================================
@@ -1167,6 +1282,7 @@ if __name__ == "__main__":
     gen_chips()
     gen_materials()
     gen_gui_textures()
+    gen_element_icons()
     gen_entities()
     gen_item_models_and_lang()
     print("All v2.0 high-res 32x32 items, 64x64 portraits, custom blocks & 3D voxel models generated!")

@@ -1,6 +1,8 @@
 package com.resilienthope.core.init;
 
 import com.resilienthope.core.PickingHopeCore;
+import com.resilienthope.core.entity.BattleActorEntity;
+import com.resilienthope.core.entity.BattleCameraEntity;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.entity.PrecursorMechBossEntity;
 import com.resilienthope.core.entity.SecurityDroneEntity;
@@ -35,4 +37,19 @@ public class ModEntities {
                             .sized(0.6f, 1.95f)
                             .clientTrackingRange(10)
                             .build(new ResourceLocation(PickingHopeCore.MOD_ID, "faction_npc").toString()));
+
+    public static final RegistryObject<EntityType<BattleActorEntity>> BATTLE_ACTOR =
+            ENTITY_TYPES.register("battle_actor",
+                    () -> EntityType.Builder.of(BattleActorEntity::new, MobCategory.MISC)
+                            .sized(0.9f, 2.0f)
+                            .clientTrackingRange(12)
+                            .updateInterval(1)
+                            .build(new ResourceLocation(PickingHopeCore.MOD_ID, "battle_actor").toString()));
+
+    public static final RegistryObject<EntityType<BattleCameraEntity>> BATTLE_CAMERA =
+            ENTITY_TYPES.register("battle_camera",
+                    () -> EntityType.Builder.of(BattleCameraEntity::new, MobCategory.MISC)
+                            .sized(0.2f, 0.2f)
+                            .clientTrackingRange(4)
+                            .build(new ResourceLocation(PickingHopeCore.MOD_ID, "battle_camera").toString()));
 }
