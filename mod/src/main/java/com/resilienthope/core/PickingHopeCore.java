@@ -1,8 +1,10 @@
 package com.resilienthope.core;
 
+import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.client.KeyInit;
 import com.resilienthope.core.client.gui.GenshinHudOverlay;
 import com.resilienthope.core.client.gui.InventoryOverrideHandler;
+import com.resilienthope.core.client.gui.TitleScreenOverrideHandler;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.entity.PrecursorMechBossEntity;
 import com.resilienthope.core.entity.SecurityDroneEntity;
@@ -44,6 +46,7 @@ public class PickingHopeCore {
             modEventBus.addListener(this::setupClient);
             MinecraftForge.EVENT_BUS.register(GenshinHudOverlay.class);
             MinecraftForge.EVENT_BUS.register(InventoryOverrideHandler.class);
+            MinecraftForge.EVENT_BUS.register(TitleScreenOverrideHandler.class);
             MinecraftForge.EVENT_BUS.register(KeyInit.class);
         });
 
@@ -67,6 +70,7 @@ public class PickingHopeCore {
 
     private void setupClient(final FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
+            AccountSessionManager.initOnStartup();
             KeyInit.registerKeybinds();
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.VIEWPORT_GLASS.get(), RenderType.translucent());
             ItemBlockRenderTypes.setRenderLayer(ModBlocks.CRYO_SLEEP_POD.get(), RenderType.cutout());

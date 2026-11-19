@@ -1,5 +1,7 @@
 package com.resilienthope.core.event;
 
+import com.resilienthope.core.account.AccountSessionManager;
+import com.resilienthope.core.account.CloudSaveSnapshot;
 import com.resilienthope.core.combat.TurnBasedCombatManager;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.entity.PrecursorMechBossEntity;
@@ -44,8 +46,26 @@ public class StarshipSpawnHandler {
         ServerLevel level = player.getLevel();
         BlockPos origin = new BlockPos(0, 60, 0);
         boolean freshReset = !player.getTags().contains(SPAWN_TAG);
+        CloudSaveSnapshot pendingCloud = AccountSessionManager.consumePendingRestore();
+        long localSyncedAt = player.getPersistentData().getLong("PickingHopeCloudSyncAt");
+        boolean shouldRestoreCloud = pendingCloud != null && (freshReset || pendingCloud.updatedAt > localSyncedAt);
+        boolean restoredFromCloud = false;
 
-        if (freshReset) {
+        if (shouldRestoreCloud) {
+            player.setGameMode(GameType.ADVENTURE);
+            clearOldWorldEntities(level);
+            CloudSaveSnapshot.applyToPlayer(player, pendingCloud);
+            if (!player.getTags().contains(V2_WORLD_TAG)
+                    || level.getBlockState(new BlockPos(6, 60, 10)).isAir()
+                    || level.getBlockState(new BlockPos(168, 36, 28)).isAir()) {
+                buildExpandedStarship(level, origin);
+                ensureUpperShipProps(level, origin);
+                buildLowerDeck(level);
+                buildIceOutpostAndMine(level);
+                player.addTag(V2_WORLD_TAG);
+            }
+            restoredFromCloud = true;
+        } else if (freshReset) {
             // Unconditionally reset legacy Creative mode, inventory, quest NBT, and Lv.20 capability!
             player.setGameMode(GameType.ADVENTURE);
             player.getInventory().clearContent();
@@ -72,7 +92,7 @@ public class StarshipSpawnHandler {
             });
 
             QuestManager.resetAll();
-            StoryDirector.saveAndSyncQuest(player);
+            StoryDirector.saveAndSyncQuest(player, false);
 
             buildExpandedStarship(level, origin);
             ensureUpperShipProps(level, origin);
@@ -83,6 +103,7 @@ public class StarshipSpawnHandler {
             player.setRespawnPosition(level.dimension(), new BlockPos(6, 61, 10), 270.0f, true, false);
             player.addTag(SPAWN_TAG);
             player.addTag(V2_WORLD_TAG);
+            AccountSessionManager.scheduleAutoPush(player, "fresh_init");
         } else {
             if (!player.isCreative() && !player.isSpectator()) {
                 player.setGameMode(GameType.ADVENTURE);
@@ -102,12 +123,17 @@ public class StarshipSpawnHandler {
                 }
             });
 
-            if (!player.getTags().contains(V2_WORLD_TAG) || level.getBlockState(new BlockPos(168, 36, 28)).isAir()) {
+            if (!player.getTags().contains(V2_WORLD_TAG)
+                    || level.getBlockState(new BlockPos(6, 60, 10)).isAir()
+                    || level.getBlockState(new BlockPos(168, 36, 28)).isAir()) {
                 buildExpandedStarship(level, origin);
                 ensureUpperShipProps(level, origin);
                 buildLowerDeck(level);
                 buildIceOutpostAndMine(level);
                 player.addTag(V2_WORLD_TAG);
+            }
+            if (pendingCloud == null || localSyncedAt > pendingCloud.updatedAt) {
+                AccountSessionManager.scheduleAutoPush(player, "login_sync");
             }
         }
 
@@ -125,6 +151,9 @@ public class StarshipSpawnHandler {
         if (stage == 0) {
             PacketHandler.sendToPlayer(player, new PacketRadioDialogue("船舱应急广播",
                     "警告：重拾希望号遭遇不明撞击，B区供电中断。林野，先按 [F] 开启身旁的【装甲物资箱】检查装备！", 200));
+        } else if (restoredFromCloud) {
+            PacketHandler.sendToPlayer(player, new PacketRadioDialogue("云存档同步",
+                    "已加载账号进度（主线阶段 " + stage + "），欢迎回到舰区！", 90));
         }
     }
 
@@ -145,6 +174,7 @@ public class StarshipSpawnHandler {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getPlayer() instanceof ServerPlayer player) {
             TurnBasedCombatManager.clearSessionOnLogout(player);
+            AccountSessionManager.flushSyncBlocking(player, "logout", 2500);
         }
     }
 

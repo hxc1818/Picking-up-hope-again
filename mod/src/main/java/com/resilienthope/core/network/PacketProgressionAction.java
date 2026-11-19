@@ -1,5 +1,6 @@
 package com.resilienthope.core.network;
 
+import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.combat.TurnBasedCombatManager;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
@@ -71,6 +72,9 @@ public class PacketProgressionAction {
                     }
                 }
                 PacketSyncTeamData.syncToPlayer(player);
+                if (msg.actionType != ACT_START_DOMAIN) {
+                    AccountSessionManager.scheduleAutoPush(player, "progression");
+                }
             });
         });
         ctx.get().setPacketHandled(true);

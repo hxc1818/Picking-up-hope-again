@@ -1,5 +1,6 @@
 package com.resilienthope.core.network;
 
+import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.team.TeamCapability;
@@ -71,6 +72,7 @@ public class PacketWishPull {
             player.getLevel().playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.9f, 1.3f);
             PacketHandler.sendToPlayer(player, new PacketWishResult(results));
+            AccountSessionManager.scheduleAutoPush(player, "wish");
         });
         ctx.get().setPacketHandled(true);
     }

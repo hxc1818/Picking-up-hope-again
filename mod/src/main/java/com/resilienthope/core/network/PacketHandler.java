@@ -8,7 +8,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "3";
+    private static final String PROTOCOL_VERSION = "4";
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             new ResourceLocation(PickingHopeCore.MOD_ID, "main"),
             () -> PROTOCOL_VERSION,
@@ -113,6 +113,18 @@ public class PacketHandler {
                 .encoder(PacketProgressionAction::encode)
                 .decoder(PacketProgressionAction::decode)
                 .consumer(PacketProgressionAction::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketCloudSyncRequest.class, packetId++)
+                .encoder(PacketCloudSyncRequest::encode)
+                .decoder(PacketCloudSyncRequest::decode)
+                .consumer(PacketCloudSyncRequest::handle)
+                .add();
+
+        INSTANCE.messageBuilder(PacketCloudSyncAck.class, packetId++)
+                .encoder(PacketCloudSyncAck::encode)
+                .decoder(PacketCloudSyncAck::decode)
+                .consumer(PacketCloudSyncAck::handle)
                 .add();
     }
 }

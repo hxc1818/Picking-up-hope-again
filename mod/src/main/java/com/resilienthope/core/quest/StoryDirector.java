@@ -1,5 +1,6 @@
 package com.resilienthope.core.quest;
 
+import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.combat.TurnBasedCombatManager;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.entity.SecurityDroneEntity;
@@ -31,6 +32,10 @@ import java.util.List;
 public class StoryDirector {
 
     public static void saveAndSyncQuest(ServerPlayer player) {
+        saveAndSyncQuest(player, true);
+    }
+
+    public static void saveAndSyncQuest(ServerPlayer player, boolean triggerCloud) {
         if (player == null) return;
         CompoundTag qTag = new CompoundTag();
         qTag.putInt("Stage", QuestManager.getQuestStage());
@@ -56,6 +61,10 @@ public class StoryDirector {
                 QuestManager.getSubFlags(),
                 QuestManager.getEndingFaction()
         ));
+
+        if (triggerCloud) {
+            AccountSessionManager.scheduleAutoPush(player, "quest");
+        }
     }
 
     public static void loadQuest(ServerPlayer player) {
@@ -75,7 +84,7 @@ public class StoryDirector {
         } else {
             QuestManager.resetAll();
         }
-        saveAndSyncQuest(player);
+        saveAndSyncQuest(player, false);
     }
 
     public static void ensureNpc(ServerLevel level, String npcId, double x, double y, double z, float yaw) {

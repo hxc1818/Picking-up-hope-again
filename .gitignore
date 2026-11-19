@@ -22,3 +22,6 @@ out/
 # Secrets
 *.log
 .env
+
+# Local Node.js cloud save test data
+cloud-server/data/

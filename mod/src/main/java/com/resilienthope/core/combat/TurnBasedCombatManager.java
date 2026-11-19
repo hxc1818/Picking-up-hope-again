@@ -1,5 +1,6 @@
 package com.resilienthope.core.combat;
 
+import com.resilienthope.core.account.AccountSessionManager;
 import com.resilienthope.core.init.ModItems;
 import com.resilienthope.core.item.EquipmentStatsHelper;
 import com.resilienthope.core.network.PacketBattleSync;
@@ -1320,6 +1321,7 @@ public class TurnBasedCombatManager {
         }
 
         st.rewardSummary = String.join("  |  ", drops);
+        AccountSessionManager.scheduleAutoPush(player, "battle_win");
     }
 
     private static void giveItem(ServerPlayer player, ItemStack stack) {
@@ -1357,6 +1359,7 @@ public class TurnBasedCombatManager {
 
         if (st.victory) {
             StoryDirector.onBattleWon(player, st.encounterType);
+            AccountSessionManager.scheduleAutoPush(player, "battle_exit");
         }
     }
 

@@ -1,0 +1,13 @@
+{
+  "name": "picking-hope-cloud-server",
+  "version": "1.0.0",
+  "description": "Local Node.js cloud save & account test server for Picking up hope again",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test_api.mjs"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
