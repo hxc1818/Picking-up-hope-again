@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.resilienthope.core.PickingHopeCore;
 import com.resilienthope.core.client.DamagePopupManager;
 import com.resilienthope.core.client.battle.BattleSceneClientController;
+import com.resilienthope.core.client.builder.BuilderPrefabClientState;
 import com.resilienthope.core.entity.FactionNpcEntity;
 import com.resilienthope.core.init.ModBlocks;
 import com.resilienthope.core.quest.QuestManager;
@@ -105,7 +106,7 @@ public class GenshinHudOverlay {
         Font font = mc.font;
 
         if (player.isCreative()) {
-            renderBuilderModeOverlay(poseStack, mc, player, screenWidth, font);
+            renderBuilderModeOverlay(poseStack, mc, player, screenWidth, screenHeight, font);
             SystemToastManager.render(poseStack, font, screenWidth, screenHeight);
             return;
         }
@@ -124,7 +125,7 @@ public class GenshinHudOverlay {
         SystemToastManager.render(poseStack, font, screenWidth, screenHeight);
     }
 
-    private static void renderBuilderModeOverlay(PoseStack ps, Minecraft mc, Player player, int screenWidth, Font font) {
+    private static void renderBuilderModeOverlay(PoseStack ps, Minecraft mc, Player player, int screenWidth, int screenHeight, Font font) {
         String dimTitle = mc.level != null ? ModDimensions.getDisplayName(mc.level.dimension()) : "未知维度";
         String dimId = mc.level != null ? ModDimensions.toZoneDimensionId(mc.level.dimension()) : "";
         int px = player.blockPosition().getX();
@@ -134,11 +135,32 @@ public class GenshinHudOverlay {
         String zoneLabel = zone != null ? (zone.code + "·" + zone.name) : "区外通道 / 留白地带";
 
         String top = String.format("造景模式 | %s | %s | XYZ: %d, %d, %d", dimTitle, zoneLabel, px, py, pz);
-        String hint = "[M]全图蓝图与点击传送  [E]创造方块库(4专页)  /hope map starship|planet  /hope speed 1~10  /hope nv";
+        String hint = "[M]全图蓝图  [K]结构库(28种)  [E]方块库(130种)  /hope map starship|planet  /hope speed 1~10";
         int bw = Math.min(screenWidth - 16, Math.max(font.width(top), font.width(hint)) + 16);
         drawVoxelPanel(ps, 8, 6, bw, 28, 0xB809121E, 0xFF4ADE80, 0xFFFBBF24);
         font.drawShadow(ps, new TextComponent(top), 14, 10, 0xFFFBBF24);
         font.draw(ps, new TextComponent(hint), 14, 21, 0xFF9EC5E8);
+
+        if (BuilderPrefabClientState.isHoldingProjector(player)) {
+            int yOff = BuilderPrefabClientState.getYOffset();
+            String yTag = yOff == 0 ? "" : (" | Y" + (yOff > 0 ? "+" + yOff : yOff));
+            String modeTag = BuilderPrefabClientState.isAirOnly() ? " | 仅填空气" : "";
+            String line1 = String.format("结构投影: %s (%d×%d×%d) | 朝向:%s | %d段%s%s",
+                    BuilderPrefabClientState.getActiveName(),
+                    BuilderPrefabClientState.getActiveSizeX(),
+                    BuilderPrefabClientState.getActiveSizeY(),
+                    BuilderPrefabClientState.getActiveSizeZ(),
+                    BuilderPrefabClientState.getFacingLabel(),
+                    BuilderPrefabClientState.getRepeatCount(),
+                    yTag, modeTag);
+            String line2 = "左键/K: 选模   右键: 放置   Shift+右: 旋转90°   Shift+左: 撤回";
+            int pw = Math.min(screenWidth - 16, Math.max(font.width(line1), font.width(line2)) + 18);
+            int px0 = (screenWidth - pw) / 2;
+            int py0 = Math.max(40, screenHeight - 66);
+            drawVoxelPanel(ps, px0, py0, pw, 26, 0xCC09121E, 0xFF38BDF8, 0xFFFBBF24);
+            font.drawShadow(ps, new TextComponent(line1), px0 + (pw - font.width(line1)) / 2.0f, py0 + 4, 0xFF7DD3FC);
+            font.draw(ps, new TextComponent(line2), px0 + (pw - font.width(line2)) / 2.0f, py0 + 14, 0xFFFBBF24);
+        }
     }
 
     public static void drawVoxelPanel(PoseStack ps, int x, int y, int w, int h, int bgCol, int borderCol, int cornerCol) {

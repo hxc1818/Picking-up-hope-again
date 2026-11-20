@@ -20,6 +20,7 @@ import com.resilienthope.core.world.HopeMapCommand;
 import com.resilienthope.core.world.MapZoneRegistry;
 import com.resilienthope.core.world.MapZoningBuilder;
 import com.resilienthope.core.world.ModDimensions;
+import com.resilienthope.core.world.prefab.PrefabPlacementManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.MinecraftServer;
@@ -205,9 +206,20 @@ public class StarshipSpawnHandler {
         }
 
         PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("造景工坊",
-                "已启用创造造景模式！按 [M] 看双维度蓝图与点击传送"));
-        player.sendMessage(new TextComponent("§a[造景工坊] §f已开启双维度（星舰5区 + 1万×1万第一颗星球8区）动态区域划线。"), player.getUUID());
-        player.sendMessage(new TextComponent("§7常用操作：按 §e[M]§7 缩放全图与点击直达 | §e[E]§7 打开4大主题方块库 | §e/hope map planet§7 切星球 | §e/hope speed 1~10§7 调飞行速度 | §e/hope nv§7 开关夜视"), player.getUUID());
+                "已启用造景模式！按 [M] 看蓝图，[K] 选 28 种预制结构"));
+        PrefabPlacementManager.syncClipboardToClient(player);
+        boolean hasWand = false;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            if (player.getInventory().getItem(i).is(ModItems.PREFAB_PROJECTOR.get())) {
+                hasWand = true;
+                break;
+            }
+        }
+        if (!hasWand) {
+            PrefabPlacementManager.giveProjector(player);
+        }
+        player.sendMessage(new TextComponent("§a[造景工坊] §f已开启双维度（星舰5区 + 1万×1万第一颗星球8区）动态区域划线与 28 种模块化结构工具。"), player.getUUID());
+        player.sendMessage(new TextComponent("§7常用操作：§e[M]§7 全图与传送 | §e[K]§7 可复用结构库 | §e[E]§7 130种方块库 | 手持§b[蓝图投影仪]§7左键选模、右键放置、Shift+右旋转、Shift+左撤回"), player.getUUID());
     }
 
     private static void clearOldWorldEntities(ServerLevel level) {

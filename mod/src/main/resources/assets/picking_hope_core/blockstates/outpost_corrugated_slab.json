@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/outpost_corrugated_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/outpost_roof_plating"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/outpost_corrugated_slab_top"
+    }
+  }
+}

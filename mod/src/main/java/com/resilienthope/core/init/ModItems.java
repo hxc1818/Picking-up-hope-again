@@ -1,6 +1,7 @@
 package com.resilienthope.core.init;
 
 import com.resilienthope.core.PickingHopeCore;
+import com.resilienthope.core.item.PrefabProjectorItem;
 import com.resilienthope.core.item.TechChipItem;
 import com.resilienthope.core.item.TechWeaponItem;
 import net.minecraft.world.item.BlockItem;
@@ -19,8 +20,10 @@ public class ModItems {
     }
 
     // ============================================================
-    // 1. TAB_PROPS (25): Interactive Machine Blocks + Voxel Props
+    // 1. TAB_PROPS (33 Blocks + 1 Builder Tool): Interactive & Voxel Props
     // ============================================================
+    public static final RegistryObject<Item> PREFAB_PROJECTOR = ITEMS.register("prefab_projector",
+            () -> new PrefabProjectorItem(new Item.Properties().tab(ModCreativeTabs.TAB_PROPS).stacksTo(1)));
     public static final RegistryObject<Item> TELEPORT_WAYPOINT = regBlockItem("teleport_waypoint", ModBlocks.TELEPORT_WAYPOINT, ModCreativeTabs.TAB_PROPS);
     public static final RegistryObject<Item> ENGINEERING_TERMINAL = regBlockItem("engineering_terminal", ModBlocks.ENGINEERING_TERMINAL, ModCreativeTabs.TAB_PROPS);
     public static final RegistryObject<Item> AUXILIARY_ENERGY_CORE = regBlockItem("auxiliary_energy_core", ModBlocks.AUXILIARY_ENERGY_CORE, ModCreativeTabs.TAB_PROPS);
@@ -46,9 +49,17 @@ public class ModItems {
     public static final RegistryObject<Item> PROP_BREAKER_BOX = regBlockItem("prop_breaker_box", ModBlocks.PROP_BREAKER_BOX, ModCreativeTabs.TAB_PROPS);
     public static final RegistryObject<Item> PROP_BLACKBOX_RECORDER = regBlockItem("prop_blackbox_recorder", ModBlocks.PROP_BLACKBOX_RECORDER, ModCreativeTabs.TAB_PROPS);
     public static final RegistryObject<Item> PROP_RUIN_RELAY = regBlockItem("prop_ruin_relay", ModBlocks.PROP_RUIN_RELAY, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_WARNING_SIGN = regBlockItem("prop_warning_sign", ModBlocks.PROP_WARNING_SIGN, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_FLOODLIGHT = regBlockItem("prop_floodlight", ModBlocks.PROP_FLOODLIGHT, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_ANTENNA_MAST = regBlockItem("prop_antenna_mast", ModBlocks.PROP_ANTENNA_MAST, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_SOLAR_PANEL = regBlockItem("prop_solar_panel", ModBlocks.PROP_SOLAR_PANEL, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_SUPPLY_PALLET = regBlockItem("prop_supply_pallet", ModBlocks.PROP_SUPPLY_PALLET, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_BUNK_FRAME = regBlockItem("prop_bunk_frame", ModBlocks.PROP_BUNK_FRAME, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_DINING_TABLE = regBlockItem("prop_dining_table", ModBlocks.PROP_DINING_TABLE, ModCreativeTabs.TAB_PROPS);
+    public static final RegistryObject<Item> PROP_HOLOGRAM_PROJECTOR = regBlockItem("prop_hologram_projector", ModBlocks.PROP_HOLOGRAM_PROJECTOR, ModCreativeTabs.TAB_PROPS);
 
     // ============================================================
-    // 2. TAB_STARSHIP (25): Starship Architecture & Fixtures
+    // 2. TAB_STARSHIP (35): Starship Architecture & Fixtures
     // ============================================================
     public static final RegistryObject<Item> STARSHIP_FLOOR = regBlockItem("starship_floor", ModBlocks.STARSHIP_FLOOR, ModCreativeTabs.TAB_STARSHIP);
     public static final RegistryObject<Item> STARSHIP_WALL = regBlockItem("starship_wall", ModBlocks.STARSHIP_WALL, ModCreativeTabs.TAB_STARSHIP);
@@ -75,9 +86,19 @@ public class ModItems {
     public static final RegistryObject<Item> STARSHIP_VENT_HATCH = regBlockItem("starship_vent_hatch", ModBlocks.STARSHIP_VENT_HATCH, ModCreativeTabs.TAB_STARSHIP);
     public static final RegistryObject<Item> CYAN_LIGHT_STRIP = regBlockItem("cyan_light_strip", ModBlocks.CYAN_LIGHT_STRIP, ModCreativeTabs.TAB_STARSHIP);
     public static final RegistryObject<Item> AMBER_LIGHT_STRIP = regBlockItem("amber_light_strip", ModBlocks.AMBER_LIGHT_STRIP, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_HULL_DARK = regBlockItem("starship_hull_dark", ModBlocks.STARSHIP_HULL_DARK, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_ACCENT_BLUE = regBlockItem("starship_accent_blue", ModBlocks.STARSHIP_ACCENT_BLUE, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_ACCENT_ORANGE = regBlockItem("starship_accent_orange", ModBlocks.STARSHIP_ACCENT_ORANGE, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_WALL_VENT = regBlockItem("starship_wall_vent", ModBlocks.STARSHIP_WALL_VENT, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_REINFORCED_GLASS = regBlockItem("starship_reinforced_glass", ModBlocks.STARSHIP_REINFORCED_GLASS, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_CATWALK_SLAB = regBlockItem("starship_catwalk_slab", ModBlocks.STARSHIP_CATWALK_SLAB, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_HAZARD_SLAB = regBlockItem("starship_hazard_slab", ModBlocks.STARSHIP_HAZARD_SLAB, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_PILLAR_LIGHT = regBlockItem("starship_pillar_light", ModBlocks.STARSHIP_PILLAR_LIGHT, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_BULKHEAD_WALL = regBlockItem("starship_bulkhead_wall", ModBlocks.STARSHIP_BULKHEAD_WALL, ModCreativeTabs.TAB_STARSHIP);
+    public static final RegistryObject<Item> STARSHIP_LADDER = regBlockItem("starship_ladder", ModBlocks.STARSHIP_LADDER, ModCreativeTabs.TAB_STARSHIP);
 
     // ============================================================
-    // 3. TAB_PLANET (24): Polar, Outpost, Mine & Geothermal
+    // 3. TAB_PLANET (34): Polar, Outpost, Mine & Geothermal
     // ============================================================
     public static final RegistryObject<Item> PERMAFROST_ROCK = regBlockItem("permafrost_rock", ModBlocks.PERMAFROST_ROCK, ModCreativeTabs.TAB_PLANET);
     public static final RegistryObject<Item> GLACIER_SNOW = regBlockItem("glacier_snow", ModBlocks.GLACIER_SNOW, ModCreativeTabs.TAB_PLANET);
@@ -103,9 +124,19 @@ public class ModItems {
     public static final RegistryObject<Item> GEOTHERMAL_WARM_STONE = regBlockItem("geothermal_warm_stone", ModBlocks.GEOTHERMAL_WARM_STONE, ModCreativeTabs.TAB_PLANET);
     public static final RegistryObject<Item> GEOTHERMAL_STEAM_VENT = regBlockItem("geothermal_steam_vent", ModBlocks.GEOTHERMAL_STEAM_VENT, ModCreativeTabs.TAB_PLANET);
     public static final RegistryObject<Item> GEOTHERMAL_GLOW_MOSS = regBlockItem("geothermal_glow_moss", ModBlocks.GEOTHERMAL_GLOW_MOSS, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> POLAR_PACKED_SNOW = regBlockItem("polar_packed_snow", ModBlocks.POLAR_PACKED_SNOW, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> POLAR_ICE_BRICKS = regBlockItem("polar_ice_bricks", ModBlocks.POLAR_ICE_BRICKS, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> OUTPOST_YELLOW_WALL = regBlockItem("outpost_yellow_wall", ModBlocks.OUTPOST_YELLOW_WALL, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> OUTPOST_DARK_TRIM = regBlockItem("outpost_dark_trim", ModBlocks.OUTPOST_DARK_TRIM, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> OUTPOST_WINDOW_GLASS = regBlockItem("outpost_window_glass", ModBlocks.OUTPOST_WINDOW_GLASS, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> OUTPOST_CORRUGATED_SLAB = regBlockItem("outpost_corrugated_slab", ModBlocks.OUTPOST_CORRUGATED_SLAB, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> MINE_SUPPORT_WALL = regBlockItem("mine_support_wall", ModBlocks.MINE_SUPPORT_WALL, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> MINE_CONCRETE_SLAB = regBlockItem("mine_concrete_slab", ModBlocks.MINE_CONCRETE_SLAB, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> MINE_CAUTION_CONCRETE = regBlockItem("mine_caution_concrete", ModBlocks.MINE_CAUTION_CONCRETE, ModCreativeTabs.TAB_PLANET);
+    public static final RegistryObject<Item> GEOTHERMAL_MAGMA_CRUST = regBlockItem("geothermal_magma_crust", ModBlocks.GEOTHERMAL_MAGMA_CRUST, ModCreativeTabs.TAB_PLANET);
 
     // ============================================================
-    // 4. TAB_RUINS (20): Alien Obsidian Ruins, Hardlight & Ark Harbor
+    // 4. TAB_RUINS (28): Alien Obsidian Ruins, Hardlight & Ark Harbor
     // ============================================================
     public static final RegistryObject<Item> RUIN_OBSIDIAN_BLOCK = regBlockItem("ruin_obsidian_block", ModBlocks.RUIN_OBSIDIAN_BLOCK, ModCreativeTabs.TAB_RUINS);
     public static final RegistryObject<Item> RUIN_OBSIDIAN_STAIRS = regBlockItem("ruin_obsidian_stairs", ModBlocks.RUIN_OBSIDIAN_STAIRS, ModCreativeTabs.TAB_RUINS);
@@ -127,6 +158,14 @@ public class ModItems {
     public static final RegistryObject<Item> RUIN_DOCKING_BEACON = regBlockItem("ruin_docking_beacon", ModBlocks.RUIN_DOCKING_BEACON, ModCreativeTabs.TAB_RUINS);
     public static final RegistryObject<Item> RUIN_ANCIENT_STELE = regBlockItem("ruin_ancient_stele", ModBlocks.RUIN_ANCIENT_STELE, ModCreativeTabs.TAB_RUINS);
     public static final RegistryObject<Item> RUIN_FLOATING_PRISM = regBlockItem("ruin_floating_prism", ModBlocks.RUIN_FLOATING_PRISM, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_OBSIDIAN_WALL = regBlockItem("ruin_obsidian_wall", ModBlocks.RUIN_OBSIDIAN_WALL, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_PLATINUM_WALL = regBlockItem("ruin_platinum_wall", ModBlocks.RUIN_PLATINUM_WALL, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_CRACKED_OBSIDIAN = regBlockItem("ruin_cracked_obsidian", ModBlocks.RUIN_CRACKED_OBSIDIAN, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_MOSSY_OBSIDIAN = regBlockItem("ruin_mossy_obsidian", ModBlocks.RUIN_MOSSY_OBSIDIAN, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_HEX_FLOOR = regBlockItem("ruin_hex_floor", ModBlocks.RUIN_HEX_FLOOR, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_ENERGY_CONDUIT = regBlockItem("ruin_energy_conduit", ModBlocks.RUIN_ENERGY_CONDUIT, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_PORTAL_FRAME = regBlockItem("ruin_portal_frame", ModBlocks.RUIN_PORTAL_FRAME, ModCreativeTabs.TAB_RUINS);
+    public static final RegistryObject<Item> RUIN_ARK_GLOW_PANEL = regBlockItem("ruin_ark_glow_panel", ModBlocks.RUIN_ARK_GLOW_PANEL, ModCreativeTabs.TAB_RUINS);
 
     // ============================================================
     // Legacy & Base Valuables / Consumables

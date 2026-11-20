@@ -75,6 +75,13 @@ public class BuilderRegionMapScreen extends Screen {
             init();
         }, "planet".equals(viewingDimId) ? 0xFFFBBF24 : 0xFF38BDF8));
 
+        addRenderableWidget(new SciFiButton(this.width - 134, 10, 70, 16,
+                new TextComponent("结构库 (K)"), btn -> {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new BuilderPrefabScreen());
+            }
+        }, 0xFFC084FC));
+
         addRenderableWidget(new SciFiButton(this.width - 60, 10, 42, 16,
                 new TextComponent("关闭"), btn -> onClose(), 0xFFEF4444));
 

@@ -49,7 +49,8 @@
      1. **战斗最后一击结算延迟修复**：`BattleSceneClientController` / `BattleActorRenderer` / `TurnBasedBattleScreen` 等待最后一击动作 + 敌方爆裂倾倒消散 + 短暂收尾停顿后再弹出结算窗，按 `[Space]` 在演播期仅跳过演出直达结算。
      2. **覆盖式系统提示与防刷包治理**：新增 `SystemToastManager`，并将养成/强化/装备/抽卡/编队切换等提示与 `RadioSubtitleManager`（新增 `MAX_QUEUE_SIZE=4` 与队列去重）剥离；同时阻止养成与背包界面的空格连发。
      3. **双维度 + 万格大陆规划 + 造景无阻模式**：新增 1.18.2 自定义维度 `picking_hope_core:starship`（深空星夜虚空，规划 `1560x820` 5 区巨舰）、`picking_hope_core:planet_cryo`（极寒雪地深岩层，规划 `11700x9700` 超 1 万×1 万 8 区不规则大陆）与 `picking_hope_core:battle_arena`（隔离战斗维度）；启动页新增【地图造景工坊】（创造存档 `puh_map_builder`，保留原版快捷栏、`1~9` 与 `E` 背包）；基于 `SavedData` + `ChunkEvent.Load` 零卡顿按区块动态划定区界与路标；新增 `[M]` 键交互式全图蓝图点击传送界面（`BuilderRegionMapScreen`）及 `/hope` 造景导航指令集（`map`, `tp`, `speed`, `guides`, `list`, `nv`, `time`, `builder`）。
-     4. **4 主题创造标签页与 94 种自定义建筑与小体素道具库**：在 `ModCreativeTabs`、`ModBlocks`、`ModItems` 及 `gen_v4_blocks.py` 中完成 25 星舰 / 24 冰原矿区地热 / 20 外星遗迹方舟 / 25 家具道具的全套模型、纹理、Blockstate 与中英文名。
+     4. **4 主题创造标签页与 130 种自定义建筑与小体素道具库**：在 `ModCreativeTabs`、`ModBlocks`、`ModItems` 及 `gen_v4_blocks.py` 中完成 35 星舰 / 34 冰原矿区地热 / 28 外星遗迹方舟 / 33 家具道具的全套模型、纹理、Blockstate（含楼梯、台阶、支柱、可连接栏杆/隔断矮墙、防滑爬梯、气密门、活板门）与中英文名。
+     5. **可复用结构蓝图与投影仪建造引擎（28 套模块化预制 + 复制粘贴 + 20 步撤回）**：新增工具道具 `prefab_projector`（【蓝图结构投影仪】）、`[K]` 键结构库面板（`BuilderPrefabScreen`）、3D 线框实景预览（`BuilderPrefabOverlayRenderer`）、`PrefabRegistry`（星舰走廊/T字路口/十字中庭/气密门/双层阶梯/舷窗廊/船员舱/巨型机库拱/逃生舱位，科考站房/连廊/雷达塔/补给棚/输电塔/管廊/飞船残骸，矿道/井架/悬空栈桥/温泉池/玄武岩拱，硬光桥/神殿拱门/方尖碑/仪式广场/方舟对接臂/蓝冰尖峰/雪山脊）、`PrefabPlacementManager`（自动连通墙壁/护栏/楼梯、20 步 `/hope undo`）及 `/hope pos1`~`pos2`~`copy`~`paste` 区域复制粘贴。
    - **第 2 阶段（待开工）**：扩充 3 大生态阵营 15+ 种独立 3D 怪物与多波次战斗舞台 + 商业级多角色分支对话/机关解谜/日志档案/3D 过场引擎。
    - **第 3 阶段（待玩家造景完交付存档后）**：实景巡查选点部署 NPC、怪物、宝箱与机关解谜并编写主支线完整剧本。
 

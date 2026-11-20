@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "picking_hope_core:block/ruin_energy_conduit_top",
+    "side": "picking_hope_core:block/ruin_energy_conduit"
+  }
+}

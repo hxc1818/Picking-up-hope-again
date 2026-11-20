@@ -4,6 +4,9 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.resilienthope.core.network.PacketHandler;
 import com.resilienthope.core.network.PacketRadioDialogue;
+import com.resilienthope.core.world.prefab.PrefabPlacementManager;
+import com.resilienthope.core.world.prefab.PrefabRegistry;
+import com.resilienthope.core.world.prefab.PrefabTransform;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.core.BlockPos;
@@ -30,6 +33,8 @@ import java.util.List;
  *   /hope list
  *   /hope nv
  *   /hope time day|night|dusk
+ *   /hope prefab list|wand|place <id> [repeat]
+ *   /hope undo | pos1 | pos2 | copy | paste [repeat]
  */
 public final class HopeMapCommand {
     public static final String BUILDER_TAG = "picking_hope_builder_mode";
@@ -68,6 +73,49 @@ public final class HopeMapCommand {
                                 .then(Commands.literal("day").executes(ctx -> setTime(ctx.getSource().getPlayerOrException(), 6000L)))
                                 .then(Commands.literal("night").executes(ctx -> setTime(ctx.getSource().getPlayerOrException(), 18000L)))
                                 .then(Commands.literal("dusk").executes(ctx -> setTime(ctx.getSource().getPlayerOrException(), 12500L))))
+                        .then(Commands.literal("prefab")
+                                .then(Commands.literal("list").executes(ctx -> listPrefabs(ctx.getSource().getPlayerOrException())))
+                                .then(Commands.literal("wand").executes(ctx -> {
+                                    PrefabPlacementManager.giveProjector(ctx.getSource().getPlayerOrException());
+                                    return 1;
+                                }))
+                                .then(Commands.literal("place")
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(
+                                                        PrefabRegistry.getAll().stream().map(p -> p.id), builder))
+                                                .executes(ctx -> placePrefabCmd(
+                                                        ctx.getSource().getPlayerOrException(),
+                                                        StringArgumentType.getString(ctx, "id"), 1))
+                                                .then(Commands.argument("repeat", IntegerArgumentType.integer(1, 10))
+                                                        .executes(ctx -> placePrefabCmd(
+                                                                ctx.getSource().getPlayerOrException(),
+                                                                StringArgumentType.getString(ctx, "id"),
+                                                                IntegerArgumentType.getInteger(ctx, "repeat")))))))
+                        .then(Commands.literal("undo").executes(ctx -> {
+                            PrefabPlacementManager.undoLast(ctx.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                        .then(Commands.literal("pos1").executes(ctx -> {
+                            ServerPlayer p = ctx.getSource().getPlayerOrException();
+                            PrefabPlacementManager.setPos1(p, p.blockPosition());
+                            return 1;
+                        }))
+                        .then(Commands.literal("pos2").executes(ctx -> {
+                            ServerPlayer p = ctx.getSource().getPlayerOrException();
+                            PrefabPlacementManager.setPos2(p, p.blockPosition());
+                            return 1;
+                        }))
+                        .then(Commands.literal("copy").executes(ctx -> {
+                            PrefabPlacementManager.copySelection(ctx.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                        .then(Commands.literal("paste")
+                                .executes(ctx -> placePrefabCmd(ctx.getSource().getPlayerOrException(), PrefabPlacementManager.CLIPBOARD_ID, 1))
+                                .then(Commands.argument("repeat", IntegerArgumentType.integer(1, 10))
+                                        .executes(ctx -> placePrefabCmd(
+                                                ctx.getSource().getPlayerOrException(),
+                                                PrefabPlacementManager.CLIPBOARD_ID,
+                                                IntegerArgumentType.getInteger(ctx, "repeat")))))
         );
     }
 
@@ -206,6 +254,22 @@ public final class HopeMapCommand {
         level.setDayTime(dayTime);
         String label = dayTime == 6000L ? "正午白昼" : (dayTime == 12500L ? "黄昏极光" : "极地深夜");
         PacketHandler.sendToPlayer(player, PacketRadioDialogue.toast("时间切换", "已设置为：" + label));
+        return 1;
+    }
+
+    private static int listPrefabs(ServerPlayer player) {
+        player.sendMessage(new TextComponent("=== 可复用结构模板列表 (共 " + PrefabRegistry.getAll().size() + " 种) ==="), player.getUUID());
+        for (PrefabRegistry.PrefabDef def : PrefabRegistry.getAll()) {
+            player.sendMessage(new TextComponent(String.format("  [%s] %s · %s (%s, 步距%d) - %s",
+                    def.category.label, def.id, def.name, def.sizeLabel(), def.repeatStep, def.description)), player.getUUID());
+        }
+        player.sendMessage(new TextComponent("用法：按 [K] 选模并用投影仪放置，或 /hope prefab place <id> [段数] | /hope undo"), player.getUUID());
+        return 1;
+    }
+
+    private static int placePrefabCmd(ServerPlayer player, String id, int repeat) {
+        int rot = PrefabTransform.rotStepsFromPlayerYaw(player.getYRot());
+        PrefabPlacementManager.placePrefab(player, id, player.blockPosition(), rot, repeat, 0, false);
         return 1;
     }
 }

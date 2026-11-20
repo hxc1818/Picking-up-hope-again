@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/mine_concrete_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/mine_concrete_floor"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/mine_concrete_slab_top"
+    }
+  }
+}

@@ -1,5 +1,6 @@
 package com.resilienthope.core.client;
 
+import com.resilienthope.core.client.gui.BuilderPrefabScreen;
 import com.resilienthope.core.client.gui.BuilderRegionMapScreen;
 import com.resilienthope.core.client.gui.CharacterProfileScreen;
 import com.resilienthope.core.client.gui.InfiniteInventoryScreen;
@@ -46,6 +47,7 @@ public class KeyInit {
     public static KeyMapping KEY_PROFILE_C;
     public static KeyMapping KEY_WISH_G;
     public static KeyMapping KEY_BUILDER_MAP_M;
+    public static KeyMapping KEY_BUILDER_PREFAB_K;
 
     public static void registerKeybinds() {
         KEY_CHAR_1 = new KeyMapping("key.picking_hope.char_1", GLFW.GLFW_KEY_1, CATEGORY);
@@ -59,6 +61,7 @@ public class KeyInit {
         KEY_PROFILE_C = new KeyMapping("key.picking_hope.profile_c", GLFW.GLFW_KEY_C, CATEGORY);
         KEY_WISH_G = new KeyMapping("key.picking_hope.wish_g", GLFW.GLFW_KEY_G, CATEGORY);
         KEY_BUILDER_MAP_M = new KeyMapping("key.picking_hope.builder_map_m", GLFW.GLFW_KEY_M, CATEGORY);
+        KEY_BUILDER_PREFAB_K = new KeyMapping("key.picking_hope.builder_prefab_k", GLFW.GLFW_KEY_K, CATEGORY);
 
         ClientRegistry.registerKeyBinding(KEY_CHAR_1);
         ClientRegistry.registerKeyBinding(KEY_CHAR_2);
@@ -71,6 +74,7 @@ public class KeyInit {
         ClientRegistry.registerKeyBinding(KEY_PROFILE_C);
         ClientRegistry.registerKeyBinding(KEY_WISH_G);
         ClientRegistry.registerKeyBinding(KEY_BUILDER_MAP_M);
+        ClientRegistry.registerKeyBinding(KEY_BUILDER_PREFAB_K);
     }
 
     public static float getSkillCooldownSeconds() {
@@ -86,9 +90,13 @@ public class KeyInit {
             if (KEY_BUILDER_MAP_M.consumeClick()) {
                 mc.setScreen(new BuilderRegionMapScreen());
             }
+            if (KEY_BUILDER_PREFAB_K.consumeClick()) {
+                mc.setScreen(new BuilderPrefabScreen());
+            }
             return;
         }
         while (KEY_BUILDER_MAP_M.consumeClick()) {}
+        while (KEY_BUILDER_PREFAB_K.consumeClick()) {}
 
         if (KEY_CHAR_1.consumeClick()) triggerSlotSwitch(0);
         if (KEY_CHAR_2.consumeClick()) triggerSlotSwitch(1);

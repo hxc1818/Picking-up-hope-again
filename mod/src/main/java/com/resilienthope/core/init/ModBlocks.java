@@ -6,6 +6,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -83,9 +84,25 @@ public class ModBlocks {
             () -> new RotatablePropBlock(8, Block.box(3.0D, 0.0D, 3.0D, 13.0D, 8.0D, 13.0D)));
     public static final RegistryObject<Block> PROP_RUIN_RELAY = BLOCKS.register("prop_ruin_relay",
             () -> new RotatablePropBlock(11, Block.box(3.0D, 0.0D, 3.0D, 13.0D, 15.0D, 13.0D)));
+    public static final RegistryObject<Block> PROP_WARNING_SIGN = BLOCKS.register("prop_warning_sign",
+            () -> new RotatablePropBlock(8, Block.box(2.0D, 0.0D, 6.0D, 14.0D, 15.0D, 10.0D)));
+    public static final RegistryObject<Block> PROP_FLOODLIGHT = BLOCKS.register("prop_floodlight",
+            () -> new RotatablePropBlock(15, Block.box(3.0D, 0.0D, 3.0D, 13.0D, 16.0D, 13.0D)));
+    public static final RegistryObject<Block> PROP_ANTENNA_MAST = BLOCKS.register("prop_antenna_mast",
+            () -> new VoxelPropBlock(4, Block.box(5.5D, 0.0D, 5.5D, 10.5D, 16.0D, 10.5D)));
+    public static final RegistryObject<Block> PROP_SOLAR_PANEL = BLOCKS.register("prop_solar_panel",
+            () -> new RotatablePropBlock(2, Block.box(1.0D, 0.0D, 1.0D, 15.0D, 11.0D, 15.0D)));
+    public static final RegistryObject<Block> PROP_SUPPLY_PALLET = BLOCKS.register("prop_supply_pallet",
+            () -> new RotatablePropBlock(0, Block.box(1.0D, 0.0D, 1.0D, 15.0D, 14.0D, 15.0D)));
+    public static final RegistryObject<Block> PROP_BUNK_FRAME = BLOCKS.register("prop_bunk_frame",
+            () -> new RotatablePropBlock(0, Block.box(2.0D, 0.0D, 3.0D, 14.0D, 16.0D, 15.0D)));
+    public static final RegistryObject<Block> PROP_DINING_TABLE = BLOCKS.register("prop_dining_table",
+            () -> new VoxelPropBlock(0, Block.box(1.0D, 0.0D, 1.0D, 15.0D, 12.0D, 15.0D)));
+    public static final RegistryObject<Block> PROP_HOLOGRAM_PROJECTOR = BLOCKS.register("prop_hologram_projector",
+            () -> new VoxelPropBlock(12, Block.box(2.0D, 0.0D, 2.0D, 14.0D, 14.0D, 14.0D)));
 
     // ============================================================
-    // 2. TAB_STARSHIP (25): Starship Structural, Interior, Glass & Lighting
+    // 2. TAB_STARSHIP (35): Starship Structural, Interior, Glass & Lighting
     // ============================================================
     public static final RegistryObject<Block> STARSHIP_FLOOR = BLOCKS.register("starship_floor",
             () -> new Block(metalProps(5.0f, 0)));
@@ -141,9 +158,29 @@ public class ModBlocks {
     public static final RegistryObject<Block> AMBER_LIGHT_STRIP = BLOCKS.register("amber_light_strip",
             () -> new RotatablePropBlock(Material.GLASS, SoundType.GLASS, 14,
                     Block.box(1.0D, 6.0D, 14.0D, 15.0D, 10.0D, 16.0D), false));
+    public static final RegistryObject<Block> STARSHIP_HULL_DARK = BLOCKS.register("starship_hull_dark",
+            () -> new Block(hullProps()));
+    public static final RegistryObject<Block> STARSHIP_ACCENT_BLUE = BLOCKS.register("starship_accent_blue",
+            () -> new Block(metalProps(5.0f, 0)));
+    public static final RegistryObject<Block> STARSHIP_ACCENT_ORANGE = BLOCKS.register("starship_accent_orange",
+            () -> new Block(metalProps(5.0f, 0)));
+    public static final RegistryObject<Block> STARSHIP_WALL_VENT = BLOCKS.register("starship_wall_vent",
+            () -> new Block(metalProps(4.5f, 0)));
+    public static final RegistryObject<Block> STARSHIP_REINFORCED_GLASS = BLOCKS.register("starship_reinforced_glass",
+            () -> new TranslucentFullBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(4.0f, 10.0f).sound(SoundType.GLASS).noOcclusion()));
+    public static final RegistryObject<Block> STARSHIP_CATWALK_SLAB = BLOCKS.register("starship_catwalk_slab",
+            () -> new SlabBlock(metalProps(4.0f, 0).noOcclusion()));
+    public static final RegistryObject<Block> STARSHIP_HAZARD_SLAB = BLOCKS.register("starship_hazard_slab",
+            () -> new SlabBlock(metalProps(5.0f, 0)));
+    public static final RegistryObject<Block> STARSHIP_PILLAR_LIGHT = BLOCKS.register("starship_pillar_light",
+            () -> new RotatedPillarBlock(metalProps(4.5f, 13)));
+    public static final RegistryObject<Block> STARSHIP_BULKHEAD_WALL = BLOCKS.register("starship_bulkhead_wall",
+            () -> new WallBlock(hullProps()));
+    public static final RegistryObject<Block> STARSHIP_LADDER = BLOCKS.register("starship_ladder",
+            () -> new SciFiLadderBlock(metalProps(3.0f, 0).noOcclusion()));
 
     // ============================================================
-    // 3. TAB_PLANET (24): Polar Glacier, Outpost, Deep Mine & Geothermal
+    // 3. TAB_PLANET (34): Polar Glacier, Outpost, Deep Mine & Geothermal
     // ============================================================
     public static final RegistryObject<Block> PERMAFROST_ROCK = BLOCKS.register("permafrost_rock",
             () -> new Block(stoneProps(4.0f, SoundType.BASALT, 0)));
@@ -197,9 +234,29 @@ public class ModBlocks {
             () -> new Block(metalProps(4.5f, 6)));
     public static final RegistryObject<Block> GEOTHERMAL_GLOW_MOSS = BLOCKS.register("geothermal_glow_moss",
             () -> new Block(stoneProps(2.5f, SoundType.MOSS, 11)));
+    public static final RegistryObject<Block> POLAR_PACKED_SNOW = BLOCKS.register("polar_packed_snow",
+            () -> new Block(BlockBehaviour.Properties.of(Material.SNOW).strength(2.2f, 6.0f).sound(SoundType.SNOW)));
+    public static final RegistryObject<Block> POLAR_ICE_BRICKS = BLOCKS.register("polar_ice_bricks",
+            () -> new Block(BlockBehaviour.Properties.of(Material.ICE_SOLID).strength(3.0f, 8.0f).sound(SoundType.GLASS).friction(0.94f)));
+    public static final RegistryObject<Block> OUTPOST_YELLOW_WALL = BLOCKS.register("outpost_yellow_wall",
+            () -> new Block(metalProps(4.5f, 0)));
+    public static final RegistryObject<Block> OUTPOST_DARK_TRIM = BLOCKS.register("outpost_dark_trim",
+            () -> new Block(metalProps(5.0f, 0)));
+    public static final RegistryObject<Block> OUTPOST_WINDOW_GLASS = BLOCKS.register("outpost_window_glass",
+            () -> new TranslucentFullBlock(BlockBehaviour.Properties.of(Material.GLASS).strength(3.0f, 8.0f).sound(SoundType.GLASS).noOcclusion()));
+    public static final RegistryObject<Block> OUTPOST_CORRUGATED_SLAB = BLOCKS.register("outpost_corrugated_slab",
+            () -> new SlabBlock(metalProps(4.5f, 0)));
+    public static final RegistryObject<Block> MINE_SUPPORT_WALL = BLOCKS.register("mine_support_wall",
+            () -> new WallBlock(hullProps()));
+    public static final RegistryObject<Block> MINE_CONCRETE_SLAB = BLOCKS.register("mine_concrete_slab",
+            () -> new SlabBlock(stoneProps(4.5f, SoundType.STONE, 0)));
+    public static final RegistryObject<Block> MINE_CAUTION_CONCRETE = BLOCKS.register("mine_caution_concrete",
+            () -> new Block(stoneProps(4.5f, SoundType.STONE, 0)));
+    public static final RegistryObject<Block> GEOTHERMAL_MAGMA_CRUST = BLOCKS.register("geothermal_magma_crust",
+            () -> new Block(stoneProps(4.5f, SoundType.BASALT, 10)));
 
     // ============================================================
-    // 4. TAB_RUINS (20): Alien Obsidian/Platinum Ruins, Hardlight & Ark Harbor
+    // 4. TAB_RUINS (28): Alien Obsidian/Platinum Ruins, Hardlight & Ark Harbor
     // ============================================================
     public static final RegistryObject<Block> RUIN_OBSIDIAN_BLOCK = BLOCKS.register("ruin_obsidian_block",
             () -> new Block(stoneProps(6.5f, SoundType.DEEPSLATE, 0)));
@@ -247,4 +304,20 @@ public class ModBlocks {
                     Block.box(2.0D, 0.0D, 5.0D, 14.0D, 16.0D, 11.0D), true));
     public static final RegistryObject<Block> RUIN_FLOATING_PRISM = BLOCKS.register("ruin_floating_prism",
             () -> new VoxelPropBlock(13, Block.box(4.0D, 3.0D, 4.0D, 12.0D, 15.0D, 12.0D)));
+    public static final RegistryObject<Block> RUIN_OBSIDIAN_WALL = BLOCKS.register("ruin_obsidian_wall",
+            () -> new WallBlock(stoneProps(6.5f, SoundType.DEEPSLATE, 0)));
+    public static final RegistryObject<Block> RUIN_PLATINUM_WALL = BLOCKS.register("ruin_platinum_wall",
+            () -> new WallBlock(metalProps(6.0f, 2)));
+    public static final RegistryObject<Block> RUIN_CRACKED_OBSIDIAN = BLOCKS.register("ruin_cracked_obsidian",
+            () -> new Block(stoneProps(6.0f, SoundType.DEEPSLATE, 4)));
+    public static final RegistryObject<Block> RUIN_MOSSY_OBSIDIAN = BLOCKS.register("ruin_mossy_obsidian",
+            () -> new Block(stoneProps(6.0f, SoundType.DEEPSLATE, 2)));
+    public static final RegistryObject<Block> RUIN_HEX_FLOOR = BLOCKS.register("ruin_hex_floor",
+            () -> new Block(stoneProps(6.0f, SoundType.DEEPSLATE_TILES, 3)));
+    public static final RegistryObject<Block> RUIN_ENERGY_CONDUIT = BLOCKS.register("ruin_energy_conduit",
+            () -> new RotatedPillarBlock(stoneProps(5.5f, SoundType.AMETHYST, 13)));
+    public static final RegistryObject<Block> RUIN_PORTAL_FRAME = BLOCKS.register("ruin_portal_frame",
+            () -> new Block(stoneProps(7.0f, SoundType.DEEPSLATE, 6)));
+    public static final RegistryObject<Block> RUIN_ARK_GLOW_PANEL = BLOCKS.register("ruin_ark_glow_panel",
+            () -> new Block(hullProps().lightLevel(s -> 11)));
 }

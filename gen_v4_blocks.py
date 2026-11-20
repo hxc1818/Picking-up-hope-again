@@ -406,6 +406,204 @@ def gen_textures():
     rect(ms, 22, 16, 27, 26, (56, 189, 248, 255))
     save_img(ms, "textures/block/prop_screen_glow.png")
 
+    # ============================================================
+    # +36 NEW BLOCKS & PREFAB PROJECTOR WAND TEXTURES
+    # ============================================================
+    # --- Starship +10 ---
+    # starship_hull_dark
+    im = Image.new("RGBA", (32, 32), (16, 20, 28, 255))
+    rect(im, 2, 2, 29, 29, (26, 32, 44, 255))
+    rect(im, 4, 4, 27, 27, (20, 25, 35, 255))
+    rect(im, 0, 15, 31, 16, (12, 15, 21, 255))
+    save_img(im, "textures/block/starship_hull_dark.png")
+
+    # starship_accent_blue & orange
+    for aid, stripe_c in (("starship_accent_blue", (48, 175, 238, 255)), ("starship_accent_orange", (235, 132, 42, 255))):
+        im = Image.new("RGBA", (32, 32), (48, 58, 74, 255))
+        rect(im, 2, 2, 29, 29, (68, 82, 102, 255))
+        rect(im, 0, 11, 31, 20, stripe_c)
+        rect(im, 0, 10, 31, 10, (30, 36, 46, 255))
+        rect(im, 0, 21, 31, 21, (30, 36, 46, 255))
+        save_img(im, f"textures/block/{aid}.png")
+
+    # starship_wall_vent
+    im = Image.new("RGBA", (32, 32), (42, 52, 66, 255))
+    rect(im, 2, 2, 29, 29, (60, 72, 90, 255))
+    for y in range(5, 28, 3):
+        rect(im, 5, y, 26, y + 1, (20, 26, 34, 255))
+    rect(im, 2, 2, 4, 4, (56, 189, 248, 255))
+    save_img(im, "textures/block/starship_wall_vent.png")
+
+    # starship_reinforced_glass
+    im = Image.new("RGBA", (32, 32), (75, 165, 215, 115))
+    rect(im, 0, 0, 31, 3, (36, 44, 58, 255))
+    rect(im, 0, 28, 31, 31, (36, 44, 58, 255))
+    rect(im, 0, 0, 3, 31, (36, 44, 58, 255))
+    rect(im, 28, 0, 31, 31, (36, 44, 58, 255))
+    draw_line(im, 5, 25, 25, 5, (48, 58, 74, 185), 2)
+    draw_line(im, 5, 5, 25, 25, (48, 58, 74, 185), 2)
+    save_img(im, "textures/block/starship_reinforced_glass.png")
+
+    # starship_pillar_light + top
+    im = Image.new("RGBA", (32, 32), (34, 42, 54, 255))
+    rect(im, 2, 0, 8, 31, (54, 66, 84, 255))
+    rect(im, 23, 0, 29, 31, (54, 66, 84, 255))
+    rect(im, 10, 0, 21, 31, (75, 215, 248, 255))
+    rect(im, 13, 0, 18, 31, (215, 252, 255, 255))
+    save_img(im, "textures/block/starship_pillar_light.png")
+    im = Image.new("RGBA", (32, 32), (30, 38, 50, 255))
+    rect(im, 4, 4, 27, 27, (58, 70, 88, 255))
+    rect(im, 11, 11, 20, 20, (145, 242, 255, 255))
+    save_img(im, "textures/block/starship_pillar_light_top.png")
+
+    # starship_bulkhead_wall
+    im = Image.new("RGBA", (32, 32), (34, 42, 56, 255))
+    rect(im, 2, 2, 29, 29, (52, 64, 82, 255))
+    rect(im, 4, 13, 27, 18, (30, 38, 50, 255))
+    rect(im, 12, 4, 19, 27, (66, 82, 104, 255))
+    save_img(im, "textures/block/starship_bulkhead_wall.png")
+
+    # starship_ladder (transparent center rails + cyan-lit rungs)
+    im = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    rect(im, 4, 0, 7, 31, (72, 86, 106, 255))
+    rect(im, 24, 0, 27, 31, (72, 86, 106, 255))
+    for y in (3, 11, 19, 27):
+        rect(im, 6, y, 25, y + 2, (158, 178, 202, 255))
+        rect(im, 13, y, 18, y + 1, (56, 189, 248, 255))
+    save_img(im, "textures/block/starship_ladder.png")
+
+    # --- Planet / Polar / Outpost / Mine +10 ---
+    # polar_packed_snow
+    im = Image.new("RGBA", (32, 32), (222, 238, 248, 255))
+    for x in range(32):
+        for y in range(32):
+            v = ((x * 13 + y * 23) ^ (x * y)) % 9
+            if v < 2:
+                px(im, x, y, (206, 226, 242, 255))
+            elif v > 6:
+                px(im, x, y, (240, 250, 255, 255))
+    save_img(im, "textures/block/polar_packed_snow.png")
+
+    # polar_ice_bricks
+    im = Image.new("RGBA", (32, 32), (132, 196, 232, 255))
+    for row in range(4):
+        y0 = row * 8
+        rect(im, 0, y0, 31, y0 + 6, (168, 224, 248, 255))
+        rect(im, 2, y0 + 1, 29, y0 + 5, (192, 236, 255, 255))
+        off = 8 if row % 2 else 0
+        rect(im, off, y0, off + 1, y0 + 6, (120, 184, 224, 255))
+        rect(im, (off + 16) % 32, y0, (off + 16) % 32 + 1, y0 + 6, (120, 184, 224, 255))
+    save_img(im, "textures/block/polar_ice_bricks.png")
+
+    # outpost_yellow_wall
+    im = Image.new("RGBA", (32, 32), (195, 198, 205, 255))
+    rect(im, 2, 2, 29, 29, (226, 230, 236, 255))
+    rect(im, 0, 10, 31, 21, (238, 178, 42, 255))
+    rect(im, 0, 10, 31, 11, (54, 62, 74, 255))
+    rect(im, 0, 20, 31, 21, (54, 62, 74, 255))
+    save_img(im, "textures/block/outpost_yellow_wall.png")
+
+    # outpost_dark_trim
+    im = Image.new("RGBA", (32, 32), (38, 46, 56, 255))
+    rect(im, 2, 2, 29, 29, (56, 66, 80, 255))
+    rect(im, 3, 3, 5, 5, (238, 130, 42, 255))
+    rect(im, 26, 26, 28, 28, (238, 130, 42, 255))
+    save_img(im, "textures/block/outpost_dark_trim.png")
+
+    # outpost_window_glass
+    im = Image.new("RGBA", (32, 32), (165, 222, 245, 120))
+    rect(im, 0, 0, 31, 3, (195, 206, 218, 255))
+    rect(im, 0, 28, 31, 31, (195, 206, 218, 255))
+    rect(im, 0, 14, 31, 17, (78, 90, 108, 255))
+    draw_line(im, 5, 11, 11, 5, (235, 252, 255, 210), 2)
+    save_img(im, "textures/block/outpost_window_glass.png")
+
+    # mine_caution_concrete
+    im = Image.open(os.path.join(ASSETS, "textures/block/mine_concrete_floor.png")).copy()
+    for i in range(-16, 32, 8):
+        draw_line(im, i, 24, i + 7, 31, (235, 175, 42, 255), 3)
+    rect(im, 0, 23, 31, 23, (46, 50, 56, 255))
+    save_img(im, "textures/block/mine_caution_concrete.png")
+
+    # geothermal_magma_crust
+    im = Image.open(os.path.join(ASSETS, "textures/block/geothermal_basalt.png")).copy()
+    draw_line(im, 3, 6, 28, 15, (235, 92, 28, 255), 3)
+    draw_line(im, 6, 8, 25, 14, (255, 198, 65, 255), 1)
+    draw_line(im, 5, 25, 26, 18, (245, 115, 32, 255), 2)
+    draw_line(im, 9, 23, 22, 20, (255, 225, 105, 255), 1)
+    save_img(im, "textures/block/geothermal_magma_crust.png")
+
+    # --- Ruins +8 ---
+    # ruin_cracked_obsidian
+    im = Image.open(os.path.join(ASSETS, "textures/block/ruin_obsidian_block.png")).copy()
+    draw_line(im, 4, 4, 18, 17, (45, 235, 225, 255), 2)
+    draw_line(im, 18, 17, 27, 27, (45, 235, 225, 255), 2)
+    draw_line(im, 25, 6, 14, 15, (145, 252, 248, 255), 1)
+    save_img(im, "textures/block/ruin_cracked_obsidian.png")
+
+    # ruin_mossy_obsidian
+    im = Image.open(os.path.join(ASSETS, "textures/block/ruin_obsidian_block.png")).copy()
+    for (cx, cy) in ((6, 6), (14, 5), (22, 9), (8, 22), (24, 24)):
+        add_circle(im, cx, cy, 4, (40, 128, 86, 255))
+        add_circle(im, cx, cy, 2, (98, 212, 152, 255))
+    save_img(im, "textures/block/ruin_mossy_obsidian.png")
+
+    # ruin_hex_floor
+    im = Image.new("RGBA", (32, 32), (24, 28, 42, 255))
+    rect(im, 3, 2, 13, 13, (46, 52, 74, 255))
+    rect(im, 18, 2, 28, 13, (46, 52, 74, 255))
+    rect(im, 3, 18, 13, 29, (46, 52, 74, 255))
+    rect(im, 18, 18, 28, 29, (46, 52, 74, 255))
+    rect(im, 14, 6, 17, 9, (56, 215, 210, 255))
+    rect(im, 14, 22, 17, 25, (238, 192, 82, 255))
+    rect(im, 6, 14, 9, 17, (56, 215, 210, 255))
+    rect(im, 22, 14, 25, 17, (238, 192, 82, 255))
+    save_img(im, "textures/block/ruin_hex_floor.png")
+
+    # ruin_energy_conduit + top
+    im = Image.new("RGBA", (32, 32), (22, 26, 38, 255))
+    rect(im, 2, 0, 7, 31, (192, 202, 216, 255))
+    rect(im, 24, 0, 29, 31, (192, 202, 216, 255))
+    rect(im, 10, 0, 21, 31, (45, 220, 225, 255))
+    rect(im, 13, 0, 18, 31, (185, 255, 252, 255))
+    for y in (6, 16, 26):
+        rect(im, 2, y, 29, y + 1, (238, 192, 82, 255))
+    save_img(im, "textures/block/ruin_energy_conduit.png")
+    im = Image.new("RGBA", (32, 32), (24, 28, 40, 255))
+    rect(im, 4, 4, 27, 27, (192, 202, 216, 255))
+    rect(im, 9, 9, 22, 22, (45, 220, 225, 255))
+    rect(im, 12, 12, 19, 19, (255, 232, 155, 255))
+    save_img(im, "textures/block/ruin_energy_conduit_top.png")
+
+    # ruin_portal_frame
+    im = Image.new("RGBA", (32, 32), (16, 18, 26, 255))
+    rect(im, 2, 2, 29, 29, (34, 38, 54, 255))
+    rect(im, 5, 5, 26, 26, (195, 206, 220, 255))
+    rect(im, 8, 8, 23, 23, (48, 225, 220, 255))
+    rect(im, 11, 11, 20, 20, (245, 198, 88, 255))
+    save_img(im, "textures/block/ruin_portal_frame.png")
+
+    # ruin_ark_glow_panel
+    im = Image.new("RGBA", (32, 32), (34, 30, 52, 255))
+    rect(im, 2, 2, 29, 29, (52, 46, 78, 255))
+    rect(im, 5, 11, 26, 20, (245, 185, 85, 255))
+    rect(im, 7, 13, 24, 18, (255, 242, 195, 255))
+    save_img(im, "textures/block/ruin_ark_glow_panel.png")
+
+    # --- Prop Textures (+2 helper textures + prefab_projector item icon) ---
+    save_solid("prop_solar_cell", (20, 46, 98, 255), (34, 78, 156, 255), (145, 195, 245, 255))
+    save_solid("prop_wood_crate", (118, 86, 54, 255), (146, 110, 72, 255), (84, 58, 36, 255))
+
+    wand = Image.new("RGBA", (32, 32), (0, 0, 0, 0))
+    draw_line(wand, 5, 26, 19, 12, (62, 74, 92, 255), 3)
+    draw_line(wand, 6, 25, 18, 13, (124, 145, 170, 255), 1)
+    rect(wand, 17, 5, 26, 14, (45, 215, 245, 255))
+    rect(wand, 19, 7, 24, 12, (195, 252, 255, 255))
+    rect(wand, 14, 11, 18, 15, (251, 191, 36, 255))
+    px(wand, 27, 4, (255, 255, 255, 255))
+    px(wand, 28, 8, (115, 235, 255, 255))
+    save_img(wand, "textures/item/prefab_projector.png")
+
 
 # ============================================================
 # 2. VANILLA 1.18.2 BLOCKSTATES & MULTI-CUBE VOXEL MODELS
@@ -507,6 +705,55 @@ def gen_pillar_blockstate(pillar_id):
     save_json({"parent": "minecraft:block/cube_column", "textures": texs}, f"models/block/{pillar_id}.json")
     save_json({"parent": "minecraft:block/cube_column_horizontal", "textures": texs}, f"models/block/{pillar_id}_horizontal.json")
     save_json({"parent": f"picking_hope_core:block/{pillar_id}"}, f"models/item/{pillar_id}.json")
+
+
+def gen_wall_blockstate(wall_id, tex_id):
+    # Exact vanilla 1.18.2 stone_brick_wall multipart definition
+    save_json({
+        "multipart": [
+            {"when": {"up": "true"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_post"}},
+            {"when": {"north": "low"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side", "uvlock": True}},
+            {"when": {"east": "low"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side", "y": 90, "uvlock": True}},
+            {"when": {"south": "low"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side", "y": 180, "uvlock": True}},
+            {"when": {"west": "low"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side", "y": 270, "uvlock": True}},
+            {"when": {"north": "tall"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side_tall", "uvlock": True}},
+            {"when": {"east": "tall"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side_tall", "y": 90, "uvlock": True}},
+            {"when": {"south": "tall"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side_tall", "y": 180, "uvlock": True}},
+            {"when": {"west": "tall"}, "apply": {"model": f"picking_hope_core:block/{wall_id}_side_tall", "y": 270, "uvlock": True}},
+        ]
+    }, f"blockstates/{wall_id}.json")
+    tex = {"wall": f"picking_hope_core:block/{tex_id}"}
+    save_json({"parent": "minecraft:block/template_wall_post", "textures": tex}, f"models/block/{wall_id}_post.json")
+    save_json({"parent": "minecraft:block/template_wall_side", "textures": tex}, f"models/block/{wall_id}_side.json")
+    save_json({"parent": "minecraft:block/template_wall_side_tall", "textures": tex}, f"models/block/{wall_id}_side_tall.json")
+    save_json({"parent": "minecraft:block/wall_inventory", "textures": tex}, f"models/block/{wall_id}_inventory.json")
+    save_json({"parent": f"picking_hope_core:block/{wall_id}_inventory"}, f"models/item/{wall_id}.json")
+
+
+def gen_ladder_blockstate(ladder_id):
+    save_json({
+        "variants": {
+            "facing=north": {"model": f"picking_hope_core:block/{ladder_id}"},
+            "facing=east": {"model": f"picking_hope_core:block/{ladder_id}", "y": 90},
+            "facing=south": {"model": f"picking_hope_core:block/{ladder_id}", "y": 180},
+            "facing=west": {"model": f"picking_hope_core:block/{ladder_id}", "y": 270},
+        }
+    }, f"blockstates/{ladder_id}.json")
+    tex = f"picking_hope_core:block/{ladder_id}"
+    save_json({
+        "ambientocclusion": False,
+        "textures": {"particle": tex, "texture": tex},
+        "elements": [{
+            "from": [0, 0, 15.2],
+            "to": [16, 16, 15.2],
+            "shade": False,
+            "faces": {
+                "north": {"uv": [0, 0, 16, 16], "texture": "#texture"},
+                "south": {"uv": [16, 0, 0, 16], "texture": "#texture"},
+            },
+        }],
+    }, f"models/block/{ladder_id}.json")
+    save_json({"parent": "minecraft:item/generated", "textures": {"layer0": tex}}, f"models/item/{ladder_id}.json")
 
 
 def gen_railing_and_panes():
@@ -612,12 +859,15 @@ def gen_new_models_and_states():
     # 1. Simple cube_all blocks
     simple_cubes = [
         "starship_grate_floor", "starship_white_panel", "starship_ceiling_tile", "starship_damaged_hull",
+        "starship_hull_dark", "starship_accent_blue", "starship_accent_orange", "starship_wall_vent", "starship_reinforced_glass",
         "permafrost_bricks", "glacier_ice_block", "outpost_insulated_wall", "outpost_roof_plating",
-        "mine_steel_truss", "mine_rusted_plate", "mine_concrete_floor",
-        "geothermal_basalt", "geothermal_warm_stone", "geothermal_glow_moss",
+        "polar_packed_snow", "polar_ice_bricks", "outpost_yellow_wall", "outpost_dark_trim", "outpost_window_glass",
+        "mine_steel_truss", "mine_rusted_plate", "mine_concrete_floor", "mine_caution_concrete",
+        "geothermal_basalt", "geothermal_warm_stone", "geothermal_glow_moss", "geothermal_magma_crust",
         "ruin_obsidian_block", "ruin_platinum_trim", "ruin_carved_glyph",
         "ruin_circuit_teal", "ruin_circuit_gold", "ruin_floor_tile", "ruin_energy_core",
         "ruin_ark_hull", "ruin_docking_beacon",
+        "ruin_cracked_obsidian", "ruin_mossy_obsidian", "ruin_hex_floor", "ruin_portal_frame", "ruin_ark_glow_panel",
     ]
     for b in simple_cubes:
         save_json({"variants": {"": {"model": f"picking_hope_core:block/{b}"}}}, f"blockstates/{b}.json")
@@ -653,16 +903,20 @@ def gen_new_models_and_states():
     ):
         gen_stair_blockstate(stair_id, full_id)
 
-    # 3. 13 Slabs
+    # 3. 17 Slabs
     for slab_id, tex_id, double_id in (
         ("starship_floor_slab", "starship_floor", None),
         ("starship_wall_slab", "starship_wall", None),
         ("starship_hull_slab", "starship_hull", None),
         ("starship_white_slab", "starship_white_panel", None),
+        ("starship_catwalk_slab", "starship_grate_floor", "starship_catwalk_slab_double"),
+        ("starship_hazard_slab", "hazard_stripe_block", None),
         ("permafrost_slab", "permafrost_rock", None),
         ("permafrost_bricks_slab", "permafrost_bricks", None),
         ("snow_packed_slab", "glacier_snow", None),
         ("outpost_insulated_slab", "outpost_insulated_wall", None),
+        ("outpost_corrugated_slab", "outpost_roof_plating", None),
+        ("mine_concrete_slab", "mine_concrete_floor", None),
         ("geothermal_basalt_slab", "geothermal_basalt", None),
         ("ruin_obsidian_slab", "ruin_obsidian_block", None),
         ("ruin_platinum_slab", "ruin_platinum_trim", None),
@@ -671,9 +925,22 @@ def gen_new_models_and_states():
     ):
         gen_slab_blockstate(slab_id, tex_id, double_id)
 
-    # 4. 3 Pillars
-    for pid in ("starship_dark_rib", "mine_steel_beam", "ruin_pillar"):
+    # 4. 5 Pillars
+    for pid in ("starship_dark_rib", "starship_pillar_light", "mine_steel_beam", "ruin_pillar", "ruin_energy_conduit"):
         gen_pillar_blockstate(pid)
+
+    # 4b. 4 Walls & 1 Ladder + Prefab Projector wand item model
+    for wall_id, wall_tex in (
+        ("starship_bulkhead_wall", "starship_bulkhead_wall"),
+        ("mine_support_wall", "mine_rusted_plate"),
+        ("ruin_obsidian_wall", "ruin_obsidian_block"),
+        ("ruin_platinum_wall", "ruin_platinum_trim"),
+    ):
+        gen_wall_blockstate(wall_id, wall_tex)
+
+    gen_ladder_blockstate("starship_ladder")
+    save_json({"parent": "minecraft:item/handheld", "textures": {"layer0": "picking_hope_core:item/prefab_projector"}},
+              "models/item/prefab_projector.json")
 
     # 5. Railings, panes, door & vent hatch
     gen_railing_and_panes()
@@ -827,6 +1094,50 @@ def gen_new_models_and_states():
                 make_cube([5, 9, 5], [11, 14.5, 11], {"all": "c"}),
             ],
         },
+        "prop_warning_sign": {
+            "textures": {"particle": "picking_hope_core:block/amber_light_strip", "d": "picking_hope_core:block/prop_metal_dark", "a": "picking_hope_core:block/amber_light_strip"},
+            "elements": [
+                make_cube([6, 0, 6], [10, 2, 10], {"all": "d"}),
+                make_cube([7, 2, 7], [9, 8, 9], {"all": "d"}),
+                make_cube([2, 8, 6.8], [14, 15, 9.2], {"north": "a", "south": "a", "all": "d"}),
+            ],
+        },
+        "prop_floodlight": {
+            "textures": {"particle": "picking_hope_core:block/cyan_light_strip", "d": "picking_hope_core:block/prop_metal_dark", "l": "picking_hope_core:block/cyan_light_strip"},
+            "elements": [
+                make_cube([4, 0, 4], [12, 1.5, 12], {"all": "d"}),
+                make_cube([7, 1.5, 7], [9, 10, 9], {"all": "d"}),
+                make_cube([3, 10, 5], [13, 15.5, 11], {"north": "l", "all": "d"}),
+            ],
+        },
+        "prop_solar_panel": {
+            "textures": {"particle": "picking_hope_core:block/prop_solar_cell", "d": "picking_hope_core:block/prop_metal_dark", "s": "picking_hope_core:block/prop_solar_cell"},
+            "elements": [
+                make_cube([5, 0, 5], [11, 2, 11], {"all": "d"}),
+                make_cube([7, 2, 7], [9, 7, 9], {"all": "d"}),
+                make_cube([1, 7, 2], [15, 9.5, 14], {"up": "s", "all": "d"}),
+            ],
+        },
+        "prop_supply_pallet": {
+            "textures": {"particle": "picking_hope_core:block/prop_wood_crate", "w": "picking_hope_core:block/prop_wood_crate", "c": "picking_hope_core:block/supply_crate_side"},
+            "elements": [
+                make_cube([1, 0, 1], [15, 2, 15], {"all": "w"}),
+                make_cube([2, 2, 2], [8.5, 8.5, 8.5], {"all": "c"}),
+                make_cube([8.5, 2, 7.5], [14, 9.5, 14], {"all": "w"}),
+                make_cube([4, 8.5, 4], [10, 14, 10], {"all": "c"}),
+            ],
+        },
+        "prop_bunk_frame": {
+            "textures": {"particle": "picking_hope_core:block/prop_bed_fabric", "d": "picking_hope_core:block/prop_metal_dark", "b": "picking_hope_core:block/prop_bed_fabric"},
+            "elements": [
+                make_cube([2, 0, 13], [4, 16, 15], {"all": "d"}),
+                make_cube([12, 0, 13], [14, 16, 15], {"all": "d"}),
+                make_cube([2, 0, 3], [14, 2, 15], {"all": "d"}),
+                make_cube([2.5, 2, 3.5], [13.5, 4.5, 14], {"all": "b"}),
+                make_cube([2, 10, 3], [14, 11.5, 15], {"all": "d"}),
+                make_cube([2.5, 11.5, 3.5], [13.5, 14, 14], {"all": "b"}),
+            ],
+        },
     }
 
     for pid, spec in rotatable_props.items():
@@ -873,6 +1184,32 @@ def gen_new_models_and_states():
                 make_cube([6.5, 12, 6.5], [9.5, 15, 9.5], {"all": "g"}),
             ],
         },
+        "prop_antenna_mast": {
+            "textures": {"particle": "picking_hope_core:block/prop_metal_light", "d": "picking_hope_core:block/prop_metal_dark", "l": "picking_hope_core:block/prop_metal_light", "a": "picking_hope_core:block/amber_light_strip"},
+            "elements": [
+                make_cube([5, 0, 5], [11, 2, 11], {"all": "d"}),
+                make_cube([7, 2, 7], [9, 14, 9], {"all": "l"}),
+                make_cube([3, 9, 7.2], [13, 10.5, 8.8], {"all": "l"}),
+                make_cube([7.2, 12, 3], [8.8, 13.5, 13], {"all": "l"}),
+                make_cube([7, 14, 7], [9, 16, 9], {"all": "a"}),
+            ],
+        },
+        "prop_dining_table": {
+            "textures": {"particle": "picking_hope_core:block/prop_metal_light", "d": "picking_hope_core:block/prop_metal_dark", "l": "picking_hope_core:block/prop_metal_light"},
+            "elements": [
+                make_cube([5, 0, 5], [11, 1.5, 11], {"all": "d"}),
+                make_cube([6.5, 1.5, 6.5], [9.5, 10, 9.5], {"all": "d"}),
+                make_cube([1, 10, 1], [15, 12, 15], {"all": "l"}),
+            ],
+        },
+        "prop_hologram_projector": {
+            "textures": {"particle": "picking_hope_core:block/prop_screen_glow", "d": "picking_hope_core:block/prop_metal_dark", "s": "picking_hope_core:block/prop_screen_glow", "c": "picking_hope_core:block/cyan_light_strip"},
+            "elements": [
+                make_cube([2, 0, 2], [14, 3, 14], {"all": "d"}),
+                make_cube([4, 3, 4], [12, 4.5, 12], {"all": "c"}),
+                make_cube([5.5, 6.5, 5.5], [10.5, 13.5, 10.5], {"all": "s"}),
+            ],
+        },
     }
     for pid, spec in static_props.items():
         save_json({"variants": {"": {"model": f"picking_hope_core:block/{pid}"}}}, f"blockstates/{pid}.json")
@@ -901,12 +1238,16 @@ def update_lang():
     zh["itemGroup.picking_hope_ruins"] = "重拾希望 · 外星遗迹方舟"
     zh["itemGroup.picking_hope_props"] = "重拾希望 · 家具与小道具"
     zh["key.picking_hope.builder_map_m"] = "造景全图蓝图与传送 (M)"
+    zh["key.picking_hope.builder_prefab_k"] = "造景可复用结构库 (K)"
+    zh["item.picking_hope_core.prefab_projector"] = "蓝图结构投影仪"
 
     en["itemGroup.picking_hope_starship"] = "Hope: Starship Blocks"
     en["itemGroup.picking_hope_planet"] = "Hope: Cryo Planet & Mine"
     en["itemGroup.picking_hope_ruins"] = "Hope: Alien Ruins & Ark"
     en["itemGroup.picking_hope_props"] = "Hope: Furniture & Props"
     en["key.picking_hope.builder_map_m"] = "Builder Region Blueprint (M)"
+    en["key.picking_hope.builder_prefab_k"] = "Builder Prefab Library (K)"
+    en["item.picking_hope_core.prefab_projector"] = "Blueprint Prefab Projector"
 
     names = {
         "starship_floor_stairs": ("星舰合金地板楼梯", "Starship Floor Stairs"),
@@ -987,6 +1328,47 @@ def update_lang():
         "prop_breaker_box": ("配电闸门控制箱", "Breaker Control Box"),
         "prop_blackbox_recorder": ("坠机橙色黑匣子", "Flight Blackbox Recorder"),
         "prop_ruin_relay": ("外星三脚谐振中继柱", "Alien Relay Tripod"),
+
+        # +36 new blocks
+        "starship_hull_dark": ("深炭暗影装甲块", "Dark Shadow Hull Plate"),
+        "starship_accent_blue": ("星舰海蓝涂装饰板", "Starship Blue Accent Panel"),
+        "starship_accent_orange": ("星舰橙色工程涂装板", "Starship Orange Accent Panel"),
+        "starship_wall_vent": ("星舰百叶通风舱壁", "Starship Louvered Wall Vent"),
+        "starship_reinforced_glass": ("带框防爆玻璃窗", "Reinforced Starship Glass"),
+        "starship_catwalk_slab": ("星舰格栅栈桥台阶", "Starship Catwalk Slab"),
+        "starship_hazard_slab": ("警戒黄黑半砖台阶", "Hazard Stripe Slab"),
+        "starship_pillar_light": ("嵌入式竖向灯柱", "Embedded Vertical Light Pillar"),
+        "starship_bulkhead_wall": ("可连接金属隔断矮墙", "Metal Bulkhead Wall"),
+        "starship_ladder": ("星舰防滑金属爬梯", "Starship Metal Ladder"),
+
+        "polar_packed_snow": ("极地厚实压雪层", "Polar Dense Packed Snow"),
+        "polar_ice_bricks": ("冰砖砌块", "Polar Carved Ice Bricks"),
+        "outpost_yellow_wall": ("科考站白黄工程墙板", "Outpost Yellow Trim Wall"),
+        "outpost_dark_trim": ("科考站深灰钢边柱", "Outpost Dark Steel Trim"),
+        "outpost_window_glass": ("极地防寒双层玻璃", "Insulated Outpost Window"),
+        "outpost_corrugated_slab": ("科考站波纹屋顶台阶", "Corrugated Roof Slab"),
+        "mine_support_wall": ("矿区锈铁支护矮墙", "Mine Support Iron Wall"),
+        "mine_concrete_slab": ("矿区混凝土半砖", "Mine Concrete Slab"),
+        "mine_caution_concrete": ("矿区黄条混凝土块", "Mine Caution Concrete"),
+        "geothermal_magma_crust": ("地热岩浆裂隙石", "Geothermal Magma Crust"),
+
+        "ruin_obsidian_wall": ("遗迹黑曜矮墙围栏", "Ruin Obsidian Wall"),
+        "ruin_platinum_wall": ("遗迹白金栏墙", "Ruin Platinum Wall"),
+        "ruin_cracked_obsidian": ("发光裂纹遗迹黑曜石", "Glowing Cracked Obsidian"),
+        "ruin_mossy_obsidian": ("青苔覆盖遗迹黑曜石", "Mossy Ruin Obsidian"),
+        "ruin_hex_floor": ("外星几何嵌花地砖", "Alien Geometric Floor Tile"),
+        "ruin_energy_conduit": ("外星光能传输柱", "Alien Energy Conduit Pillar"),
+        "ruin_portal_frame": ("遗迹大型拱门框石", "Ruin Monument Frame Block"),
+        "ruin_ark_glow_panel": ("休眠方舟暖金灯板", "Ark Warm Glow Panel"),
+
+        "prop_warning_sign": ("立式工程安全警示牌", "Standing Warning Sign"),
+        "prop_floodlight": ("可旋转工程探照灯", "Portable Work Floodlight"),
+        "prop_antenna_mast": ("屋顶通讯雷达天线杆", "Roof Comms Antenna Mast"),
+        "prop_solar_panel": ("极地小型太阳能发电板", "Polar Solar Panel"),
+        "prop_supply_pallet": ("木栈板堆叠物资货箱", "Stacked Supply Pallet"),
+        "prop_bunk_frame": ("双层船员上下铺铁架", "Crew Double Bunk Frame"),
+        "prop_dining_table": ("食堂合金方块餐桌", "Mess Hall Metal Table"),
+        "prop_hologram_projector": ("地面全息数据投影仪", "Floor Hologram Projector"),
     }
 
     for bid, (zname, ename) in names.items():
@@ -1069,12 +1451,28 @@ def verify_all_blocks():
                     if not os.path.exists(tpath):
                         errors.append(f"{item_path}: missing texture PNG {tpath}")
 
+    # Also verify standalone prefab_projector item model/texture/lang
+    extra_item = "prefab_projector"
+    if f"item.picking_hope_core.{extra_item}" not in zh:
+        errors.append(f"Missing zh_cn key for item {extra_item}")
+    extra_item_path = os.path.join(ASSETS, "models", "item", f"{extra_item}.json")
+    if not os.path.exists(extra_item_path):
+        errors.append(f"Missing item model: {extra_item_path}")
+    else:
+        im = json.load(open(extra_item_path, encoding="utf-8"))
+        for tk, tv in im.get("textures", {}).items():
+            if tv.startswith("picking_hope_core:"):
+                trel = tv.split(":", 1)[1]
+                tpath = os.path.join(ASSETS, "textures", trel.replace("/", os.sep) + ".png")
+                if not os.path.exists(tpath):
+                    errors.append(f"{extra_item_path}: missing texture PNG {tpath}")
+
     if errors:
         print("INTEGRITY CHECK FAILED:")
         for e in errors:
             print(" -", e)
         raise SystemExit(1)
-    print(f"ALL {len(block_ids)} blocks passed 100% blockstate, model, texture & lang verification!")
+    print(f"ALL {len(block_ids)} blocks + {extra_item} passed 100% blockstate, model, texture & lang verification!")
 
 
 if __name__ == "__main__":

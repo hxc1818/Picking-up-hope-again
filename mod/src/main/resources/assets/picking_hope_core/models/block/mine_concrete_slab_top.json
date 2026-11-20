@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab_top",
+  "textures": {
+    "bottom": "picking_hope_core:block/mine_concrete_floor",
+    "top": "picking_hope_core:block/mine_concrete_floor",
+    "side": "picking_hope_core:block/mine_concrete_floor"
+  }
+}

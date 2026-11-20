@@ -36,7 +36,7 @@ public class HopePauseScreen extends Screen {
         clearWidgets();
 
         boolean creative = this.minecraft != null && this.minecraft.player != null && this.minecraft.player.isCreative();
-        int boxH = creative ? 198 : 156;
+        int boxH = creative ? 220 : 156;
         int by = (this.height - boxH) / 2;
         int panelW = 196;
         int x = (this.width - panelW) / 2;
@@ -53,6 +53,14 @@ public class HopePauseScreen extends Screen {
                     this.minecraft.setScreen(new BuilderRegionMapScreen());
                 }
             }, 0xFF4ADE80));
+            curY += 22;
+
+            addRenderableWidget(new SciFiButton(x, curY, panelW, 19,
+                    new TextComponent("打开可复用结构蓝图库 (K)"), btn -> {
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(new BuilderPrefabScreen());
+                }
+            }, 0xFF38BDF8));
             curY += 22;
 
             int hw = (panelW - 4) / 2;
@@ -113,7 +121,7 @@ public class HopePauseScreen extends Screen {
 
         boolean creative = this.minecraft != null && this.minecraft.player != null && this.minecraft.player.isCreative();
         int boxW = 228;
-        int boxH = creative ? 198 : 156;
+        int boxH = creative ? 220 : 156;
         int bx = (this.width - boxW) / 2;
         int by = (this.height - boxH) / 2;
 
