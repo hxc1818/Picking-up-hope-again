@@ -220,7 +220,7 @@ final class OutpostMinePrefabDefs {
         for (int x = 1; x <= 13; x++) {
             for (int z = 0; z <= 12; z++) {
                 boolean rib = (z == 1 || z == 6 || z == 11);
-                b.set(x, 6, z, rib ? truss : roof.defaultBlockState());
+                b.set(x, 6, z, rib ? truss : roof);
             }
         }
         b.set(7, 6, 3, ModBlocks.STARSHIP_LIGHT.get());

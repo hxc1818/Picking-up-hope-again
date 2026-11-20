@@ -13,7 +13,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelLastEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
@@ -27,7 +27,10 @@ public final class BuilderPrefabOverlayRenderer {
     private BuilderPrefabOverlayRenderer() {}
 
     @SubscribeEvent
-    public static void onRenderLevelLast(RenderLevelLastEvent event) {
+    public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+            return;
+        }
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null || mc.screen != null || !mc.player.isCreative()) {
             return;
@@ -45,7 +48,7 @@ public final class BuilderPrefabOverlayRenderer {
         int rep = BuilderPrefabClientState.getRepeatCount();
         int dy = BuilderPrefabClientState.getYOffset();
 
-        Vec3 cam = mc.gameRenderer.getMainCamera().getPosition();
+        Vec3 cam = event.getCamera().getPosition();
         PoseStack ps = event.getPoseStack();
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         VertexConsumer vc = buffers.getBuffer(RenderType.lines());
