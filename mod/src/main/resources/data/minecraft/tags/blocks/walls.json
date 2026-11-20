@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "picking_hope_core:starship_bulkhead_wall",
+    "picking_hope_core:mine_support_wall",
+    "picking_hope_core:ruin_obsidian_wall",
+    "picking_hope_core:ruin_platinum_wall"
+  ]
+}

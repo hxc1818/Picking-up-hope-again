@@ -8,7 +8,7 @@ Thumbs.db
 *.iml
 
 # Local Minecraft Client (Used for local testing, not committed to git)
-Minecraft/
+/Minecraft/
 
 # Java & Gradle Build Artifacts (CI compiles remotely)
 .gradle/
