@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/ruin_obsidian_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/ruin_obsidian_block"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/ruin_obsidian_slab_top"
+    }
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "id": "boss_core_laser",
+  "durationTicks": 28,
+  "bones": {
+    "torso": [
+      {
+        "t": 0.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.35,
+        "rot": [
+          14.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.72,
+        "rot": [
+          16.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "arm_l": [
+      {
+        "t": 0.0,
+        "rot": [
+          -20.0,
+          0.0,
+          -10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.4,
+        "rot": [
+          -85.0,
+          10.0,
+          -14.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -20.0,
+          0.0,
+          -10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "arm_r": [
+      {
+        "t": 0.0,
+        "rot": [
+          -20.0,
+          0.0,
+          10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.4,
+        "rot": [
+          -85.0,
+          -10.0,
+          14.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -20.0,
+          0.0,
+          10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [
+    {
+      "t": 0.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.4,
+      "anchor": "home",
+      "offset": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "camera": [
+    {
+      "t": 0.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.44,
+      "posAnchor": "arena_center",
+      "posOffset": [
+        0.8,
+        4.2,
+        9.2
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "target",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 50.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "events": [
+    {
+      "t": 0.24,
+      "type": "sound",
+      "anchor": "actor",
+      "vfx": "",
+      "particle": "",
+      "sound": "blaze",
+      "pitch": 0.75,
+      "volume": 0.85,
+      "count": 12,
+      "spread": 0.5,
+      "scale": 1.0,
+      "shake": 0.0,
+      "hitStop": 0,
+      "suppressDamagePopup": false
+    },
+    {
+      "t": 0.46,
+      "type": "impact",
+      "anchor": "target",
+      "vfx": "fire_beam",
+      "particle": "flame",
+      "sound": "fire",
+      "pitch": 1.0,
+      "volume": 0.85,
+      "count": 18,
+      "spread": 0.5,
+      "scale": 1.45,
+      "shake": 0.45,
+      "hitStop": 2,
+      "suppressDamagePopup": false
+    }
+  ]
+}

@@ -1,0 +1,377 @@
+{
+  "id": "laozheng_ult",
+  "durationTicks": 44,
+  "bannerStyle": "ULT",
+  "bones": {
+    "torso": [
+      {
+        "t": 0.0,
+        "rot": [
+          8.0,
+          -22.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.32,
+        "rot": [
+          -25.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.6,
+        "rot": [
+          40.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_out_cubic"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          4.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "right_arm": [
+      {
+        "t": 0.0,
+        "rot": [
+          -110.0,
+          0.0,
+          15.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.36,
+        "rot": [
+          -175.0,
+          0.0,
+          10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.6,
+        "rot": [
+          -20.0,
+          0.0,
+          -10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -28.0,
+          0.0,
+          10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "left_arm": [
+      {
+        "t": 0.0,
+        "rot": [
+          -90.0,
+          0.0,
+          -15.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.36,
+        "rot": [
+          -168.0,
+          0.0,
+          -10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.6,
+        "rot": [
+          -20.0,
+          0.0,
+          10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          12.0,
+          0.0,
+          -10.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [
+    {
+      "t": 0.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.28,
+      "anchor": "home",
+      "offset": [
+        0.6,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.46,
+      "anchor": "arena_center",
+      "offset": [
+        -1.5,
+        2.2,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_out_cubic"
+    },
+    {
+      "t": 0.6,
+      "anchor": "arena_center",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_cubic"
+    },
+    {
+      "t": 0.82,
+      "anchor": "arena_center",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "camera": [
+    {
+      "t": 0.0,
+      "posAnchor": "actor",
+      "posOffset": [
+        2.6,
+        1.35,
+        2.5
+      ],
+      "localToActorFacing": true,
+      "lookAnchor": "actor",
+      "lookOffset": [
+        0.0,
+        1.4,
+        0.0
+      ],
+      "fov": 40.0,
+      "roll": -3.5,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.34,
+      "posAnchor": "actor",
+      "posOffset": [
+        3.1,
+        1.85,
+        -2.5
+      ],
+      "localToActorFacing": true,
+      "lookAnchor": "actor",
+      "lookOffset": [
+        0.0,
+        1.4,
+        0.0
+      ],
+      "fov": 44.0,
+      "roll": 3.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.58,
+      "posAnchor": "arena_center",
+      "posOffset": [
+        -2.0,
+        3.4,
+        8.6
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        1.5,
+        0.8,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "events": [
+    {
+      "t": 0.08,
+      "type": "sound",
+      "anchor": "actor",
+      "vfx": "",
+      "particle": "",
+      "sound": "anvil",
+      "pitch": 0.75,
+      "volume": 0.85,
+      "count": 12,
+      "spread": 0.5,
+      "scale": 1.0,
+      "shake": 0.0,
+      "hitStop": 0,
+      "suppressDamagePopup": false
+    },
+    {
+      "t": 0.58,
+      "type": "impact",
+      "anchor": "all_enemies",
+      "vfx": "shockwave_ring",
+      "particle": "lava",
+      "sound": "explode",
+      "pitch": 1.0,
+      "volume": 0.85,
+      "count": 18,
+      "spread": 0.5,
+      "scale": 1.9,
+      "shake": 0.7,
+      "hitStop": 4,
+      "suppressDamagePopup": false
+    },
+    {
+      "t": 0.66,
+      "type": "vfx",
+      "anchor": "all_allies",
+      "vfx": "shield_dome",
+      "particle": "",
+      "sound": "shield_block",
+      "pitch": 1.1,
+      "volume": 0.85,
+      "count": 12,
+      "spread": 0.5,
+      "scale": 1.15,
+      "shake": 0.0,
+      "hitStop": 0,
+      "suppressDamagePopup": false
+    }
+  ]
+}

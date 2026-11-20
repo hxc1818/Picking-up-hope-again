@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Specification-Title: picking_hope_core
+Specification-Vendor: resilienthope
+Specification-Version: 1
+Implementation-Title: picking_hope_core
+Implementation-Version: 1.0.0
+Implementation-Vendor: resilienthope
+Implementation-Timestamp: 2026-11-20T08:56:03+0000
+

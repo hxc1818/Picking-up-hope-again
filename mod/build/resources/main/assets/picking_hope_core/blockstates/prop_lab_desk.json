@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "picking_hope_core:block/prop_lab_desk"
+    },
+    "facing=east": {
+      "model": "picking_hope_core:block/prop_lab_desk",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "picking_hope_core:block/prop_lab_desk",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "picking_hope_core:block/prop_lab_desk",
+      "y": 270
+    }
+  }
+}

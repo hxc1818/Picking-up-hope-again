@@ -1,0 +1,187 @@
+{
+  "id": "boss_arm_r_hammer",
+  "durationTicks": 26,
+  "bones": {
+    "arm_r": [
+      {
+        "t": 0.0,
+        "rot": [
+          -25.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.34,
+        "rot": [
+          -165.0,
+          0.0,
+          8.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.54,
+        "rot": [
+          14.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_cubic"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -25.0,
+          0.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [
+    {
+      "t": 0.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.36,
+      "anchor": "target",
+      "offset": [
+        -1.6,
+        1.2,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.54,
+      "anchor": "target",
+      "offset": [
+        -1.45,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_cubic"
+    },
+    {
+      "t": 1.0,
+      "anchor": "home",
+      "offset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "yawOffset": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "camera": [
+    {
+      "t": 0.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 0.48,
+      "posAnchor": "arena_center",
+      "posOffset": [
+        -1.8,
+        3.8,
+        8.6
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "target",
+      "lookOffset": [
+        0.0,
+        0.9,
+        0.0
+      ],
+      "fov": 48.0,
+      "roll": -2.0,
+      "ease": "ease_in_out_cubic"
+    },
+    {
+      "t": 1.0,
+      "posAnchor": "overview",
+      "posOffset": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "localToActorFacing": false,
+      "lookAnchor": "arena_center",
+      "lookOffset": [
+        0.0,
+        1.1,
+        0.0
+      ],
+      "fov": 54.0,
+      "roll": 0.0,
+      "ease": "ease_in_out_cubic"
+    }
+  ],
+  "events": [
+    {
+      "t": 0.52,
+      "type": "impact",
+      "anchor": "target",
+      "vfx": "shockwave_ring",
+      "particle": "lava",
+      "sound": "anvil",
+      "pitch": 0.75,
+      "volume": 0.85,
+      "count": 16,
+      "spread": 0.5,
+      "scale": 1.45,
+      "shake": 0.55,
+      "hitStop": 3,
+      "suppressDamagePopup": false
+    }
+  ]
+}

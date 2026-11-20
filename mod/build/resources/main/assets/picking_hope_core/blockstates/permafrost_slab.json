@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/permafrost_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/permafrost_rock"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/permafrost_slab_top"
+    }
+  }
+}

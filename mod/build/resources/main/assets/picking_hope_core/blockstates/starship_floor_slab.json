@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/starship_floor_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/starship_floor"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/starship_floor_slab_top"
+    }
+  }
+}

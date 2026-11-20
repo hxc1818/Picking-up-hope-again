@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/outer_stairs",
+  "textures": {
+    "bottom": "picking_hope_core:block/permafrost_rock",
+    "top": "picking_hope_core:block/permafrost_rock",
+    "side": "picking_hope_core:block/permafrost_rock"
+  }
+}

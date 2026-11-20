@@ -1,0 +1,114 @@
+{
+  "id": "laozheng_ready",
+  "durationTicks": 30,
+  "loop": true,
+  "bones": {
+    "torso": [
+      {
+        "t": 0.0,
+        "rot": [
+          10.0,
+          -15.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 0.5,
+        "rot": [
+          14.0,
+          -18.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          10.0,
+          -15.0,
+          0.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "right_arm": [
+      {
+        "t": 0.0,
+        "rot": [
+          -85.0,
+          25.0,
+          20.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -85.0,
+          25.0,
+          20.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ],
+    "left_arm": [
+      {
+        "t": 0.0,
+        "rot": [
+          -78.0,
+          -22.0,
+          -22.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      },
+      {
+        "t": 1.0,
+        "rot": [
+          -78.0,
+          -22.0,
+          -22.0
+        ],
+        "pos": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "ease": "ease_in_out_quad"
+      }
+    ]
+  },
+  "rootMotion": [],
+  "camera": [],
+  "events": []
+}

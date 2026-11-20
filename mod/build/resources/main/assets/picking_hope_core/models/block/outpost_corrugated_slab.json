@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "picking_hope_core:block/outpost_roof_plating",
+    "top": "picking_hope_core:block/outpost_roof_plating",
+    "side": "picking_hope_core:block/outpost_roof_plating"
+  }
+}

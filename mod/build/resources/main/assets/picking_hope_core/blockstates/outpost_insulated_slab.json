@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/outpost_insulated_slab"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/outpost_insulated_wall"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/outpost_insulated_slab_top"
+    }
+  }
+}

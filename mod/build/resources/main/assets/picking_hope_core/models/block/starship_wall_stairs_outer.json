@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/outer_stairs",
+  "textures": {
+    "bottom": "picking_hope_core:block/starship_wall",
+    "top": "picking_hope_core:block/starship_wall",
+    "side": "picking_hope_core:block/starship_wall"
+  }
+}

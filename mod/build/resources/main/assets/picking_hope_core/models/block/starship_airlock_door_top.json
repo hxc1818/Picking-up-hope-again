@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/door_top",
+  "textures": {
+    "top": "picking_hope_core:block/starship_airlock_door_top",
+    "bottom": "picking_hope_core:block/starship_airlock_door_bottom"
+  }
+}

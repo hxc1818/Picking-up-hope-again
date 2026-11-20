@@ -1,0 +1,16 @@
+{
+  "variants": {
+    "axis=x": {
+      "model": "picking_hope_core:block/starship_pillar_light_horizontal",
+      "x": 90,
+      "y": 90
+    },
+    "axis=y": {
+      "model": "picking_hope_core:block/starship_pillar_light"
+    },
+    "axis=z": {
+      "model": "picking_hope_core:block/starship_pillar_light_horizontal",
+      "x": 90
+    }
+  }
+}

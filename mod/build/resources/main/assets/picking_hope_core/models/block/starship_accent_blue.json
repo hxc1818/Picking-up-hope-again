@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "picking_hope_core:block/starship_accent_blue"
+  }
+}

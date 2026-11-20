@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/slab",
+  "textures": {
+    "bottom": "picking_hope_core:block/ruin_hardlight_bridge",
+    "top": "picking_hope_core:block/ruin_hardlight_bridge",
+    "side": "picking_hope_core:block/ruin_hardlight_bridge"
+  }
+}

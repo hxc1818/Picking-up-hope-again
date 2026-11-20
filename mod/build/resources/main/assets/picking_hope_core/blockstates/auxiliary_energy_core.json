@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "picking_hope_core:block/auxiliary_energy_core"
+    }
+  }
+}

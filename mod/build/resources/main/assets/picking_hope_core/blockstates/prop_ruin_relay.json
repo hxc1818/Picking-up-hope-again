@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "picking_hope_core:block/prop_ruin_relay"
+    },
+    "facing=east": {
+      "model": "picking_hope_core:block/prop_ruin_relay",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "picking_hope_core:block/prop_ruin_relay",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "picking_hope_core:block/prop_ruin_relay",
+      "y": 270
+    }
+  }
+}

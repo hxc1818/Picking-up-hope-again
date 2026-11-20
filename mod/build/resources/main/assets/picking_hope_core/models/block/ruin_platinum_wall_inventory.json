@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/wall_inventory",
+  "textures": {
+    "wall": "picking_hope_core:block/ruin_platinum_trim"
+  }
+}

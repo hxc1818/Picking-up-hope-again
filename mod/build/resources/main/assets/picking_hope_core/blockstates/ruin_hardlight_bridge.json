@@ -1,0 +1,13 @@
+{
+  "variants": {
+    "type=bottom": {
+      "model": "picking_hope_core:block/ruin_hardlight_bridge"
+    },
+    "type=double": {
+      "model": "picking_hope_core:block/ruin_hardlight_bridge_double"
+    },
+    "type=top": {
+      "model": "picking_hope_core:block/ruin_hardlight_bridge_top"
+    }
+  }
+}

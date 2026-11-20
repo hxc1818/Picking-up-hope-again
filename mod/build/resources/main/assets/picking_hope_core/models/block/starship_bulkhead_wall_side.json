@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/template_wall_side",
+  "textures": {
+    "wall": "picking_hope_core:block/starship_bulkhead_wall"
+  }
+}

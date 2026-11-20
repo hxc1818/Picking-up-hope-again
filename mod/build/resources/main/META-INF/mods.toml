@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[40,)"
+license="MIT"
+
+[[mods]]
+modId="picking_hope_core"
+version="1.0.0"
+displayName="Picking Up Hope Core"
+authors="Picking Up Hope Team"
+description='''
+Core mechanics mod for Picking Up Hope Again: Genshin-like 4-character team switching, infinite categorized inventory, modern HUD overlay, radio subtitles and teleport waypoints.
+'''
+
+[[dependencies.picking_hope_core]]
+    modId="forge"
+    mandatory=true
+    versionRange="[40.3.0,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.picking_hope_core]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.18.2,1.19)"
+    ordering="NONE"
+    side="BOTH"
